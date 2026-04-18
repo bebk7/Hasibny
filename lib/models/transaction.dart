@@ -18,11 +18,6 @@ class TransactionModel {
 
   @Index()
   late int customerId;
-  
-  @Index()
-  String? firestoreId;
-  
-  bool isSynced = false;
 
   TransactionModel({
     required this.amount,

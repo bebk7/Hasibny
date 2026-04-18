@@ -12,7 +12,6 @@ import '../../utils/responsive.dart';
 import '../../controllers/auth_controller.dart';
 import '../lock/set_pin_view.dart';
 import '../auth/auth_view.dart';
-import '../auth/email_verification_view.dart';
 import 'store_profile_view.dart';
 
 class SettingsView extends StatelessWidget {
@@ -167,12 +166,13 @@ class SettingsView extends StatelessWidget {
             items: [
               Obx(() {
                 final ac = Get.find<AuthController>();
-                if (ac.firebaseUser.value == null) {
+                if (!ac.isLoggedIn) {
                   return _buildTile(
-                    icon: Icons.cloud_sync_rounded,
-                    color: Colors.indigo,
-                    title: 'sign_in_sync'.tr,
-                    subtitle: 'sign_in_sync_sub'.tr,
+                    icon: Icons.login_rounded,
+                    color: AppTheme.primaryColor,
+                    title: 'login'.tr,
+                    subtitle: 'register_subtitle'.tr,
+                    trailing: const Icon(Icons.chevron_right_rounded),
                     onTap: () => Get.to(() => const AuthView()),
                   );
                 }
@@ -183,24 +183,6 @@ class SettingsView extends StatelessWidget {
                       color: Colors.indigo,
                       title: 'logged_in_as'.tr,
                       subtitle: ac.userEmail,
-                    ),
-                    if (!ac.isEmailVerified.value) ...[
-                      Divider(
-                        height: 1,
-                        indent: 60,
-                        color: Colors.grey.withValues(alpha: 0.08),
-                      ),
-                      _buildTile(
-                        icon: Icons.mark_email_unread_rounded,
-                        color: Colors.orange,
-                        title: 'verify_email'.tr,
-                        onTap: () => Get.to(() => const EmailVerificationView()),
-                      ),
-                    ],
-                    Divider(
-                      height: 1,
-                      indent: 60,
-                      color: Colors.grey.withValues(alpha: 0.08),
                     ),
                     _buildTile(
                       icon: Icons.logout_rounded,
@@ -327,10 +309,10 @@ class SettingsView extends StatelessWidget {
       child: ListTile(
         leading: Icon(Icons.delete_forever_rounded, color: Colors.red[700]),
         title: Text('clear_all_data'.tr,
-            style:
-                TextStyle(color: const Color(0xFFD41C1C), fontWeight: FontWeight.bold)),
-        subtitle:
-            Text('clear_data_sub'.tr, style: TextStyle(color: const Color.fromARGB(255, 124, 66, 66))),
+            style: TextStyle(
+                color: const Color(0xFFD41C1C), fontWeight: FontWeight.bold)),
+        subtitle: Text('clear_data_sub'.tr,
+            style: TextStyle(color: const Color.fromARGB(255, 124, 66, 66))),
         onTap: () => _showClearDataDialog(context),
       ),
     );

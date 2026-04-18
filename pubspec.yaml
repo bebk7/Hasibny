@@ -29,8 +29,6 @@ dependencies:
   firebase_auth: ^5.5.2
   cloud_firestore: ^5.6.6
   image_picker: ^1.0.7
-  connectivity_plus: ^7.1.1
-  firebase_storage: ^12.4.10
 
 dev_dependencies:
   isar_generator: ^3.1.0+1

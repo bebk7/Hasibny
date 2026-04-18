@@ -81,27 +81,12 @@ class MerchantController extends GetxController {
 
   Future<void> deleteMerchant(int id) async {
     try {
-      final merchant = merchants.firstWhere(
-        (m) => m.id == id,
-      );
-
-      if (merchant.firestoreId != null && merchant.firestoreId!.isNotEmpty) {
-        await SyncService.deleteMerchantRemote(
-          merchant.firestoreId!,
-          merchant.id,
-        );
-      }
-
       await DatabaseService.deleteMerchant(id);
-
+      SyncService.deleteMerchantRemote(id);
       await loadMerchants();
     } catch (e) {
-      Get.snackbar(
-        'error'.tr,
-        '${'failed_delete_merchant'.tr}: $e',
-        backgroundColor: AppTheme.errorColor,
-        colorText: Colors.white,
-      );
+      Get.snackbar('error'.tr, '${'failed_delete_merchant'.tr}: $e',
+          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
     }
   }
 

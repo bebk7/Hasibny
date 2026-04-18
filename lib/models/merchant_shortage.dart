@@ -20,11 +20,6 @@ class MerchantShortage {
   late DateTime createdAt;
 
   late DateTime updatedAt;
-  
-  @Index()
-  String? firestoreId;
-  
-  bool isSynced = false;
 
   MerchantShortage({
     this.merchantId,

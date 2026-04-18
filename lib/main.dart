@@ -1,5 +1,4 @@
 import 'package:firebase_core/firebase_core.dart';
-import 'package:cloud_firestore/cloud_firestore.dart';
 import 'firebase_options.dart';
 import 'package:flutter/material.dart';
 import 'package:flutter_native_splash/flutter_native_splash.dart';
@@ -16,25 +15,12 @@ import 'controllers/auth_controller.dart';
 import 'controllers/merchant_shortage_controller.dart';
 import 'themes/app_theme.dart';
 import 'translations/app_translations.dart';
+import 'views/auth/auth_view.dart';
 import 'views/home/home_view.dart';
 import 'views/lock/lock_view.dart';
 
-Future<void> main() async {
+void main() {
   WidgetsFlutterBinding.ensureInitialized();
-  
-  try {
-    await Firebase.initializeApp(
-      options: DefaultFirebaseOptions.currentPlatform,
-    );
-    // Explicitly enable offline persistence for Firestore
-    FirebaseFirestore.instance.settings = const Settings(
-      persistenceEnabled: true,
-      cacheSizeBytes: Settings.CACHE_SIZE_UNLIMITED,
-    );
-  } catch (e) {
-    debugPrint("Firebase initialization failed: $e");
-  }
-  
   runApp(const AccountBookApp());
 }
 
@@ -55,11 +41,15 @@ class _AccountBookAppState extends State<AccountBookApp> {
   }
 
   Future<void> _initializeApp() async {
+    // Initialize Firebase
+    await Firebase.initializeApp(
+      options: DefaultFirebaseOptions.currentPlatform,
+    );
+
     // Initialize database
     await DatabaseService.initialize();
 
     // Initialize controllers
-    Get.put(AuthController()); // Auth first
     Get.put(SettingsController());
     Get.put(LockController());
     Get.put(CustomerController());
@@ -68,6 +58,7 @@ class _AccountBookAppState extends State<AccountBookApp> {
     Get.put(MerchantController());
     Get.put(InvoiceController());
     Get.put(MerchantShortageController());
+    Get.put(AuthController());
 
     // Remove splash and show app
     FlutterNativeSplash.remove();
@@ -122,7 +113,11 @@ class _AccountBookAppState extends State<AccountBookApp> {
           child: child!,
         ),
         home: Obx(() {
+          final ac = Get.find<AuthController>();
           final lc = Get.find<LockController>();
+          if (!ac.canAccessApp) {
+            return const AuthView();
+          }
           if (lc.isLockEnabled && !lc.isUnlocked.value) {
             return const LockView();
           }

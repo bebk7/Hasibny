@@ -78,19 +78,11 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     HapticFeedback.mediumImpact();
     final ac = Get.find<AuthController>();
     if (_isLogin) {
-      final success = await ac.login(email: _emailCtrl.text, password: _passwordCtrl.text);
-      if (success && mounted && Navigator.canPop(context)) {
-        Get.back();
-      }
     } else {
-      final success = await ac.register(
         email: _emailCtrl.text,
         password: _passwordCtrl.text,
         storeName: _storeNameCtrl.text.trim(),
       );
-      if (success && mounted && Navigator.canPop(context)) {
-        Get.back();
-      }
     }
   }
 
@@ -111,21 +103,7 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      extendBodyBehindAppBar: true,
-      appBar: Navigator.canPop(context)
-          ? AppBar(
-              backgroundColor: Colors.transparent,
-              elevation: 0,
-              leading: IconButton(
-                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
-                onPressed: () => Get.back(),
-              ),
-            )
-          : null,
-      body: GestureDetector(
-        onTap: () => FocusScope.of(context).unfocus(),
-        child: Stack(
-          children: [
+        children: [
           // Animated gradient background
           AnimatedBuilder(
             animation: _bgAnimCtrl,
@@ -193,7 +171,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
             ),
           ),
         ],
-        ),
       ),
     );
   }
@@ -248,7 +225,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
             fontWeight: FontWeight.w900,
             letterSpacing: 1.5,
             shadows: [
-              Shadow(color: Colors.black26, blurRadius: 10, offset: Offset(0, 4)),
             ],
           ),
         ),
@@ -317,7 +293,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(28),
               child: Form(
                 key: _formKey,
-                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [
@@ -338,7 +313,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                         label: 'store_name'.tr,
                         icon: Icons.storefront_rounded,
                         validator: (v) {
-                          if (v == null || v.trim().isEmpty) return 'store_name_required'.tr;
                           return null;
                         },
                       ),
@@ -352,7 +326,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                       icon: Icons.email_rounded,
                       keyboardType: TextInputType.emailAddress,
                       validator: (v) {
-                        if (v == null || v.trim().isEmpty) return 'email_required'.tr;
                         if (!v.contains('@')) return 'invalid_email'.tr;
                         return null;
                       },
@@ -367,14 +340,12 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                       obscure: _obscure,
                       suffixIcon: IconButton(
                         icon: Icon(
-                          _obscure ? Icons.visibility_rounded : Icons.visibility_off_rounded,
                           color: Theme.of(context).hintColor,
                           size: 22,
                         ),
                         onPressed: () => setState(() => _obscure = !_obscure),
                       ),
                       validator: (v) {
-                        if (v == null || v.isEmpty) return 'password_required'.tr;
                         if (v.length < 6) return 'password_min'.tr;
                         return null;
                       },
@@ -390,14 +361,11 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                         obscure: _obscureConfirm,
                         suffixIcon: IconButton(
                           icon: Icon(
-                            _obscureConfirm ? Icons.visibility_rounded : Icons.visibility_off_rounded,
                             color: Theme.of(context).hintColor,
                             size: 22,
                           ),
-                          onPressed: () => setState(() => _obscureConfirm = !_obscureConfirm),
                         ),
                         validator: (v) {
-                          if (v != _passwordCtrl.text) return 'passwords_not_match'.tr;
                           return null;
                         },
                       ),
@@ -442,7 +410,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                                 borderRadius: BorderRadius.circular(16),
                               ),
                               elevation: ac.isLoading.value ? 0 : 4,
-                              shadowColor: AppTheme.primaryColor.withValues(alpha: 0.4),
                             ),
                             child: ac.isLoading.value
                                 ? const SizedBox(
@@ -457,7 +424,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                                     mainAxisAlignment: MainAxisAlignment.center,
                                     children: [
                                       Icon(
-                                        _isLogin ? Icons.login_rounded : Icons.person_add_rounded,
                                         size: 22,
                                       ),
                                       const SizedBox(width: 10),
@@ -503,7 +469,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
             style: TextStyle(
               fontSize: 16,
               fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-              color: isActive ? AppTheme.primaryColor : Theme.of(Get.context!).hintColor,
             ),
           ),
         ),
@@ -530,7 +495,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
         labelText: label,
         prefixIcon: Container(
           margin: const EdgeInsets.only(left: 4),
-          child: Icon(icon, size: 22, color: AppTheme.primaryColor.withValues(alpha: 0.7)),
         ),
         suffixIcon: suffixIcon,
         border: OutlineInputBorder(
@@ -547,7 +511,6 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
         ),
         filled: true,
         fillColor: Theme.of(context).scaffoldBackgroundColor,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 16, vertical: 16),
       ),
     );
   }

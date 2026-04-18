@@ -17,11 +17,6 @@ class Customer {
   @Index()
   late DateTime updatedAt;
   
-  @Index()
-  String? firestoreId;
-  
-  bool isSynced = false;
-  
   Customer({
     required this.name,
     required this.phoneNumber,

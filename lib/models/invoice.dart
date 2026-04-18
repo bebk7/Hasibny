@@ -49,11 +49,6 @@ class Invoice {
 
   late DateTime createdAt;
   late DateTime updatedAt;
-  
-  @Index()
-  String? firestoreId;
-  
-  bool isSynced = false;
 
   Invoice({
     required this.merchantId,

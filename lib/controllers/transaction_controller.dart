@@ -4,7 +4,6 @@ import 'package:get/get.dart';
 import '../models/transaction.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
-import '../services/firestore_service.dart';
 import '../themes/app_theme.dart';
 import 'dashboard_controller.dart';
 
@@ -96,13 +95,7 @@ class TransactionController extends GetxController {
       );
 
       await DatabaseService.addTransaction(transaction);
-      try {
-        transaction.firestoreId = await FirestoreService.addTransaction(transaction);
-        transaction.isSynced = true;
-        await DatabaseService.updateTransaction(transaction);
-      } catch (e) {
-        debugPrint('Firestore add failed: $e');
-      }
+      SyncService.uploadTransaction(transaction);
       await loadTransactionsForCustomer(customerId);
       await loadAllTransactions();
       final customerController = Get.find<CustomerController>();
@@ -118,15 +111,8 @@ class TransactionController extends GetxController {
 
   Future<void> updateTransaction(TransactionModel transaction) async {
     try {
-      transaction.isSynced = false;
       await DatabaseService.updateTransaction(transaction);
-      try {
-        await FirestoreService.updateTransaction(transaction);
-        transaction.isSynced = true;
-        await DatabaseService.updateTransaction(transaction);
-      } catch (e) {
-        debugPrint('Firestore update failed: $e');
-      }
+      SyncService.uploadTransaction(transaction);
       await loadTransactionsForCustomer(selectedCustomerId.value);
 
       // Refresh customer controller to update balances
@@ -143,16 +129,8 @@ class TransactionController extends GetxController {
 
   Future<void> deleteTransaction(int transactionId) async {
     try {
-      final t = transactions.firstWhereOrNull((x) => x.id == transactionId) ?? 
-                allTransactions.firstWhereOrNull((x) => x.id == transactionId);
       await DatabaseService.deleteTransaction(transactionId);
-      if (t != null && t.firestoreId != null) {
-        try {
-          await FirestoreService.deleteTransaction(t.firestoreId!);
-        } catch (e) {
-          debugPrint('Firestore delete failed: $e');
-        }
-      }
+      SyncService.deleteTransactionRemote(transactionId);
       await loadTransactionsForCustomer(selectedCustomerId.value);
       await loadAllTransactions();
       final customerController = Get.find<CustomerController>();

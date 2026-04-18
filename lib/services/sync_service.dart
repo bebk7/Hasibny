@@ -1,3 +1,5 @@
+import 'package:cloud_firestore/cloud_firestore.dart';
+import 'package:firebase_auth/firebase_auth.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/customer.dart';
@@ -7,72 +9,190 @@ import '../models/invoice.dart';
 import '../models/merchant_shortage.dart';
 import '../themes/app_theme.dart';
 import 'database_service.dart';
-import 'firestore_service.dart';
 
 class SyncService {
-  static Future<bool> hasRemoteData() async {
-    return await FirestoreService.hasRemoteData();
+  static final _db = FirebaseFirestore.instance;
+  static final _auth = FirebaseAuth.instance;
+
+  static String? get _uid => _auth.currentUser?.uid;
+  static bool get _isAuthenticated => _auth.currentUser != null;
+
+  // ─── Collection refs ───────────────────────────────────────────────────────
+  static CollectionReference<Map<String, dynamic>>? get _customers {
+    final uid = _uid;
+    return uid == null ? null : _db.collection('users/$uid/customers');
   }
 
+  static CollectionReference<Map<String, dynamic>>? get _transactions {
+    final uid = _uid;
+    return uid == null ? null : _db.collection('users/$uid/transactions');
+  }
+
+  static CollectionReference<Map<String, dynamic>>? get _merchants {
+    final uid = _uid;
+    return uid == null ? null : _db.collection('users/$uid/merchants');
+  }
+
+  static CollectionReference<Map<String, dynamic>>? get _invoices {
+    final uid = _uid;
+    return uid == null ? null : _db.collection('users/$uid/invoices');
+  }
+
+  static CollectionReference<Map<String, dynamic>>? get _shortages {
+    final uid = _uid;
+    return uid == null ? null : _db.collection('users/$uid/shortages');
+  }
+
+  // ─── Upload individual entities ────────────────────────────────────────────
+
+  static void uploadCustomer(Customer c) {
+    if (!_isAuthenticated) return;
+    _customers?.doc('${c.id}').set({
+      'id': c.id,
+      'name': c.name,
+      'phoneNumber': c.phoneNumber,
+      'profilePicturePath': c.profilePicturePath,
+      'createdAt': c.createdAt.toIso8601String(),
+      'updatedAt': c.updatedAt.toIso8601String(),
+    }).catchError(_onError);
+  }
+
+  static void deleteCustomerRemote(int id) {
+    if (!_isAuthenticated) return;
+    _customers?.doc('$id').delete().catchError(_onError);
+    _transactions?.where('customerId', isEqualTo: id).get().then((snap) {
+      final batch = _db.batch();
+      for (final d in snap.docs) batch.delete(d.reference);
+      batch.commit();
+    }).catchError(_onError);
+  }
+
+  static void uploadTransaction(TransactionModel t) {
+    if (!_isAuthenticated) return;
+    _transactions?.doc('${t.id}').set({
+      'id': t.id,
+      'amount': t.amount,
+      'type': t.type.name,
+      'description': t.description,
+      'customerId': t.customerId,
+      'createdAt': t.createdAt.toIso8601String(),
+    }).catchError(_onError);
+  }
+
+  static void deleteTransactionRemote(int id) {
+    if (!_isAuthenticated) return;
+    _transactions?.doc('$id').delete().catchError(_onError);
+  }
+
+  static void uploadMerchant(Merchant m) {
+    if (!_isAuthenticated) return;
+    _merchants?.doc('${m.id}').set({
+      'id': m.id,
+      'name': m.name,
+      'phone': m.phone,
+      'address': m.address,
+      'notes': m.notes,
+      'createdAt': m.createdAt.toIso8601String(),
+      'updatedAt': m.updatedAt.toIso8601String(),
+    }).catchError(_onError);
+  }
+
+  static void deleteMerchantRemote(int id) {
+    if (!_isAuthenticated) return;
+    _merchants?.doc('$id').delete().catchError(_onError);
+    _invoices?.where('merchantId', isEqualTo: id).get().then((snap) {
+      final batch = _db.batch();
+      for (final d in snap.docs) batch.delete(d.reference);
+      batch.commit();
+    }).catchError(_onError);
+  }
+
+  static void uploadInvoice(Invoice inv) {
+    if (!_isAuthenticated) return;
+    _invoices?.doc('${inv.id}').set({
+      'id': inv.id,
+      'merchantId': inv.merchantId,
+      'invoiceNumber': inv.invoiceNumber,
+      'totalAmount': inv.totalAmount,
+      'paidAmount': inv.paidAmount,
+      'notes': inv.notes,
+      'itemsJson': inv.itemsJson,
+      'date': inv.date.toIso8601String(),
+      'createdAt': inv.createdAt.toIso8601String(),
+      'updatedAt': inv.updatedAt.toIso8601String(),
+    }).catchError(_onError);
+  }
+
+  static void deleteInvoiceRemote(int id) {
+    if (!_isAuthenticated) return;
+    _invoices?.doc('$id').delete().catchError(_onError);
+  }
+
+  static void uploadShortage(MerchantShortage s) {
+    if (!_isAuthenticated) return;
+    _shortages?.doc('${s.id}').set({
+      'id': s.id,
+      'merchantId': s.merchantId,
+      'productName': s.productName,
+      'quantity': s.quantity,
+      'note': s.note,
+      'isResolved': s.isResolved,
+      'createdAt': s.createdAt.toIso8601String(),
+      'updatedAt': s.updatedAt.toIso8601String(),
+    }).catchError(_onError);
+  }
+
+  static void deleteShortageRemote(int id) {
+    if (!_isAuthenticated) return;
+    _shortages?.doc('$id').delete().catchError(_onError);
+  }
+
+  // ─── Check if Firestore has data for this user ─────────────────────────────
+
+  static Future<bool> hasRemoteData() async {
+    if (!_isAuthenticated) return false;
+    try {
+      final snap = await _customers?.limit(1).get();
+      return snap?.docs.isNotEmpty ?? false;
+    } catch (_) {
+      return false;
+    }
+  }
+
+  // ─── Upload all local data to Firestore (first-time sync) ──────────────────
+
   static Future<void> uploadAll() async {
+    if (!_isAuthenticated) return;
     try {
       final customers = await DatabaseService.getAllCustomers();
-      for (final c in customers) {
-        c.firestoreId = await FirestoreService.addCustomer(c);
-        c.isSynced = true;
-        await DatabaseService.updateCustomer(c);
-      }
+      for (final c in customers) uploadCustomer(c);
 
       final transactions = await DatabaseService.getAllTransactions();
-      for (final t in transactions) {
-        t.firestoreId = await FirestoreService.addTransaction(t);
-        t.isSynced = true;
-        await DatabaseService.updateTransaction(t);
-      }
+      for (final t in transactions) uploadTransaction(t);
 
       final merchants = await DatabaseService.getAllMerchants();
-      for (final m in merchants) {
-        m.firestoreId = await FirestoreService.addMerchant(m);
-        m.isSynced = true;
-        await DatabaseService.updateMerchant(m);
-      }
+      for (final m in merchants) uploadMerchant(m);
 
       final invoices = await DatabaseService.getAllInvoices();
-      for (final inv in invoices) {
-        inv.firestoreId = await FirestoreService.addInvoice(inv);
-        inv.isSynced = true;
-        await DatabaseService.updateInvoice(inv);
-      }
+      for (final inv in invoices) uploadInvoice(inv);
 
       final shortages = await DatabaseService.getAllShortages();
-      for (final s in shortages) {
-        s.firestoreId = await FirestoreService.addShortage(s);
-        s.isSynced = true;
-        await DatabaseService.updateMerchantShortage(s);
-      }
+      for (final s in shortages) uploadShortage(s);
     } catch (e) {
       debugPrint('SyncService.uploadAll error: $e');
     }
   }
 
+  // ─── Download all Firestore data into Isar (new device login) ─────────────
+
   static Future<void> downloadAll() async {
+    if (!_isAuthenticated) return;
     try {
-      final data = await FirestoreService.downloadAll();
-
-      final customers = data['customers'] as List<Customer>;
-      for (final c in customers) await DatabaseService.addCustomer(c);
-
-      final transactions = data['transactions'] as List<TransactionModel>;
-      for (final t in transactions) await DatabaseService.addTransaction(t);
-
-      final merchants = data['merchants'] as List<Merchant>;
-      for (final m in merchants) await DatabaseService.addMerchant(m);
-
-      final invoices = data['invoices'] as List<Invoice>;
-      for (final inv in invoices) await DatabaseService.addInvoice(inv);
-
-      final shortages = data['shortages'] as List<MerchantShortage>;
-      for (final s in shortages) await DatabaseService.addMerchantShortage(s);
+      await _downloadCustomers();
+      await _downloadTransactions();
+      await _downloadMerchants();
+      await _downloadInvoices();
+      await _downloadShortages();
     } catch (e) {
       debugPrint('SyncService.downloadAll error: $e');
       Get.snackbar(
@@ -85,75 +205,101 @@ class SyncService {
     }
   }
 
-  static Future<void> uploadInvoice(Invoice invoice) async {
-    try {
-      invoice.firestoreId = await FirestoreService.addInvoice(invoice);
-      invoice.isSynced = true;
-      await DatabaseService.updateInvoice(invoice);
-    } catch (e) {
-      debugPrint('uploadInvoice error: $e');
-    }
-  }
-
-  static Future<void> deleteInvoiceRemote(String firestoreId) async {
-    try {
-      await FirestoreService.deleteInvoice(firestoreId);
-    } catch (e) {
-      debugPrint('deleteInvoiceRemote error: $e');
-    }
-  }
-
-  static Future<void> uploadMerchant(Merchant merchant) async {
-    try {
-      merchant.firestoreId = await FirestoreService.addMerchant(merchant);
-
-      merchant.isSynced = true;
-
-      await DatabaseService.updateMerchant(merchant);
-    } catch (e) {
-      debugPrint('uploadMerchant error: $e');
-    }
-  }
-
-  static Future<void> deleteMerchantRemote(
-    String firestoreId,
-    int localId,
-  ) async {
-    try {
-      await FirestoreService.deleteMerchant(
-        firestoreId,
-        localId,
+  static Future<void> _downloadCustomers() async {
+    final snap = await _customers?.get();
+    if (snap == null) return;
+    for (final doc in snap.docs) {
+      final d = doc.data();
+      final c = Customer(
+        name: d['name'] ?? '',
+        phoneNumber: d['phoneNumber'] ?? '',
+        profilePicturePath: d['profilePicturePath'] as String?,
       );
-    } catch (e) {
-      debugPrint('deleteMerchantRemote error: $e');
+      c.id = (d['id'] as num).toInt();
+      c.createdAt = DateTime.parse(d['createdAt'] as String);
+      c.updatedAt = DateTime.parse(d['updatedAt'] as String);
+      await DatabaseService.addCustomer(c);
     }
   }
 
-  static Future<void> uploadShortage(
-    MerchantShortage shortage,
-  ) async {
-    try {
-      shortage.firestoreId = await FirestoreService.addShortage(shortage);
-
-      shortage.isSynced = true;
-
-      await DatabaseService.updateMerchantShortage(
-        shortage,
+  static Future<void> _downloadTransactions() async {
+    final snap = await _transactions?.get();
+    if (snap == null) return;
+    for (final doc in snap.docs) {
+      final d = doc.data();
+      final t = TransactionModel(
+        amount: (d['amount'] as num).toDouble(),
+        type: d['type'] == 'give' ? TransactionType.give : TransactionType.got,
+        description: d['description'] ?? '',
+        customerId: (d['customerId'] as num).toInt(),
       );
-    } catch (e) {
-      debugPrint('uploadShortage error: $e');
+      t.id = (d['id'] as num).toInt();
+      t.createdAt = DateTime.parse(d['createdAt'] as String);
+      await DatabaseService.addTransaction(t);
     }
   }
 
-  static Future<void> deleteShortageRemote(
-    String firestoreId,
-  ) async {
-    try {
-      await FirestoreService.deleteShortage(
-        firestoreId,
+  static Future<void> _downloadMerchants() async {
+    final snap = await _merchants?.get();
+    if (snap == null) return;
+    for (final doc in snap.docs) {
+      final d = doc.data();
+      final m = Merchant(
+        name: d['name'] ?? '',
+        phone: d['phone'] ?? '',
+        address: d['address'] ?? '',
+        notes: d['notes'] as String?,
       );
-    } catch (e) {
-      debugPrint('deleteShortageRemote error: $e');
+      m.id = (d['id'] as num).toInt();
+      m.createdAt = DateTime.parse(d['createdAt'] as String);
+      m.updatedAt = DateTime.parse(d['updatedAt'] as String);
+      await DatabaseService.addMerchant(m);
     }
+  }
+
+  static Future<void> _downloadInvoices() async {
+    final snap = await _invoices?.get();
+    if (snap == null) return;
+    for (final doc in snap.docs) {
+      final d = doc.data();
+      final inv = Invoice(
+        merchantId: (d['merchantId'] as num).toInt(),
+        invoiceNumber: d['invoiceNumber'] ?? '',
+        totalAmount: (d['totalAmount'] as num).toDouble(),
+        paidAmount: (d['paidAmount'] as num? ?? 0).toDouble(),
+        notes: d['notes'] as String?,
+        itemsJson: d['itemsJson'] as String?,
+      );
+      inv.id = (d['id'] as num).toInt();
+      inv.date = DateTime.parse(d['date'] as String);
+      inv.createdAt = DateTime.parse(d['createdAt'] as String);
+      inv.updatedAt = DateTime.parse(d['updatedAt'] as String);
+      await DatabaseService.addInvoice(inv);
+    }
+  }
+
+  static Future<void> _downloadShortages() async {
+    final snap = await _shortages?.get();
+    if (snap == null) return;
+    for (final doc in snap.docs) {
+      final d = doc.data();
+      final s = MerchantShortage(
+        merchantId:
+            d['merchantId'] != null ? (d['merchantId'] as num).toInt() : null,
+        productName: d['productName'] ?? '',
+        quantity:
+            d['quantity'] != null ? (d['quantity'] as num).toDouble() : null,
+        note: d['note'] as String?,
+        isResolved: d['isResolved'] as bool? ?? false,
+      );
+      s.id = (d['id'] as num).toInt();
+      s.createdAt = DateTime.parse(d['createdAt'] as String);
+      s.updatedAt = DateTime.parse(d['updatedAt'] as String);
+      await DatabaseService.addMerchantShortage(s);
+    }
+  }
+
+  static dynamic _onError(dynamic e) {
+    debugPrint('SyncService error: $e');
   }
 }
