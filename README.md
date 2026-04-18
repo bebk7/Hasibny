@@ -184,8 +184,8 @@ This project is licensed under the MIT License - see the [LICENSE](LICENSE) file
 ## Support
 
 For support, please contact:
-- Email: support@accountbook.app
-- Phone: +1 (555) 123-4567
+- Email: labeeb.kaleessi@gmail.com
+- Phone: +967 774 190 100
 
 ---
 
