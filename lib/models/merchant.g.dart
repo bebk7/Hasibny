@@ -15,7 +15,7 @@ extension GetMerchantCollection on Isar {
 
 const MerchantSchema = CollectionSchema(
   name: r'Merchant',
-  id: -8971338243170812454,
+  id: -8971338243170812928,
   properties: {
     r'address': PropertySchema(
       id: 0,
@@ -27,23 +27,33 @@ const MerchantSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'name': PropertySchema(
+    r'firestoreId': PropertySchema(
       id: 2,
+      name: r'firestoreId',
+      type: IsarType.string,
+    ),
+    r'isSynced': PropertySchema(
+      id: 3,
+      name: r'isSynced',
+      type: IsarType.bool,
+    ),
+    r'name': PropertySchema(
+      id: 4,
       name: r'name',
       type: IsarType.string,
     ),
     r'notes': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'notes',
       type: IsarType.string,
     ),
     r'phone': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'phone',
       type: IsarType.string,
     ),
     r'updatedAt': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -55,7 +65,7 @@ const MerchantSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'name': IndexSchema(
-      id: 879695947855722453,
+      id: 879695947855722496,
       name: r'name',
       unique: false,
       replace: false,
@@ -68,7 +78,7 @@ const MerchantSchema = CollectionSchema(
       ],
     ),
     r'createdAt': IndexSchema(
-      id: -3433535483987302584,
+      id: -3433535483987302400,
       name: r'createdAt',
       unique: false,
       replace: false,
@@ -77,6 +87,19 @@ const MerchantSchema = CollectionSchema(
           name: r'createdAt',
           type: IndexType.value,
           caseSensitive: false,
+        )
+      ],
+    ),
+    r'firestoreId': IndexSchema(
+      id: 1863077355534728960,
+      name: r'firestoreId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'firestoreId',
+          type: IndexType.hash,
+          caseSensitive: true,
         )
       ],
     )
@@ -96,6 +119,12 @@ int _merchantEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.address.length * 3;
+  {
+    final value = object.firestoreId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.name.length * 3;
   {
     final value = object.notes;
@@ -115,10 +144,12 @@ void _merchantSerialize(
 ) {
   writer.writeString(offsets[0], object.address);
   writer.writeDateTime(offsets[1], object.createdAt);
-  writer.writeString(offsets[2], object.name);
-  writer.writeString(offsets[3], object.notes);
-  writer.writeString(offsets[4], object.phone);
-  writer.writeDateTime(offsets[5], object.updatedAt);
+  writer.writeString(offsets[2], object.firestoreId);
+  writer.writeBool(offsets[3], object.isSynced);
+  writer.writeString(offsets[4], object.name);
+  writer.writeString(offsets[5], object.notes);
+  writer.writeString(offsets[6], object.phone);
+  writer.writeDateTime(offsets[7], object.updatedAt);
 }
 
 Merchant _merchantDeserialize(
@@ -129,13 +160,15 @@ Merchant _merchantDeserialize(
 ) {
   final object = Merchant(
     address: reader.readStringOrNull(offsets[0]) ?? '',
-    name: reader.readString(offsets[2]),
-    notes: reader.readStringOrNull(offsets[3]),
-    phone: reader.readString(offsets[4]),
+    name: reader.readString(offsets[4]),
+    notes: reader.readStringOrNull(offsets[5]),
+    phone: reader.readString(offsets[6]),
   );
   object.createdAt = reader.readDateTime(offsets[1]);
+  object.firestoreId = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[5]);
+  object.isSynced = reader.readBool(offsets[3]);
+  object.updatedAt = reader.readDateTime(offsets[7]);
   return object;
 }
 
@@ -151,12 +184,16 @@ P _merchantDeserializeProp<P>(
     case 1:
       return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
-    case 3:
       return (reader.readStringOrNull(offset)) as P;
+    case 3:
+      return (reader.readBool(offset)) as P;
     case 4:
       return (reader.readString(offset)) as P;
     case 5:
+      return (reader.readStringOrNull(offset)) as P;
+    case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -390,6 +427,71 @@ extension MerchantQueryWhere on QueryBuilder<Merchant, Merchant, QWhereClause> {
       ));
     });
   }
+
+  QueryBuilder<Merchant, Merchant, QAfterWhereClause> firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterWhereClause> firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'firestoreId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterWhereClause> firestoreIdEqualTo(
+      String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [firestoreId],
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterWhereClause> firestoreIdNotEqualTo(
+      String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension MerchantQueryFilter
@@ -577,6 +679,155 @@ extension MerchantQueryFilter
     });
   }
 
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition>
+      firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition>
+      firestoreIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firestoreId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firestoreId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> firestoreIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition>
+      firestoreIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
   QueryBuilder<Merchant, Merchant, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -625,6 +876,16 @@ extension MerchantQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterFilterCondition> isSyncedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isSynced',
+        value: value,
       ));
     });
   }
@@ -1120,6 +1381,30 @@ extension MerchantQuerySortBy on QueryBuilder<Merchant, Merchant, QSortBy> {
     });
   }
 
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> sortByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> sortByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> sortByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> sortByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
+    });
+  }
+
   QueryBuilder<Merchant, Merchant, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1195,6 +1480,18 @@ extension MerchantQuerySortThenBy
     });
   }
 
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> thenByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> thenByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Merchant, Merchant, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1204,6 +1501,18 @@ extension MerchantQuerySortThenBy
   QueryBuilder<Merchant, Merchant, QAfterSortBy> thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> thenByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QAfterSortBy> thenByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1271,6 +1580,19 @@ extension MerchantQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Merchant, Merchant, QDistinct> distinctByFirestoreId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firestoreId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Merchant, Merchant, QDistinct> distinctByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSynced');
+    });
+  }
+
   QueryBuilder<Merchant, Merchant, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1316,6 +1638,18 @@ extension MerchantQueryProperty
   QueryBuilder<Merchant, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Merchant, String?, QQueryOperations> firestoreIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firestoreId');
+    });
+  }
+
+  QueryBuilder<Merchant, bool, QQueryOperations> isSyncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSynced');
     });
   }
 

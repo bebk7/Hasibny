@@ -2,7 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/customer.dart';
 import '../services/database_service.dart';
-import '../services/sync_service.dart';
+import '../services/firestore_service.dart';
 import '../themes/app_theme.dart';
 import 'dashboard_controller.dart';
 
@@ -61,7 +61,13 @@ class CustomerController extends GetxController {
   Future<void> addCustomer(Customer customer) async {
     try {
       await DatabaseService.addCustomer(customer);
-      SyncService.uploadCustomer(customer);
+      try {
+        customer.firestoreId = await FirestoreService.addCustomer(customer);
+        customer.isSynced = true;
+        await DatabaseService.updateCustomer(customer);
+      } catch (e) {
+        debugPrint('Firestore add failed: $e');
+      }
       await loadCustomers();
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshDashboard();
@@ -74,8 +80,15 @@ class CustomerController extends GetxController {
 
   Future<void> updateCustomer(Customer customer) async {
     try {
+      customer.isSynced = false;
       await DatabaseService.updateCustomer(customer);
-      SyncService.uploadCustomer(customer);
+      try {
+        await FirestoreService.updateCustomer(customer);
+        customer.isSynced = true;
+        await DatabaseService.updateCustomer(customer);
+      } catch (e) {
+        debugPrint('Firestore update failed: $e');
+      }
       await loadCustomers();
       Get.snackbar('success'.tr, 'customer_updated_success'.tr,
           backgroundColor: AppTheme.successColor, colorText: Colors.white);
@@ -87,8 +100,15 @@ class CustomerController extends GetxController {
 
   Future<void> deleteCustomer(int customerId) async {
     try {
+      final c = getCustomerById(customerId);
       await DatabaseService.deleteCustomer(customerId);
-      SyncService.deleteCustomerRemote(customerId);
+      if (c != null && c.firestoreId != null) {
+        try {
+          await FirestoreService.deleteCustomer(c.firestoreId!, customerId);
+        } catch (e) {
+          debugPrint('Firestore delete failed: $e');
+        }
+      }
       await loadCustomers();
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshDashboard();

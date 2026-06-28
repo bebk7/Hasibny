@@ -32,7 +32,11 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
 
   void _startAutoCheck() {
     _timer = Timer.periodic(const Duration(seconds: 5), (_) async {
-      await Get.find<AuthController>().checkEmailVerified();
+      final ac = Get.find<AuthController>();
+      await ac.checkEmailVerified();
+      if (ac.isEmailVerified.value && mounted && Navigator.canPop(context)) {
+        Get.back();
+      }
     });
   }
 
@@ -60,6 +64,17 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
+      extendBodyBehindAppBar: true,
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Get.back(),
+              ),
+            )
+          : null,
       body: Container(
         decoration: BoxDecoration(
           gradient: LinearGradient(
@@ -138,7 +153,12 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
                         Obx(() => ElevatedButton.icon(
                               onPressed: ac.isLoading.value
                                   ? null
-                                  : () => ac.checkEmailVerified(),
+                                  : () async {
+                                      await ac.checkEmailVerified();
+                                      if (ac.isEmailVerified.value && mounted && Navigator.canPop(context)) {
+                                        Get.back();
+                                      }
+                                    },
                               style: ElevatedButton.styleFrom(
                                 backgroundColor: AppTheme.primaryColor,
                                 foregroundColor: Colors.white,
@@ -179,6 +199,18 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
                             style: const TextStyle(fontSize: 14),
                           ),
                         ),
+                        if (!_canResend) ...[
+                          const SizedBox(height: 8),
+                          ClipRRect(
+                            borderRadius: BorderRadius.circular(4),
+                            child: LinearProgressIndicator(
+                              value: _resendCooldown / 60,
+                              backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.1),
+                              valueColor: AlwaysStoppedAnimation<Color>(AppTheme.primaryColor),
+                              minHeight: 4,
+                            ),
+                          ),
+                        ],
                         const SizedBox(height: 16),
                         // Sign out link
                         TextButton(

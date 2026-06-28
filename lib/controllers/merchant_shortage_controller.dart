@@ -75,12 +75,26 @@ class MerchantShortageController extends GetxController {
 
   Future<void> deleteShortage(int id) async {
     try {
+      final shortage = shortages.firstWhere(
+        (s) => s.id == id,
+      );
+
+      if (shortage.firestoreId != null && shortage.firestoreId!.isNotEmpty) {
+        await SyncService.deleteShortageRemote(
+          shortage.firestoreId!,
+        );
+      }
+
       await DatabaseService.deleteMerchantShortage(id);
-      SyncService.deleteShortageRemote(id);
+
       await _reload();
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_delete_shortage'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      Get.snackbar(
+        'error'.tr,
+        '${'failed_delete_shortage'.tr}: $e',
+        backgroundColor: AppTheme.errorColor,
+        colorText: Colors.white,
+      );
     }
   }
 

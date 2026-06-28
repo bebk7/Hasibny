@@ -15,7 +15,7 @@ extension GetTransactionModelCollection on Isar {
 
 const TransactionModelSchema = CollectionSchema(
   name: r'TransactionModel',
-  id: -8282894918172491246,
+  id: -8282894918172490752,
   properties: {
     r'amount': PropertySchema(
       id: 0,
@@ -37,29 +37,39 @@ const TransactionModelSchema = CollectionSchema(
       name: r'description',
       type: IsarType.string,
     ),
-    r'formattedAmount': PropertySchema(
+    r'firestoreId': PropertySchema(
       id: 4,
+      name: r'firestoreId',
+      type: IsarType.string,
+    ),
+    r'formattedAmount': PropertySchema(
+      id: 5,
       name: r'formattedAmount',
       type: IsarType.string,
     ),
     r'formattedDate': PropertySchema(
-      id: 5,
+      id: 6,
       name: r'formattedDate',
       type: IsarType.string,
     ),
+    r'isSynced': PropertySchema(
+      id: 7,
+      name: r'isSynced',
+      type: IsarType.bool,
+    ),
     r'type': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'type',
       type: IsarType.string,
       enumMap: _TransactionModeltypeEnumValueMap,
     ),
     r'typeColor': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'typeColor',
       type: IsarType.string,
     ),
     r'typeString': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'typeString',
       type: IsarType.string,
     )
@@ -71,7 +81,7 @@ const TransactionModelSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'createdAt': IndexSchema(
-      id: -3433535483987302584,
+      id: -3433535483987302400,
       name: r'createdAt',
       unique: false,
       replace: false,
@@ -84,7 +94,7 @@ const TransactionModelSchema = CollectionSchema(
       ],
     ),
     r'customerId': IndexSchema(
-      id: 1498639901530368639,
+      id: 1498639901530368512,
       name: r'customerId',
       unique: false,
       replace: false,
@@ -93,6 +103,19 @@ const TransactionModelSchema = CollectionSchema(
           name: r'customerId',
           type: IndexType.value,
           caseSensitive: false,
+        )
+      ],
+    ),
+    r'firestoreId': IndexSchema(
+      id: 1863077355534728960,
+      name: r'firestoreId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'firestoreId',
+          type: IndexType.hash,
+          caseSensitive: true,
         )
       ],
     )
@@ -112,6 +135,12 @@ int _transactionModelEstimateSize(
 ) {
   var bytesCount = offsets.last;
   bytesCount += 3 + object.description.length * 3;
+  {
+    final value = object.firestoreId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.formattedAmount.length * 3;
   bytesCount += 3 + object.formattedDate.length * 3;
   bytesCount += 3 + object.type.name.length * 3;
@@ -130,11 +159,13 @@ void _transactionModelSerialize(
   writer.writeDateTime(offsets[1], object.createdAt);
   writer.writeLong(offsets[2], object.customerId);
   writer.writeString(offsets[3], object.description);
-  writer.writeString(offsets[4], object.formattedAmount);
-  writer.writeString(offsets[5], object.formattedDate);
-  writer.writeString(offsets[6], object.type.name);
-  writer.writeString(offsets[7], object.typeColor);
-  writer.writeString(offsets[8], object.typeString);
+  writer.writeString(offsets[4], object.firestoreId);
+  writer.writeString(offsets[5], object.formattedAmount);
+  writer.writeString(offsets[6], object.formattedDate);
+  writer.writeBool(offsets[7], object.isSynced);
+  writer.writeString(offsets[8], object.type.name);
+  writer.writeString(offsets[9], object.typeColor);
+  writer.writeString(offsets[10], object.typeString);
 }
 
 TransactionModel _transactionModelDeserialize(
@@ -148,11 +179,13 @@ TransactionModel _transactionModelDeserialize(
     customerId: reader.readLong(offsets[2]),
     description: reader.readString(offsets[3]),
     type: _TransactionModeltypeValueEnumMap[
-            reader.readStringOrNull(offsets[6])] ??
+            reader.readStringOrNull(offsets[8])] ??
         TransactionType.give,
   );
   object.createdAt = reader.readDateTime(offsets[1]);
+  object.firestoreId = reader.readStringOrNull(offsets[4]);
   object.id = id;
+  object.isSynced = reader.readBool(offsets[7]);
   return object;
 }
 
@@ -172,16 +205,20 @@ P _transactionModelDeserializeProp<P>(
     case 3:
       return (reader.readString(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 5:
       return (reader.readString(offset)) as P;
     case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
+      return (reader.readBool(offset)) as P;
+    case 8:
       return (_TransactionModeltypeValueEnumMap[
               reader.readStringOrNull(offset)] ??
           TransactionType.give) as P;
-    case 7:
+    case 9:
       return (reader.readString(offset)) as P;
-    case 8:
+    case 10:
       return (reader.readString(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -488,6 +525,73 @@ extension TransactionModelQueryWhere
         upper: [upperCustomerId],
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
+      firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
+      firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'firestoreId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
+      firestoreIdEqualTo(String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [firestoreId],
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterWhereClause>
+      firestoreIdNotEqualTo(String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ));
+      }
     });
   }
 }
@@ -803,6 +907,160 @@ extension TransactionModelQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'description',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firestoreId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firestoreId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      firestoreIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firestoreId',
         value: '',
       ));
     });
@@ -1132,6 +1390,16 @@ extension TransactionModelQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterFilterCondition>
+      isSyncedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isSynced',
+        value: value,
       ));
     });
   }
@@ -1610,6 +1878,20 @@ extension TransactionModelQuerySortBy
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
       sortByFormattedAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'formattedAmount', Sort.asc);
@@ -1634,6 +1916,20 @@ extension TransactionModelQuerySortBy
       sortByFormattedDateDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'formattedDate', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      sortByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1738,6 +2034,20 @@ extension TransactionModelQuerySortThenBy
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
       thenByFormattedAmount() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'formattedAmount', Sort.asc);
@@ -1775,6 +2085,20 @@ extension TransactionModelQuerySortThenBy
       thenByIdDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.desc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QAfterSortBy>
+      thenByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1851,6 +2175,13 @@ extension TransactionModelQueryWhereDistinct
   }
 
   QueryBuilder<TransactionModel, TransactionModel, QDistinct>
+      distinctByFirestoreId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firestoreId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QDistinct>
       distinctByFormattedAmount({bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'formattedAmount',
@@ -1863,6 +2194,13 @@ extension TransactionModelQueryWhereDistinct
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'formattedDate',
           caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<TransactionModel, TransactionModel, QDistinct>
+      distinctByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSynced');
     });
   }
 
@@ -1922,6 +2260,13 @@ extension TransactionModelQueryProperty
     });
   }
 
+  QueryBuilder<TransactionModel, String?, QQueryOperations>
+      firestoreIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firestoreId');
+    });
+  }
+
   QueryBuilder<TransactionModel, String, QQueryOperations>
       formattedAmountProperty() {
     return QueryBuilder.apply(this, (query) {
@@ -1933,6 +2278,12 @@ extension TransactionModelQueryProperty
       formattedDateProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'formattedDate');
+    });
+  }
+
+  QueryBuilder<TransactionModel, bool, QQueryOperations> isSyncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSynced');
     });
   }
 

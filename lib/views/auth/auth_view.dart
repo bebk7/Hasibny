@@ -78,13 +78,19 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     HapticFeedback.mediumImpact();
     final ac = Get.find<AuthController>();
     if (_isLogin) {
-      await ac.login(email: _emailCtrl.text, password: _passwordCtrl.text);
+      final success = await ac.login(email: _emailCtrl.text, password: _passwordCtrl.text);
+      if (success && mounted && Navigator.canPop(context)) {
+        Get.back();
+      }
     } else {
-      await ac.register(
+      final success = await ac.register(
         email: _emailCtrl.text,
         password: _passwordCtrl.text,
         storeName: _storeNameCtrl.text.trim(),
       );
+      if (success && mounted && Navigator.canPop(context)) {
+        Get.back();
+      }
     }
   }
 
@@ -105,8 +111,21 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     final size = MediaQuery.of(context).size;
 
     return Scaffold(
-      body: Stack(
-        children: [
+      extendBodyBehindAppBar: true,
+      appBar: Navigator.canPop(context)
+          ? AppBar(
+              backgroundColor: Colors.transparent,
+              elevation: 0,
+              leading: IconButton(
+                icon: const Icon(Icons.arrow_back_rounded, color: Colors.white),
+                onPressed: () => Get.back(),
+              ),
+            )
+          : null,
+      body: GestureDetector(
+        onTap: () => FocusScope.of(context).unfocus(),
+        child: Stack(
+          children: [
           // Animated gradient background
           AnimatedBuilder(
             animation: _bgAnimCtrl,
@@ -174,6 +193,7 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
             ),
           ),
         ],
+        ),
       ),
     );
   }
@@ -297,6 +317,7 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
               padding: const EdgeInsets.all(28),
               child: Form(
                 key: _formKey,
+                autovalidateMode: AutovalidateMode.onUserInteraction,
                 child: Column(
                   crossAxisAlignment: CrossAxisAlignment.stretch,
                   children: [

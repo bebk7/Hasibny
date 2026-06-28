@@ -1,3 +1,4 @@
+import 'package:account_book/services/firestore_service.dart';
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/invoice.dart';
@@ -55,21 +56,33 @@ class InvoiceController extends GetxController {
 
   Future<void> deleteInvoice(int id) async {
     try {
+      final invoice = invoices.firstWhere(
+        (invoice) => invoice.id == id,
+      );
+
+      if (invoice.firestoreId != null && invoice.firestoreId!.isNotEmpty) {
+        await SyncService.deleteInvoiceRemote(
+          invoice.firestoreId!,
+        );
+      }
+
       await DatabaseService.deleteInvoice(id);
-      SyncService.deleteInvoiceRemote(id);
+
       await loadInvoicesForMerchant(selectedMerchantId.value);
       _refreshMerchantTotals();
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_delete_invoice'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      Get.snackbar(
+        'error'.tr,
+        '${'failed_delete_invoice'.tr}: $e',
+        backgroundColor: AppTheme.errorColor,
+        colorText: Colors.white,
+      );
     }
   }
 
-  double get totalAmount =>
-      invoices.fold(0.0, (s, i) => s + i.totalAmount);
+  double get totalAmount => invoices.fold(0.0, (s, i) => s + i.totalAmount);
 
-  double get totalPaid =>
-      invoices.fold(0.0, (s, i) => s + i.paidAmount);
+  double get totalPaid => invoices.fold(0.0, (s, i) => s + i.paidAmount);
 
   double get totalRemaining =>
       invoices.fold(0.0, (s, i) => s + i.remainingAmount);

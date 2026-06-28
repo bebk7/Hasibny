@@ -27,53 +27,63 @@ const InvoiceSchema = CollectionSchema(
       name: r'date',
       type: IsarType.dateTime,
     ),
-    r'invoiceNumber': PropertySchema(
+    r'firestoreId': PropertySchema(
       id: 2,
+      name: r'firestoreId',
+      type: IsarType.string,
+    ),
+    r'invoiceNumber': PropertySchema(
+      id: 3,
       name: r'invoiceNumber',
       type: IsarType.string,
     ),
     r'isFullyPaid': PropertySchema(
-      id: 3,
+      id: 4,
       name: r'isFullyPaid',
       type: IsarType.bool,
     ),
+    r'isSynced': PropertySchema(
+      id: 5,
+      name: r'isSynced',
+      type: IsarType.bool,
+    ),
     r'itemsJson': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'itemsJson',
       type: IsarType.string,
     ),
     r'merchantId': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'merchantId',
       type: IsarType.long,
     ),
     r'notes': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'notes',
       type: IsarType.string,
     ),
     r'paidAmount': PropertySchema(
-      id: 7,
+      id: 9,
       name: r'paidAmount',
       type: IsarType.double,
     ),
     r'paymentPercentage': PropertySchema(
-      id: 8,
+      id: 10,
       name: r'paymentPercentage',
       type: IsarType.double,
     ),
     r'remainingAmount': PropertySchema(
-      id: 9,
+      id: 11,
       name: r'remainingAmount',
       type: IsarType.double,
     ),
     r'totalAmount': PropertySchema(
-      id: 10,
+      id: 12,
       name: r'totalAmount',
       type: IsarType.double,
     ),
     r'updatedAt': PropertySchema(
-      id: 11,
+      id: 13,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -85,7 +95,7 @@ const InvoiceSchema = CollectionSchema(
   idName: r'id',
   indexes: {
     r'merchantId': IndexSchema(
-      id: 6127827311702803342,
+      id: 6127827311702803456,
       name: r'merchantId',
       unique: false,
       replace: false,
@@ -98,7 +108,7 @@ const InvoiceSchema = CollectionSchema(
       ],
     ),
     r'date': IndexSchema(
-      id: -7552997827385218417,
+      id: -7552997827385218048,
       name: r'date',
       unique: false,
       replace: false,
@@ -107,6 +117,19 @@ const InvoiceSchema = CollectionSchema(
           name: r'date',
           type: IndexType.value,
           caseSensitive: false,
+        )
+      ],
+    ),
+    r'firestoreId': IndexSchema(
+      id: 1863077355534728960,
+      name: r'firestoreId',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'firestoreId',
+          type: IndexType.hash,
+          caseSensitive: true,
         )
       ],
     )
@@ -125,6 +148,12 @@ int _invoiceEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.firestoreId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.invoiceNumber.length * 3;
   {
     final value = object.itemsJson;
@@ -149,16 +178,18 @@ void _invoiceSerialize(
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
   writer.writeDateTime(offsets[1], object.date);
-  writer.writeString(offsets[2], object.invoiceNumber);
-  writer.writeBool(offsets[3], object.isFullyPaid);
-  writer.writeString(offsets[4], object.itemsJson);
-  writer.writeLong(offsets[5], object.merchantId);
-  writer.writeString(offsets[6], object.notes);
-  writer.writeDouble(offsets[7], object.paidAmount);
-  writer.writeDouble(offsets[8], object.paymentPercentage);
-  writer.writeDouble(offsets[9], object.remainingAmount);
-  writer.writeDouble(offsets[10], object.totalAmount);
-  writer.writeDateTime(offsets[11], object.updatedAt);
+  writer.writeString(offsets[2], object.firestoreId);
+  writer.writeString(offsets[3], object.invoiceNumber);
+  writer.writeBool(offsets[4], object.isFullyPaid);
+  writer.writeBool(offsets[5], object.isSynced);
+  writer.writeString(offsets[6], object.itemsJson);
+  writer.writeLong(offsets[7], object.merchantId);
+  writer.writeString(offsets[8], object.notes);
+  writer.writeDouble(offsets[9], object.paidAmount);
+  writer.writeDouble(offsets[10], object.paymentPercentage);
+  writer.writeDouble(offsets[11], object.remainingAmount);
+  writer.writeDouble(offsets[12], object.totalAmount);
+  writer.writeDateTime(offsets[13], object.updatedAt);
 }
 
 Invoice _invoiceDeserialize(
@@ -168,17 +199,19 @@ Invoice _invoiceDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Invoice(
-    invoiceNumber: reader.readString(offsets[2]),
-    itemsJson: reader.readStringOrNull(offsets[4]),
-    merchantId: reader.readLong(offsets[5]),
-    notes: reader.readStringOrNull(offsets[6]),
-    paidAmount: reader.readDoubleOrNull(offsets[7]) ?? 0.0,
-    totalAmount: reader.readDouble(offsets[10]),
+    invoiceNumber: reader.readString(offsets[3]),
+    itemsJson: reader.readStringOrNull(offsets[6]),
+    merchantId: reader.readLong(offsets[7]),
+    notes: reader.readStringOrNull(offsets[8]),
+    paidAmount: reader.readDoubleOrNull(offsets[9]) ?? 0.0,
+    totalAmount: reader.readDouble(offsets[12]),
   );
   object.createdAt = reader.readDateTime(offsets[0]);
   object.date = reader.readDateTime(offsets[1]);
+  object.firestoreId = reader.readStringOrNull(offsets[2]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[11]);
+  object.isSynced = reader.readBool(offsets[5]);
+  object.updatedAt = reader.readDateTime(offsets[13]);
   return object;
 }
 
@@ -194,24 +227,28 @@ P _invoiceDeserializeProp<P>(
     case 1:
       return (reader.readDateTime(offset)) as P;
     case 2:
-      return (reader.readString(offset)) as P;
-    case 3:
-      return (reader.readBool(offset)) as P;
-    case 4:
       return (reader.readStringOrNull(offset)) as P;
+    case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readBool(offset)) as P;
     case 5:
-      return (reader.readLong(offset)) as P;
+      return (reader.readBool(offset)) as P;
     case 6:
       return (reader.readStringOrNull(offset)) as P;
     case 7:
-      return (reader.readDoubleOrNull(offset) ?? 0.0) as P;
+      return (reader.readLong(offset)) as P;
     case 8:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 9:
-      return (reader.readDouble(offset)) as P;
+      return (reader.readDoubleOrNull(offset) ?? 0.0) as P;
     case 10:
       return (reader.readDouble(offset)) as P;
     case 11:
+      return (reader.readDouble(offset)) as P;
+    case 12:
+      return (reader.readDouble(offset)) as P;
+    case 13:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -498,6 +535,71 @@ extension InvoiceQueryWhere on QueryBuilder<Invoice, Invoice, QWhereClause> {
       ));
     });
   }
+
+  QueryBuilder<Invoice, Invoice, QAfterWhereClause> firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [null],
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterWhereClause> firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.between(
+        indexName: r'firestoreId',
+        lower: [null],
+        includeLower: false,
+        upper: [],
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterWhereClause> firestoreIdEqualTo(
+      String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'firestoreId',
+        value: [firestoreId],
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterWhereClause> firestoreIdNotEqualTo(
+      String? firestoreId) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [firestoreId],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'firestoreId',
+              lower: [],
+              upper: [firestoreId],
+              includeUpper: false,
+            ));
+      }
+    });
+  }
 }
 
 extension InvoiceQueryFilter
@@ -604,6 +706,153 @@ extension InvoiceQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firestoreId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firestoreId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> firestoreIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition>
+      firestoreIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firestoreId',
+        value: '',
       ));
     });
   }
@@ -797,6 +1046,16 @@ extension InvoiceQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isFullyPaid',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterFilterCondition> isSyncedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isSynced',
         value: value,
       ));
     });
@@ -1485,6 +1744,18 @@ extension InvoiceQuerySortBy on QueryBuilder<Invoice, Invoice, QSortBy> {
     });
   }
 
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByInvoiceNumber() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'invoiceNumber', Sort.asc);
@@ -1506,6 +1777,18 @@ extension InvoiceQuerySortBy on QueryBuilder<Invoice, Invoice, QSortBy> {
   QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByIsFullyPaidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isFullyPaid', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> sortByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1632,6 +1915,18 @@ extension InvoiceQuerySortThenBy
     });
   }
 
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> thenByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> thenByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
   QueryBuilder<Invoice, Invoice, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1665,6 +1960,18 @@ extension InvoiceQuerySortThenBy
   QueryBuilder<Invoice, Invoice, QAfterSortBy> thenByIsFullyPaidDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isFullyPaid', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> thenByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QAfterSortBy> thenByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1779,6 +2086,13 @@ extension InvoiceQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Invoice, Invoice, QDistinct> distinctByFirestoreId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firestoreId', caseSensitive: caseSensitive);
+    });
+  }
+
   QueryBuilder<Invoice, Invoice, QDistinct> distinctByInvoiceNumber(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
@@ -1790,6 +2104,12 @@ extension InvoiceQueryWhereDistinct
   QueryBuilder<Invoice, Invoice, QDistinct> distinctByIsFullyPaid() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isFullyPaid');
+    });
+  }
+
+  QueryBuilder<Invoice, Invoice, QDistinct> distinctByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSynced');
     });
   }
 
@@ -1864,6 +2184,12 @@ extension InvoiceQueryProperty
     });
   }
 
+  QueryBuilder<Invoice, String?, QQueryOperations> firestoreIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firestoreId');
+    });
+  }
+
   QueryBuilder<Invoice, String, QQueryOperations> invoiceNumberProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'invoiceNumber');
@@ -1873,6 +2199,12 @@ extension InvoiceQueryProperty
   QueryBuilder<Invoice, bool, QQueryOperations> isFullyPaidProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isFullyPaid');
+    });
+  }
+
+  QueryBuilder<Invoice, bool, QQueryOperations> isSyncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSynced');
     });
   }
 

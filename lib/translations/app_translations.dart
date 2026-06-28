@@ -130,6 +130,8 @@ class AppTranslations extends Translations {
           'account_section': 'Account',
           'logged_in_as': 'Logged in as',
           'logout_confirm': 'Are you sure you want to sign out?',
+          'sign_in_sync': 'Sign In / Sync Data',
+          'sign_in_sync_sub': 'Backup and sync your data across devices',
 
           // Store Profile
           'store_profile': 'Store Profile',
@@ -328,8 +330,8 @@ class AppTranslations extends Translations {
           // Dashboard
           'app_title': 'Hasibny',
           'financial_overview': 'مراجعة مالية ',
-          'total_to_give': 'عليك (لهم)',
-          'total_to_get': 'لك (عليهم)',
+          'total_to_give': 'لك (عليهم)',
+          'total_to_get': 'لهم (عليك)',
           'net_balance': 'صافي الرصيد',
           'statistics': 'الإحصائيات',
           'total_customers': 'إجمالي العملاء',
@@ -443,6 +445,8 @@ class AppTranslations extends Translations {
           'account_section': 'الحساب',
           'logged_in_as': 'مسجّل باسم',
           'logout_confirm': 'هل أنت متأكد من تسجيل الخروج؟',
+          'sign_in_sync': 'تسجيل الدخول / مزامنة',
+          'sign_in_sync_sub': 'نسخ احتياطي ومزامنة بياناتك',
 
           // Store Profile
           'store_profile': 'بروفايل المتجر',

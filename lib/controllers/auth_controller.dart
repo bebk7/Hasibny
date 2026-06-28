@@ -6,6 +6,7 @@ import '../controllers/settings_controller.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
 import '../themes/app_theme.dart';
+import 'package:connectivity_plus/connectivity_plus.dart';
 
 class AuthController extends GetxController {
   final _auth = FirebaseAuth.instance;
@@ -40,6 +41,7 @@ class AuthController extends GetxController {
     required String password,
     required String storeName,
   }) async {
+    if (!await _checkNetwork()) return false;
     isLoading.value = true;
     try {
       final cred = await _auth.createUserWithEmailAndPassword(
@@ -77,6 +79,7 @@ class AuthController extends GetxController {
     required String email,
     required String password,
   }) async {
+    if (!await _checkNetwork()) return false;
     isLoading.value = true;
     try {
       final cred = await _auth.signInWithEmailAndPassword(
@@ -136,11 +139,21 @@ class AuthController extends GetxController {
   }
 
   Future<void> logout() async {
-    await DatabaseService.clearAllData();
+    await DatabaseService.clearAllData(); // Clears local cache only
     await _auth.signOut();
   }
 
+  Future<bool> _checkNetwork() async {
+    final connectivityResults = await (Connectivity().checkConnectivity());
+    if (connectivityResults.contains(ConnectivityResult.none)) {
+      _showError(_authMessage('network-request-failed'));
+      return false;
+    }
+    return true;
+  }
+
   Future<void> sendVerificationEmail() async {
+    if (!await _checkNetwork()) return;
     try {
       await _auth.currentUser?.sendEmailVerification();
       Get.snackbar(
@@ -154,6 +167,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> checkEmailVerified() async {
+    if (!await _checkNetwork()) return;
     isLoading.value = true;
     try {
       await _auth.currentUser?.reload();
@@ -169,6 +183,7 @@ class AuthController extends GetxController {
   }
 
   Future<void> resetPassword(String email) async {
+    if (!await _checkNetwork()) return;
     try {
       await _auth.sendPasswordResetEmail(email: email.trim());
       Get.snackbar(
@@ -180,6 +195,61 @@ class AuthController extends GetxController {
       );
     } on FirebaseAuthException catch (e) {
       _showError(_authMessage(e.code));
+    }
+  }
+
+  Future<bool> changePassword(String currentPassword, String newPassword) async {
+    if (!await _checkNetwork()) return false;
+    isLoading.value = true;
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) return false;
+      
+      // Re-authenticate
+      final cred = EmailAuthProvider.credential(email: user.email!, password: currentPassword);
+      await user.reauthenticateWithCredential(cred);
+      
+      // Update password
+      await user.updatePassword(newPassword);
+      Get.snackbar(
+        'success'.tr,
+        'Password updated successfully',
+        backgroundColor: AppTheme.successColor,
+        colorText: Colors.white,
+      );
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _showError(_authMessage(e.code));
+      return false;
+    } finally {
+      isLoading.value = false;
+    }
+  }
+
+  Future<bool> deleteAccount(String password) async {
+    if (!await _checkNetwork()) return false;
+    isLoading.value = true;
+    try {
+      final user = _auth.currentUser;
+      if (user == null || user.email == null) return false;
+      
+      // Re-authenticate
+      final cred = EmailAuthProvider.credential(email: user.email!, password: password);
+      await user.reauthenticateWithCredential(cred);
+      
+      // Delete user data from Firestore
+      await _firestore.collection('users').doc(user.uid).delete();
+      
+      // Delete auth account
+      await user.delete();
+      
+      await DatabaseService.clearAllData();
+      return true;
+    } on FirebaseAuthException catch (e) {
+      _showError(_authMessage(e.code));
+      return false;
+    } finally {
+      isLoading.value = false;
     }
   }
 
