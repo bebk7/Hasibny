@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
+import '../models/app_currency.dart';
 
 class CurrencyOption {
   final String code;
@@ -20,10 +21,11 @@ class SettingsController extends GetxController {
   static const _keyStoreEmail = 'store_email';
   static const _keyStoreTaxNumber = 'store_tax_number';
   static const _keyStoreLogo = 'store_logo';
+  static const _keyEnableWhatsAppInvoices = 'enable_whatsapp_invoices';
 
-  final RxString currentLanguage = 'en'.obs;
+  final RxString currentLanguage = 'ar'.obs;
   final RxBool isDarkMode = false.obs;
-  final RxString currentCurrency = 'USD'.obs;
+  final RxString currentCurrency = 'YER'.obs;
 
   final RxString storeName = ''.obs;
   final RxString storePhone = ''.obs;
@@ -32,23 +34,26 @@ class SettingsController extends GetxController {
   final RxString storeTaxNumber = ''.obs;
   final RxString storeLogoPath = ''.obs;
 
+  /// Global Master Switch: Enable/Disable WhatsApp automated invoice delivery
+  final RxBool enableWhatsAppInvoices = true.obs;
+
   static const List<CurrencyOption> currencies = [
-    CurrencyOption(code: 'USD', symbol: '\$', label: 'USD - دولار أمريكي'),
-    CurrencyOption(code: 'SAR', symbol: 'ر.س', label: 'SAR - ريال سعودي'),
-    CurrencyOption(code: 'YER', symbol: '﷼', label: 'YER - ريال يمني'),
+    CurrencyOption(code: 'YER', symbol: 'ر.ي', label: '🇾🇪 الريال اليمني (YER)'),
+    CurrencyOption(code: 'SAR', symbol: 'ر.س', label: '🇸🇦 الريال السعودي (SAR)'),
+    CurrencyOption(code: 'USD', symbol: '\$', label: '🇺🇸 الدولار الأمريكي (USD)'),
   ];
 
   bool get isArabic => currentLanguage.value == 'ar';
 
-  String get currencySymbol => currencies
-      .firstWhere((c) => c.code == currentCurrency.value,
-          orElse: () => currencies[0])
-      .symbol;
+  String get currencySymbol {
+    final curr = AppCurrency.fromCode(currentCurrency.value);
+    return curr.getSymbol(isArabic: isArabic);
+  }
 
-  String get currencyLabel => currencies
-      .firstWhere((c) => c.code == currentCurrency.value,
-          orElse: () => currencies[0])
-      .label;
+  String get currencyLabel {
+    final curr = AppCurrency.fromCode(currentCurrency.value);
+    return '${curr.flag} ${curr.getName(isArabic: isArabic)} (${curr.code})';
+  }
 
   @override
   void onInit() {
@@ -58,9 +63,9 @@ class SettingsController extends GetxController {
 
   Future<void> _loadSettings() async {
     final prefs = await SharedPreferences.getInstance();
-    final lang = prefs.getString(_keyLanguage) ?? 'en';
+    final lang = prefs.getString(_keyLanguage) ?? 'ar';
     final dark = prefs.getBool(_keyDarkMode) ?? false;
-    final currency = prefs.getString(_keyCurrency) ?? 'USD';
+    final currency = prefs.getString(_keyCurrency) ?? 'YER';
 
     currentLanguage.value = lang;
     isDarkMode.value = dark;
@@ -72,13 +77,20 @@ class SettingsController extends GetxController {
     storeEmail.value = prefs.getString(_keyStoreEmail) ?? '';
     storeTaxNumber.value = prefs.getString(_keyStoreTaxNumber) ?? '';
     storeLogoPath.value = prefs.getString(_keyStoreLogo) ?? '';
+    enableWhatsAppInvoices.value = prefs.getBool(_keyEnableWhatsAppInvoices) ?? true;
 
-    if (lang == 'ar') {
-      Get.updateLocale(const Locale('ar', 'SA'));
-    } else {
-      Get.updateLocale(const Locale('en', 'US'));
+    try {
+      if (Get.context != null) {
+        if (lang == 'ar') {
+          Get.updateLocale(const Locale('ar', 'SA'));
+        } else {
+          Get.updateLocale(const Locale('en', 'US'));
+        }
+        Get.changeThemeMode(dark ? ThemeMode.dark : ThemeMode.light);
+      }
+    } catch (_) {
+      // In headless/test environments without an active Navigator or during unit tests, ignore
     }
-    Get.changeThemeMode(dark ? ThemeMode.dark : ThemeMode.light);
   }
 
   void toggleLanguage() async {
@@ -108,6 +120,17 @@ class SettingsController extends GetxController {
     currentCurrency.value = code;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyCurrency, code);
+  }
+
+  Future<void> setEnableWhatsAppInvoices(bool value) async {
+    enableWhatsAppInvoices.value = value;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setBool(_keyEnableWhatsAppInvoices, value);
+  }
+
+  void toggleWhatsAppInvoices() async {
+    final newVal = !enableWhatsAppInvoices.value;
+    await setEnableWhatsAppInvoices(newVal);
   }
 
   Future<void> saveStoreProfile({

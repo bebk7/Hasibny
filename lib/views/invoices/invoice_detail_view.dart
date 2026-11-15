@@ -1,12 +1,14 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
+import '../../controllers/customer_controller.dart';
 import '../../controllers/invoice_controller.dart';
 import '../../controllers/merchant_controller.dart';
+import '../../core/core.dart';
+import '../../models/customer.dart';
 import '../../models/invoice.dart';
-import '../../themes/app_theme.dart';
-import '../../utils/currency_formatter.dart';
-import '../../utils/responsive.dart';
+import '../../models/merchant.dart';
+import '../../services/export_service.dart';
 import '../../widgets/amount_field.dart';
 import 'add_invoice_view.dart';
 
@@ -16,284 +18,819 @@ class InvoiceDetailView extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
-    final mc = Get.find<MerchantController>();
-    final merchant = mc.getMerchantById(invoice.merchantId);
+    final resp = AppResponsive.of(context);
+    Merchant? merchant;
+    if (invoice.merchantId != null && Get.isRegistered<MerchantController>()) {
+      merchant =
+          Get.find<MerchantController>().getMerchantById(invoice.merchantId!);
+    }
+
+    Customer? customer;
+    if (invoice.customerId != null && Get.isRegistered<CustomerController>()) {
+      customer =
+          Get.find<CustomerController>().getCustomerById(invoice.customerId!);
+    }
+
     final paid = invoice.isFullyPaid;
-    final statusColor = paid ? AppTheme.gotColor : AppTheme.giveColor;
+    final isPartiallyPaid = invoice.paidAmount > 0 && !paid;
+    final statusColor = paid
+        ? AppColors.got
+        : (isPartiallyPaid ? AppColors.warning : AppColors.give);
+    final currCode =
+        invoice.currencyCode.isNotEmpty ? invoice.currencyCode : 'YER';
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('#${invoice.invoiceNumber}',
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          '#${invoice.invoiceNumber}',
+          style: AppTypography.pageTitle(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.edit_outlined),
-            onPressed: () => Get.off(() => AddInvoiceView(
-                merchantId: invoice.merchantId, invoice: invoice)),
+            tooltip: 'preview_report'.tr,
+            icon: Icon(Icons.visibility_outlined, size: resp.iconSM),
+            onPressed: () => ExportService.previewInvoice(
+              invoice: invoice,
+              customer: customer,
+              merchant: merchant,
+            ),
           ),
           IconButton(
-            icon: const Icon(Icons.delete_outline),
+            tooltip: 'export_pdf'.tr,
+            icon: Icon(Icons.picture_as_pdf_rounded, size: resp.iconSM),
+            onPressed: () =>
+                _exportPDF(context, customer: customer, merchant: merchant),
+          ),
+          IconButton(
+            icon: Icon(Icons.edit_outlined, size: resp.iconSM),
+            onPressed: () => Get.off(() => AddInvoiceView(
+                  merchantId: invoice.merchantId,
+                  customerId: invoice.customerId,
+                  invoice: invoice,
+                )),
+          ),
+          IconButton(
+            icon: Icon(Icons.delete_outline_rounded,
+                color: AppColors.give, size: resp.iconSM),
             onPressed: () => _confirmDelete(context),
           ),
         ],
       ),
-      body: SingleChildScrollView(
-        padding: Responsive.pagePadding(context),
-        child: Column(
-          children: [
-            // Status badge
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.symmetric(vertical: 20, horizontal: 20),
-              decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    statusColor,
-                    statusColor.withValues(alpha: 0.7),
+      body: AppPageContainer(
+        maxWidth: 640,
+        padding: EdgeInsets.zero,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: resp.spacingSM,
+            vertical: resp.spacingMD,
+          ),
+          physics: const BouncingScrollPhysics(),
+          child: Column(
+            children: [
+              // Status badge hero card
+              Container(
+                width: double.infinity,
+                padding: EdgeInsets.symmetric(
+                  vertical: resp.spacingLG,
+                  horizontal: resp.spacingMD,
+                ),
+                decoration: BoxDecoration(
+                  gradient: LinearGradient(
+                    colors: [
+                      statusColor,
+                      statusColor.withValues(alpha: 0.8),
+                    ],
+                    begin: Alignment.topLeft,
+                    end: Alignment.bottomRight,
+                  ),
+                  borderRadius: BorderRadius.circular(resp.cardRadius),
+                  boxShadow: [
+                    BoxShadow(
+                      color: statusColor.withValues(alpha: 0.3),
+                      blurRadius: 16,
+                      offset: const Offset(0, 6),
+                    ),
                   ],
                 ),
-                borderRadius: BorderRadius.circular(16),
-              ),
-              child: Column(
-                children: [
-                  Icon(
-                    paid ? Icons.check_circle : Icons.hourglass_bottom_rounded,
-                    color: Colors.white,
-                    size: 48,
-                  ),
-                  const SizedBox(height: 8),
-                  Text(
-                    paid ? 'fully_paid'.tr : 'partially_paid'.tr,
-                    style: const TextStyle(
+                child: Column(
+                  children: [
+                    Container(
+                      padding: EdgeInsets.all(resp.spacingSM),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        shape: BoxShape.circle,
+                      ),
+                      child: Icon(
+                        paid
+                            ? Icons.check_circle_rounded
+                            : (isPartiallyPaid
+                                ? Icons.timelapse_rounded
+                                : Icons.hourglass_bottom_rounded),
                         color: Colors.white,
-                        fontSize: 18,
-                        fontWeight: FontWeight.bold),
-                  ),
-                  const SizedBox(height: 12),
-                  // Progress bar
-                  ClipRRect(
-                    borderRadius: BorderRadius.circular(6),
-                    child: LinearProgressIndicator(
-                      value: invoice.paymentPercentage,
-                      minHeight: 8,
-                      backgroundColor: Colors.white24,
-                      valueColor:
-                          const AlwaysStoppedAnimation(Colors.white),
+                        size: resp.iconLG + 4,
+                      ),
                     ),
+                    SizedBox(height: resp.spacingSM),
+                    Text(
+                      paid
+                          ? 'paid_full'.tr
+                          : (isPartiallyPaid
+                              ? 'partially_paid'.tr
+                              : 'unpaid'.tr),
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        color: Colors.white,
+                        fontSize: resp.fontLG,
+                        fontWeight: FontWeight.bold,
+                      ),
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    // Progress bar
+                    Padding(
+                      padding: EdgeInsets.symmetric(horizontal: resp.spacingSM),
+                      child: ClipRRect(
+                        borderRadius: BorderRadius.circular(resp.radiusSM),
+                        child: LinearProgressIndicator(
+                          value: invoice.paymentPercentage,
+                          minHeight: 8,
+                          backgroundColor: Colors.white.withValues(alpha: 0.25),
+                          valueColor:
+                              const AlwaysStoppedAnimation(Colors.white),
+                        ),
+                      ),
+                    ),
+                    SizedBox(height: resp.spacingXS),
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: resp.spacingSM,
+                        vertical: 3,
+                      ),
+                      decoration: BoxDecoration(
+                        color: Colors.white.withValues(alpha: 0.2),
+                        borderRadius: BorderRadius.circular(resp.radiusSM),
+                      ),
+                      child: Text(
+                        '${(invoice.paymentPercentage * 100).toStringAsFixed(0)}%',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          color: Colors.white,
+                          fontSize: resp.fontXS,
+                          fontWeight: FontWeight.bold,
+                        ),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: resp.spacingMD),
+
+              // Amount summary cards (3 columns)
+              Row(
+                children: [
+                  _AmountCard(
+                    label: 'total_amount'.tr,
+                    amount: invoice.totalAmount,
+                    currencyCode: currCode,
+                    color: AppColors.primary,
                   ),
-                  const SizedBox(height: 6),
-                  Text(
-                    '${(invoice.paymentPercentage * 100).toStringAsFixed(0)}%',
-                    style: const TextStyle(
-                        color: Colors.white70, fontWeight: FontWeight.w600),
+                  SizedBox(width: resp.spacingXS),
+                  _AmountCard(
+                    label: 'paid_amount'.tr,
+                    amount: invoice.paidAmount,
+                    currencyCode: currCode,
+                    color: AppColors.got,
+                  ),
+                  SizedBox(width: resp.spacingXS),
+                  _AmountCard(
+                    label: 'remaining_amount'.tr,
+                    amount: invoice.remainingAmount,
+                    currencyCode: currCode,
+                    color: AppColors.give,
                   ),
                 ],
               ),
-            ),
-            const SizedBox(height: 20),
+              SizedBox(height: resp.spacingMD),
 
-            // Amount cards
-            Row(
-              children: [
-                _AmountCard(
-                    label: 'total_amount_label'.tr,
-                    amount: invoice.totalAmount,
-                    color: AppTheme.primaryColor),
-                const SizedBox(width: 12),
-                _AmountCard(
-                    label: 'paid_amount_label'.tr,
-                    amount: invoice.paidAmount,
-                    color: AppTheme.gotColor),
-                const SizedBox(width: 12),
-                _AmountCard(
-                    label: 'remaining_amount'.tr,
-                    amount: invoice.remainingAmount,
-                    color: AppTheme.giveColor),
-              ],
-            ),
-            const SizedBox(height: 20),
-
-            // Line items
-            if (invoice.items.isNotEmpty) ...[
-              Container(
-                width: double.infinity,
-                padding: const EdgeInsets.all(16),
-                decoration: BoxDecoration(
-                  color: Theme.of(context).cardColor,
-                  borderRadius: BorderRadius.circular(16),
-                  border: Border.all(
-                      color: Colors.grey.withValues(alpha: 0.1)),
-                ),
-                child: Column(
-                  crossAxisAlignment: CrossAxisAlignment.start,
-                  children: [
-                    Text('invoice_items'.tr,
-                        style: const TextStyle(
-                            fontWeight: FontWeight.bold, fontSize: 16)),
-                    const Divider(),
-                    ...invoice.items.map((item) => Padding(
-                          padding: const EdgeInsets.symmetric(vertical: 4),
-                          child: Row(
+              // Line items card
+              if (invoice.items.isNotEmpty) ...[
+                AppCard(
+                  padding: EdgeInsets.all(resp.spacingMD),
+                  child: Column(
+                    crossAxisAlignment: CrossAxisAlignment.start,
+                    children: [
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                        children: [
+                          Row(
                             children: [
-                              Expanded(
-                                flex: 3,
-                                child: Text(item.name,
-                                    style: const TextStyle(
-                                        fontWeight: FontWeight.w600,
-                                        fontSize: 13)),
-                              ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice)}',
-                                  textAlign: TextAlign.center,
-                                  style: TextStyle(
-                                      color: Colors.grey[500], fontSize: 12),
+                              Container(
+                                padding: EdgeInsets.all(resp.spacingXS),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(resp.radiusXS),
+                                ),
+                                child: Icon(
+                                  Icons.receipt_long_rounded,
+                                  color: AppColors.primary,
+                                  size: resp.iconSM,
                                 ),
                               ),
-                              Expanded(
-                                flex: 2,
-                                child: Text(
-                                  CurrencyFormatter.format(item.total),
-                                  textAlign: TextAlign.end,
-                                  style: const TextStyle(
-                                      fontWeight: FontWeight.w900,
-                                      fontSize: 13,
-                                      color: AppTheme.primaryColor),
+                              SizedBox(width: resp.spacingSM),
+                              Text(
+                                'invoice_items'.tr,
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: resp.fontMD,
                                 ),
                               ),
                             ],
                           ),
-                        )),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: resp.spacingSM,
+                              vertical: 3,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(resp.radiusSM),
+                            ),
+                            child: Text(
+                              '${invoice.items.length} ${'items_count'.tr}',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: resp.fontXS,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
+                      SizedBox(height: resp.spacingSM),
+                      const Divider(height: 1),
+                      SizedBox(height: resp.spacingXS),
+                      ...invoice.items.asMap().entries.map((entry) {
+                        final i = entry.key;
+                        final item = entry.value;
+                        return Container(
+                          padding: EdgeInsets.symmetric(vertical: resp.spacingXS + 1),
+                          decoration: BoxDecoration(
+                            border: i < invoice.items.length - 1
+                                ? Border(
+                                    bottom: BorderSide(
+                                      color: isDark
+                                          ? Colors.white.withValues(alpha: 0.06)
+                                          : Colors.grey.withValues(alpha: 0.1),
+                                    ),
+                                  )
+                                : null,
+                          ),
+                          child: Row(
+                            children: [
+                              Container(
+                                width: 24,
+                                height: 24,
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.08),
+                                  borderRadius: BorderRadius.circular(resp.radiusXS),
+                                ),
+                                alignment: Alignment.center,
+                                child: Text(
+                                  '${i + 1}',
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontSize: resp.fontXS - 1,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.primary,
+                                  ),
+                                ),
+                              ),
+                              SizedBox(width: resp.spacingSM),
+                              Expanded(
+                                flex: 3,
+                                child: Text(
+                                  item.name,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.w600,
+                                    fontSize: resp.fontSM,
+                                  ),
+                                  maxLines: 2,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                flex: 2,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: AlignmentDirectional.center,
+                                  child: Text(
+                                    '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currencyCode: currCode)}',
+                                    textAlign: TextAlign.center,
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                      fontSize: resp.fontXS,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                              const SizedBox(width: 4),
+                              Expanded(
+                                flex: 2,
+                                child: FittedBox(
+                                  fit: BoxFit.scaleDown,
+                                  alignment: AlignmentDirectional.centerEnd,
+                                  child: Text(
+                                    CurrencyFormatter.format(item.total,
+                                        currencyCode: currCode),
+                                    textAlign: TextAlign.end,
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontWeight: FontWeight.w900,
+                                      fontSize: resp.fontSM,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ),
+                            ],
+                          ),
+                        );
+                      }),
+                    ],
+                  ),
+                ),
+                SizedBox(height: resp.spacingMD),
+              ],
+
+              // Details info card
+              AppCard(
+                padding: EdgeInsets.all(resp.spacingMD),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(resp.spacingXS),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(resp.radiusXS),
+                          ),
+                          child: Icon(
+                            Icons.info_outline_rounded,
+                            color: AppColors.primary,
+                            size: resp.iconSM,
+                          ),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Text(
+                          'invoice_details'.tr,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: resp.fontMD,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    const Divider(height: 1),
+                    SizedBox(height: resp.spacingXS),
+                    _DetailRow(
+                      label: 'invoice_number'.tr,
+                      value: '#${invoice.invoiceNumber}',
+                    ),
+                    if (customer != null)
+                      _DetailRow(
+                        label: 'customer_name'.tr,
+                        value: customer.name,
+                      ),
+                    if (merchant != null)
+                      _DetailRow(
+                        label: 'merchant_name'.tr,
+                        value: merchant.name,
+                      ),
+                    if (customer != null && customer.phoneNumber.isNotEmpty)
+                      _DetailRow(
+                        label: 'phone'.tr,
+                        value: customer.phoneNumber,
+                      ),
+                    if (merchant != null && merchant.phone.isNotEmpty)
+                      _DetailRow(
+                        label: 'phone'.tr,
+                        value: merchant.phone,
+                      ),
+                    _DetailRow(
+                      label: 'account_currency'.tr,
+                      value: currCode,
+                    ),
+                    _DetailRow(
+                      label: 'invoice_date'.tr,
+                      value: DateFormat('yyyy/MM/dd HH:mm').format(invoice.date),
+                    ),
+                    if (invoice.notes != null && invoice.notes!.isNotEmpty)
+                      _DetailRow(
+                        label: 'notes'.tr,
+                        value: invoice.notes!,
+                      ),
                   ],
                 ),
               ),
-              const SizedBox(height: 20),
-            ],
+              SizedBox(height: resp.spacingMD),
 
-            // Details card
-            Container(
-              width: double.infinity,
-              padding: const EdgeInsets.all(16),
-              decoration: BoxDecoration(
-                color: Theme.of(context).cardColor,
-                borderRadius: BorderRadius.circular(16),
-                border: Border.all(
-                    color: Colors.grey.withValues(alpha: 0.1)),
-              ),
-              child: Column(
-                crossAxisAlignment: CrossAxisAlignment.start,
+              // WhatsApp Delivery Section
+              _buildWhatsAppDeliveryCard(context,
+                  customer: customer, merchant: merchant),
+              SizedBox(height: resp.spacingLG),
+
+              // Action Buttons (PDF & Record Payment)
+              Row(
                 children: [
-                  Text('details'.tr,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 16)),
-                  const Divider(),
-                  _DetailRow(
-                      label: 'invoice_number'.tr,
-                      value: '#${invoice.invoiceNumber}'),
-                  _DetailRow(
-                      label: 'merchant_name'.tr,
-                      value: merchant?.name ?? '-'),
-                  _DetailRow(
-                      label: 'date'.tr,
-                      value: DateFormat('yyyy/MM/dd HH:mm')
-                          .format(invoice.date)),
-                  if (invoice.notes != null && invoice.notes!.isNotEmpty)
-                    _DetailRow(label: 'notes'.tr, value: invoice.notes!),
-                  _DetailRow(
-                      label: 'created_at'.tr,
-                      value: DateFormat('yyyy/MM/dd HH:mm')
-                          .format(invoice.createdAt)),
+                  Expanded(
+                    child: AppButton(
+                      text: 'export_pdf'.tr,
+                      icon: Icons.picture_as_pdf_rounded,
+                      variant: AppButtonVariant.outlined,
+                      onPressed: () => _exportPDF(context,
+                          customer: customer, merchant: merchant),
+                    ),
+                  ),
+                  if (!paid) ...[
+                    SizedBox(width: resp.spacingSM),
+                    Expanded(
+                      child: AppButton(
+                        text: 'record_give'.tr,
+                        icon: Icons.payments_rounded,
+                        variant: AppButtonVariant.got,
+                        onPressed: () => _showPayDialog(context),
+                      ),
+                    ),
+                  ],
                 ],
               ),
-            ),
-
-            const SizedBox(height: 20),
-
-            // Quick pay button
-            if (!paid)
-              SizedBox(
-                width: double.infinity,
-                height: 52,
-                child: ElevatedButton.icon(
-                  onPressed: () => _showPayDialog(context),
-                  icon: const Icon(Icons.payments_rounded, color: Colors.white),
-                  label: Text('record_payment'.tr,
-                      style: const TextStyle(
-                          color: Colors.white,
-                          fontWeight: FontWeight.bold,
-                          fontSize: 15)),
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.gotColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
-                  ),
-                ),
-              ),
-          ],
+              SizedBox(height: resp.pagePadding),
+            ],
+          ),
         ),
       ),
     );
   }
 
+  Widget _buildWhatsAppDeliveryCard(BuildContext context,
+      {Customer? customer, Merchant? merchant}) {
+    final resp = AppResponsive.of(context);
+    const waColor = Color(0xFF25D366);
+    final status = invoice.whatsappStatus;
+    final isSent = status == 'sent';
+    final isSending = status == 'sending' || status == 'pending';
+    final isFailed = status == 'failed';
+    final autoDeliveryOn = customer?.autoSendInvoiceWhatsApp ?? false;
+
+    final targetPhone =
+        customer?.effectiveWhatsAppNumber ?? merchant?.phone ?? '';
+    final formattedPhone = targetPhone.isNotEmpty
+        ? PhoneNumberHelper.formatForDisplay(targetPhone)
+        : 'no_whatsapp_number'.tr;
+
+    Color badgeColor = Colors.grey;
+    String statusTitle = 'لم يتم الإرسال بعد';
+    IconData statusIcon = Icons.chat_bubble_outline_rounded;
+
+    if (isSent) {
+      badgeColor = waColor;
+      statusTitle = 'whatsapp_sent_success'.tr;
+      statusIcon = Icons.check_circle_rounded;
+    } else if (isSending) {
+      badgeColor = Colors.blue;
+      statusTitle = 'whatsapp_sending'.tr;
+      statusIcon = Icons.hourglass_top_rounded;
+    } else if (isFailed) {
+      badgeColor = AppColors.error;
+      statusTitle = 'whatsapp_failed'.tr;
+      statusIcon = Icons.error_outline_rounded;
+    }
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    return AppCard(
+      padding: EdgeInsets.all(resp.spacingMD),
+      border: Border.all(
+        color: isSent
+            ? waColor.withValues(alpha: 0.35)
+            : (isDark
+                ? Colors.white.withValues(alpha: 0.08)
+                : Colors.black.withValues(alpha: 0.06)),
+      ),
+      child: Column(
+        crossAxisAlignment: CrossAxisAlignment.start,
+        children: [
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+            children: [
+              Row(
+                children: [
+                  Container(
+                    padding: EdgeInsets.all(resp.spacingXS),
+                    decoration: BoxDecoration(
+                      color: badgeColor.withValues(alpha: 0.12),
+                      borderRadius: BorderRadius.circular(resp.radiusXS),
+                    ),
+                    child: Icon(statusIcon, color: badgeColor, size: resp.iconSM),
+                  ),
+                  SizedBox(width: resp.spacingSM),
+                  Text(
+                    'whatsapp_delivery'.tr,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.bold,
+                      fontSize: resp.fontMD,
+                    ),
+                  ),
+                ],
+              ),
+              Container(
+                padding: EdgeInsets.symmetric(
+                  horizontal: resp.spacingSM,
+                  vertical: 4,
+                ),
+                decoration: BoxDecoration(
+                  color: (autoDeliveryOn ? waColor : Colors.grey)
+                      .withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(resp.radiusSM),
+                ),
+                child: Text(
+                  autoDeliveryOn
+                      ? 'whatsapp_auto_delivery_on'.tr
+                      : 'whatsapp_auto_delivery_off'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontXS,
+                    fontWeight: FontWeight.bold,
+                    color: autoDeliveryOn
+                        ? waColor
+                        : (isDark ? Colors.grey[400] : Colors.grey[700]),
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: resp.spacingSM),
+          const Divider(height: 1),
+          SizedBox(height: resp.spacingSM),
+
+          // Status details
+          Row(
+            crossAxisAlignment: CrossAxisAlignment.start,
+            children: [
+              Icon(
+                isSent
+                    ? Icons.done_all_rounded
+                    : (isFailed
+                        ? Icons.warning_amber_rounded
+                        : Icons.info_outline_rounded),
+                size: resp.iconXS,
+                color: badgeColor,
+              ),
+              SizedBox(width: resp.spacingSM),
+              Expanded(
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Text(
+                      statusTitle,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.bold,
+                        fontSize: resp.fontSM,
+                        color: badgeColor,
+                      ),
+                    ),
+                    const SizedBox(height: 3),
+                    Text(
+                      '${'phone'.tr}: $formattedPhone',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontXS,
+                        color: isDark ? Colors.grey[400] : Colors.grey[600],
+                      ),
+                    ),
+                    if (invoice.whatsappSentAt != null) ...[
+                      const SizedBox(height: 2),
+                      Text(
+                        '${'whatsapp_sent_at'.tr}: ${DateFormat('yyyy/MM/dd — hh:mm a').format(invoice.whatsappSentAt!)}',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontXS - 1,
+                          color: isDark ? Colors.grey[500] : Colors.grey[500],
+                        ),
+                      ),
+                    ],
+                    if (isFailed && invoice.whatsappError != null) ...[
+                      SizedBox(height: resp.spacingXS),
+                      Container(
+                        padding: EdgeInsets.all(resp.spacingXS),
+                        decoration: BoxDecoration(
+                          color: AppColors.error.withValues(alpha: 0.08),
+                          borderRadius: BorderRadius.circular(resp.radiusSM),
+                        ),
+                        child: Text(
+                          '${'whatsapp_error'.tr}: ${invoice.whatsappError}',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: resp.fontXS,
+                            color: AppColors.error,
+                          ),
+                        ),
+                      ),
+                    ],
+                  ],
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: resp.spacingSM),
+
+          // Trigger / Resend Button
+          SizedBox(
+            width: double.infinity,
+            child: AppButton(
+              text: isFailed
+                  ? 'resend_via_whatsapp'.tr
+                  : (isSent
+                      ? 'resend_via_whatsapp'.tr
+                      : 'send_via_whatsapp'.tr),
+              icon: isFailed
+                  ? Icons.refresh_rounded
+                  : (isSent ? Icons.send_rounded : Icons.chat_bubble_rounded),
+              isLoading: isSending,
+              onPressed: isSending
+                  ? null
+                  : () async {
+                      final ic = Get.find<InvoiceController>();
+                      await ic.resendWhatsAppDelivery(
+                        invoice: invoice,
+                        customer: customer,
+                        merchant: merchant,
+                      );
+                      Get.forceAppUpdate();
+                    },
+            ),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Future<void> _exportPDF(BuildContext context,
+      {Customer? customer, Merchant? merchant}) async {
+    try {
+      Get.snackbar('exporting'.tr, 'please_wait'.tr,
+          snackPosition: SnackPosition.BOTTOM,
+          duration: const Duration(seconds: 1));
+      await ExportService.exportInvoiceToPDF(
+        invoice: invoice,
+        customer: customer,
+        merchant: merchant,
+      );
+    } catch (e) {
+      Get.snackbar('error'.tr, e.toString(),
+          backgroundColor: AppColors.error, colorText: Colors.white);
+    }
+  }
+
   void _showPayDialog(BuildContext context) {
     final payCtrl = TextEditingController();
-    Get.dialog(
-      AlertDialog(
-        title: Text('record_payment'.tr),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: Column(
+    final resp = AppResponsive.of(context);
+    final currCode =
+        invoice.currencyCode.isNotEmpty ? invoice.currencyCode : 'YER';
+
+    AppDialog.show(
+      context: context,
+      maxWidth: 420,
+      child: SingleChildScrollView(
+        child: Column(
           mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
           children: [
-            Text(
-                '${'remaining_amount'.tr}: ${CurrencyFormatter.format(invoice.remainingAmount)}'),
-            const SizedBox(height: 12),
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(resp.spacingXS),
+                  decoration: BoxDecoration(
+                    color: AppColors.got.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(resp.radiusSM),
+                  ),
+                  child: Icon(Icons.payments_rounded,
+                      color: AppColors.got, size: resp.iconSM),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Text(
+                  'record_give'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontLG,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingMD),
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(resp.spacingSM),
+              decoration: BoxDecoration(
+                color: AppColors.give.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(resp.radiusSM),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Text(
+                    'remaining_amount'.tr,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: resp.fontSM,
+                      color: Colors.grey[700],
+                      fontWeight: FontWeight.w600,
+                    ),
+                  ),
+                  SizedBox(width: resp.spacingSM),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        CurrencyFormatter.format(invoice.remainingAmount,
+                            currencyCode: currCode),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontMD,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.give,
+                        ),
+                      ),
+                    ),
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(height: resp.spacingMD),
             AmountField(
               controller: payCtrl,
               label: 'amount'.tr,
               hint: '0',
-              icon: Icons.attach_money,
+            ),
+            SizedBox(height: resp.spacingLG),
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    text: 'cancel'.tr,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: AppButton(
+                    text: 'confirm'.tr,
+                    icon: Icons.check_rounded,
+                    variant: AppButtonVariant.got,
+                    onPressed: () {
+                      final amount = double.tryParse(payCtrl.text.trim());
+                      if (amount == null || amount <= 0) return;
+                      invoice.paidAmount = (invoice.paidAmount + amount)
+                          .clamp(0, invoice.totalAmount);
+                      Get.find<InvoiceController>().updateInvoice(invoice);
+                      Get.back();
+                      Get.back();
+                    },
+                  ),
+                ),
+              ],
             ),
           ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          TextButton(
-            onPressed: () {
-              final amount = double.tryParse(payCtrl.text.trim());
-              if (amount == null || amount <= 0) return;
-              invoice.paidAmount =
-                  (invoice.paidAmount + amount).clamp(0, invoice.totalAmount);
-              Get.find<InvoiceController>().updateInvoice(invoice);
-              Get.back();
-              Get.back(); // Return to invoices list
-            },
-            child: Text('confirm'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
       ),
     );
   }
 
   void _confirmDelete(BuildContext context) {
-    Get.dialog(
-      AlertDialog(
-        title: Text('delete_invoice'.tr),
-        content: Text('delete_invoice_confirm'.tr),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          TextButton(
-            onPressed: () {
-              Get.find<InvoiceController>().deleteInvoice(invoice.id);
-              Get.back();
-              Get.back();
-            },
-            child: Text('delete'.tr, style: const TextStyle(color: Colors.red)),
-          ),
-        ],
-      ),
+    AppDialog.confirm(
+      context: context,
+      title: 'delete_invoice'.tr,
+      message: 'delete_invoice_confirm'.tr,
+      confirmLabel: 'delete'.tr,
+      isDestructive: true,
+      onConfirm: () {
+        Get.find<InvoiceController>().deleteInvoice(invoice.id);
+        Get.back();
+      },
     );
   }
 }
@@ -301,36 +838,58 @@ class InvoiceDetailView extends StatelessWidget {
 class _AmountCard extends StatelessWidget {
   final String label;
   final double amount;
+  final String currencyCode;
   final Color color;
-  const _AmountCard(
-      {required this.label, required this.amount, required this.color});
+  const _AmountCard({
+    required this.label,
+    required this.amount,
+    required this.currencyCode,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
       child: Container(
-        padding: EdgeInsets.all(Responsive.isSmall(context) ? 10 : 14),
+        padding: EdgeInsets.symmetric(
+          horizontal: resp.spacingXS,
+          vertical: resp.spacingSM,
+        ),
         decoration: BoxDecoration(
-          color: color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-          border: Border.all(color: color.withValues(alpha: 0.15)),
+          color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+          borderRadius: BorderRadius.circular(resp.cardRadius * 0.75),
+          border: Border.all(
+            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+          ),
         ),
         child: Column(
           children: [
             FittedBox(
-              child: Text(label,
-                  style: TextStyle(
-                      color: Colors.grey[600],
-                      fontSize: Responsive.sp(context, 10))),
+              fit: BoxFit.scaleDown,
+              child: Text(
+                label,
+                style: TextStyle(
+                  fontFamily: 'Cairo',
+                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                  fontSize: resp.fontXS,
+                  fontWeight: FontWeight.w600,
+                ),
+              ),
             ),
             const SizedBox(height: 4),
             FittedBox(
+              fit: BoxFit.scaleDown,
               child: Text(
-                CurrencyFormatter.format(amount),
+                CurrencyFormatter.format(amount, currencyCode: currencyCode),
                 style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: Responsive.sp(context, 14)),
+                  fontFamily: 'Cairo',
+                  color: color,
+                  fontWeight: FontWeight.w900,
+                  fontSize: resp.fontMD,
+                ),
               ),
             ),
           ],
@@ -347,19 +906,32 @@ class _DetailRow extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
     return Padding(
-      padding: const EdgeInsets.symmetric(vertical: 6),
+      padding: EdgeInsets.symmetric(vertical: resp.spacingXS),
       child: Row(
         mainAxisAlignment: MainAxisAlignment.spaceBetween,
         children: [
-          Text(label,
-              style: TextStyle(color: Colors.grey[600], fontSize: 13)),
-          const SizedBox(width: 12),
+          Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: resp.fontSM,
+            ),
+          ),
+          SizedBox(width: resp.spacingSM),
           Flexible(
-            child: Text(value,
-                textAlign: TextAlign.end,
-                style:
-                    const TextStyle(fontWeight: FontWeight.w600, fontSize: 13)),
+            child: Text(
+              value,
+              textAlign: TextAlign.end,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.w600,
+                fontSize: resp.fontSM,
+              ),
+            ),
           ),
         ],
       ),

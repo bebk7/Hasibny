@@ -19,8 +19,10 @@ class MerchantShortageController extends GetxController {
       final list = await DatabaseService.getAllShortages();
       shortages.assignAll(list);
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_shortages'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_shortages'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }
@@ -33,8 +35,10 @@ class MerchantShortageController extends GetxController {
       final list = await DatabaseService.getShortagesForMerchant(merchantId);
       shortages.assignAll(list);
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_shortages'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_shortages'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }

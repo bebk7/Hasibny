@@ -13,43 +13,29 @@ import 'controllers/merchant_controller.dart';
 import 'controllers/invoice_controller.dart';
 import 'controllers/auth_controller.dart';
 import 'controllers/merchant_shortage_controller.dart';
+import 'controllers/onboarding_controller.dart';
 import 'themes/app_theme.dart';
 import 'translations/app_translations.dart';
 import 'views/auth/auth_view.dart';
+import 'views/auth/email_verification_view.dart';
 import 'views/home/home_view.dart';
 import 'views/lock/lock_view.dart';
+import 'views/onboarding/onboarding_view.dart';
 
-void main() {
-  WidgetsFlutterBinding.ensureInitialized();
-  runApp(const AccountBookApp());
-}
+void main() async {
+  final widgetsBinding = WidgetsFlutterBinding.ensureInitialized();
+  FlutterNativeSplash.preserve(widgetsBinding: widgetsBinding);
 
-class AccountBookApp extends StatefulWidget {
-  const AccountBookApp({super.key});
-
-  @override
-  State<AccountBookApp> createState() => _AccountBookAppState();
-}
-
-class _AccountBookAppState extends State<AccountBookApp> {
-  bool _initialized = false;
-
-  @override
-  void initState() {
-    super.initState();
-    _initializeApp();
-  }
-
-  Future<void> _initializeApp() async {
-    // Initialize Firebase
+  try {
+    // 1. Initialize Firebase
     await Firebase.initializeApp(
       options: DefaultFirebaseOptions.currentPlatform,
     );
 
-    // Initialize database
+    // 2. Initialize Database
     await DatabaseService.initialize();
 
-    // Initialize controllers
+    // 3. Register Controllers
     Get.put(SettingsController());
     Get.put(LockController());
     Get.put(CustomerController());
@@ -59,46 +45,31 @@ class _AccountBookAppState extends State<AccountBookApp> {
     Get.put(InvoiceController());
     Get.put(MerchantShortageController());
     Get.put(AuthController());
+    final onboardingController = Get.put(OnboardingController());
 
-    // Remove splash and show app
+    // 4. Check onboarding status (handles existing installations seamlessly)
+    await onboardingController.checkOnboardingStatus();
+  } catch (e, stack) {
+    debugPrint('App initialization error: $e\n$stack');
+  } finally {
+    // Remove native splash screen now that app is ready to render directly
     FlutterNativeSplash.remove();
-    if (mounted) setState(() => _initialized = true);
   }
+
+  runApp(const AccountBookApp());
+}
+
+class AccountBookApp extends StatelessWidget {
+  const AccountBookApp({super.key});
 
   @override
   Widget build(BuildContext context) {
-    if (!_initialized) {
-      return MaterialApp(
-        debugShowCheckedModeBanner: false,
-        home: Scaffold(
-          backgroundColor: const Color(0xFF1565C0),
-          body: Center(
-            child: Column(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: [
-                Image.asset(
-                  'assets/images/logo.png',
-                  width: 80,
-                  height: 80,
-                  errorBuilder: (_, __, ___) => const Icon(
-                    Icons.account_balance_wallet_rounded,
-                    color: Colors.white,
-                    size: 64,
-                  ),
-                ),
-                const SizedBox(height: 24),
-                const CircularProgressIndicator(color: Colors.white),
-              ],
-            ),
-          ),
-        ),
-      );
-    }
-
     final settingsController = Get.find<SettingsController>();
+
     return Obx(() {
       final isArabic = settingsController.isArabic;
       final isDark = settingsController.isDarkMode.value;
+
       return GetMaterialApp(
         title: 'Hasibny',
         debugShowCheckedModeBanner: false,
@@ -108,20 +79,50 @@ class _AccountBookAppState extends State<AccountBookApp> {
         translations: AppTranslations(),
         locale: isArabic ? const Locale('ar', 'SA') : const Locale('en', 'US'),
         fallbackLocale: const Locale('en', 'US'),
-        builder: (context, child) => Directionality(
-          textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
-          child: child!,
-        ),
+        builder: (context, child) {
+          final mediaQuery = MediaQuery.of(context);
+          final clampedScaler = mediaQuery.textScaler.clamp(
+            minScaleFactor: 0.85,
+            maxScaleFactor: 1.25,
+          );
+          return MediaQuery(
+            data: mediaQuery.copyWith(textScaler: clampedScaler),
+            child: Directionality(
+              textDirection: isArabic ? TextDirection.rtl : TextDirection.ltr,
+              child: child!,
+            ),
+          );
+        },
         home: Obx(() {
+          final oc = Get.find<OnboardingController>();
           final ac = Get.find<AuthController>();
           final lc = Get.find<LockController>();
-          if (!ac.canAccessApp) {
-            return const AuthView();
+
+          // 1. First-Run Onboarding (if not completed)
+          if (!oc.isOnboarded.value) {
+            return const OnboardingView();
           }
+
+          // 2. App Lock
           if (lc.isLockEnabled && !lc.isUnlocked.value) {
             return const LockView();
           }
-          return const HomeView();
+
+          // 3. Logged-in User
+          if (ac.isLoggedIn) {
+            if (!ac.isEmailVerified.value) {
+              return const EmailVerificationView();
+            }
+            return const HomeView();
+          }
+
+          // 4. Guest Mode
+          if (ac.isGuestMode.value) {
+            return const HomeView();
+          }
+
+          // 5. Auth / Login
+          return const AuthView();
         }),
         defaultTransition: Transition.cupertino,
         transitionDuration: const Duration(milliseconds: 300),

@@ -11,8 +11,8 @@ dependencies:
   flutter:
     sdk: flutter
   get: ^4.6.6
-  isar: any
-  isar_flutter_libs: ^3.1.0+1
+  isar_community: ^3.3.2
+  isar_community_flutter_libs: ^3.3.2
   path_provider: ^2.1.1
   pdf: ^3.11.3
   excel: ^4.0.1
@@ -29,9 +29,12 @@ dependencies:
   firebase_auth: ^5.5.2
   cloud_firestore: ^5.6.6
   image_picker: ^1.0.7
+  connectivity_plus: ^7.3.1
+  cryptography: ^2.9.0
+  file_picker: ^10.2.4
 
 dev_dependencies:
-  isar_generator: ^3.1.0+1
+  isar_community_generator: ^3.3.2
   build_runner: ^2.4.0
   flutter_launcher_icons: ^0.13.1
   flutter_test:
@@ -43,16 +46,19 @@ flutter_launcher_icons:
   image_path: assets/images/logo.png
 
 flutter_native_splash:
-  color: "#FFFFFF"
+  color: "#0F1315"
   image: assets/images/logo.png
   android_gravity: center
   ios_content_mode: center
   fullscreen: true
+  branding: assets/images/branding_credits.png
+  branding_mode: bottom
 
   android_12:
-    color: "#FFFFFF"
+    color: "#0F1315"
     image: assets/images/logo.png
-    icon_background_color: "#FFFFFF"
+    icon_background_color: "#0F1315"
+    branding: assets/images/branding_credits.png
 
 flutter:
   uses-material-design: true

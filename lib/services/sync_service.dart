@@ -52,6 +52,7 @@ class SyncService {
       'name': c.name,
       'phoneNumber': c.phoneNumber,
       'profilePicturePath': c.profilePicturePath,
+      'currencyCode': c.currencyCode,
       'createdAt': c.createdAt.toIso8601String(),
       'updatedAt': c.updatedAt.toIso8601String(),
     }).catchError(_onError);
@@ -75,6 +76,7 @@ class SyncService {
       'type': t.type.name,
       'description': t.description,
       'customerId': t.customerId,
+      'currencyCode': t.currencyCode,
       'createdAt': t.createdAt.toIso8601String(),
     }).catchError(_onError);
   }
@@ -115,6 +117,7 @@ class SyncService {
       'invoiceNumber': inv.invoiceNumber,
       'totalAmount': inv.totalAmount,
       'paidAmount': inv.paidAmount,
+      'currencyCode': inv.currencyCode,
       'notes': inv.notes,
       'itemsJson': inv.itemsJson,
       'date': inv.date.toIso8601String(),
@@ -214,6 +217,7 @@ class SyncService {
         name: d['name'] ?? '',
         phoneNumber: d['phoneNumber'] ?? '',
         profilePicturePath: d['profilePicturePath'] as String?,
+        currencyCode: d['currencyCode'] as String? ?? 'YER',
       );
       c.id = (d['id'] as num).toInt();
       c.createdAt = DateTime.parse(d['createdAt'] as String);
@@ -232,6 +236,7 @@ class SyncService {
         type: d['type'] == 'give' ? TransactionType.give : TransactionType.got,
         description: d['description'] ?? '',
         customerId: (d['customerId'] as num).toInt(),
+        currencyCode: d['currencyCode'] as String? ?? 'YER',
       );
       t.id = (d['id'] as num).toInt();
       t.createdAt = DateTime.parse(d['createdAt'] as String);
@@ -267,6 +272,7 @@ class SyncService {
         invoiceNumber: d['invoiceNumber'] ?? '',
         totalAmount: (d['totalAmount'] as num).toDouble(),
         paidAmount: (d['paidAmount'] as num? ?? 0).toDouble(),
+        currencyCode: d['currencyCode'] as String? ?? 'YER',
         notes: d['notes'] as String?,
         itemsJson: d['itemsJson'] as String?,
       );

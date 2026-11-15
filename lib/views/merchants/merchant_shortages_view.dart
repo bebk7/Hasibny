@@ -1,8 +1,9 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/merchant_shortage_controller.dart';
+import '../../core/core.dart';
 import '../../models/merchant_shortage.dart';
-import '../../utils/responsive.dart';
 
 class MerchantShortagesView extends StatelessWidget {
   /// When null, shows ALL shortages regardless of merchant.
@@ -12,6 +13,8 @@ class MerchantShortagesView extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sc = Get.find<MerchantShortageController>();
+    final resp = AppResponsive.of(context);
+
     Future.microtask(() {
       if (merchantId != null) {
         sc.loadForMerchant(merchantId!);
@@ -22,34 +25,57 @@ class MerchantShortagesView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('shortages'.tr,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'shortages'.tr,
+          style: AppTypography.pageTitle(context),
+        ),
       ),
-      body: Column(
-        children: [
-          _SummaryHeader(),
-          Expanded(
-            child: Obx(() {
-              if (sc.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (sc.shortages.isEmpty) {
-                return _Empty();
-              }
-              return ListView.builder(
-                padding: Responsive.pagePadding(context),
-                physics: const BouncingScrollPhysics(),
-                itemCount: sc.shortages.length,
-                itemBuilder: (ctx, i) => _ShortageCard(shortage: sc.shortages[i]),
-              );
-            }),
-          ),
-        ],
+      body: AppPageContainer(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            _SummaryHeader(),
+            Expanded(
+              child: Obx(() {
+                if (sc.isLoading.value) {
+                  return const Center(child: AppLoading());
+                }
+                if (sc.shortages.isEmpty) {
+                  return Center(
+                    child: AppEmptyState(
+                      icon: Icons.inventory_2_rounded,
+                      title: 'no_shortages'.tr,
+                      actionLabel: 'add_shortage'.tr,
+                      actionIcon: Icons.add_rounded,
+                      onAction: () => _showAddDialog(context),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    resp.pagePadding,
+                    resp.spacing2XS,
+                    resp.pagePadding,
+                    resp.pagePadding + resp.bottomInset,
+                  ),
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  itemCount: sc.shortages.length,
+                  itemBuilder: (ctx, i) => _ShortageCard(shortage: sc.shortages[i]),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_shortage_fab',
-        onPressed: () => _showAddDialog(context),
-        child: const Icon(Icons.add),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          _showAddDialog(context);
+        },
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
@@ -58,71 +84,89 @@ class MerchantShortagesView extends StatelessWidget {
     final productCtrl = TextEditingController();
     final qtyCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    Get.dialog(
-      AlertDialog(
-        title: Text('add_shortage'.tr),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: productCtrl,
-                decoration: InputDecoration(
-                  labelText: 'product_name'.tr,
-                  hintText: 'enter_product_name'.tr,
-                ),
+    AppBottomSheet.show(
+      context: context,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.stretch,
+          children: [
+            Text(
+              'add_shortage'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontLG,
+                fontWeight: FontWeight.w800,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: qtyCtrl,
-                keyboardType:
-                    const TextInputType.numberWithOptions(decimal: true),
-                decoration: InputDecoration(
-                  labelText: 'quantity'.tr,
-                  hintText: 'quantity_optional'.tr,
-                ),
+            ),
+            SizedBox(height: resp.spacingMD),
+            TextField(
+              controller: productCtrl,
+              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+              decoration: InputDecoration(
+                labelText: 'product_name'.tr,
+                hintText: 'enter_product_name'.tr,
+                prefixIcon: Icon(Icons.inventory_2_rounded, size: resp.iconSM),
               ),
-              const SizedBox(height: 12),
-              TextField(
-                controller: noteCtrl,
-                decoration: InputDecoration(
-                  labelText: 'notes'.tr,
-                  hintText: 'note_optional'.tr,
-                ),
+            ),
+            SizedBox(height: resp.spacingSM),
+            TextField(
+              controller: qtyCtrl,
+              keyboardType: TextInputType.number,
+              inputFormatters: const [
+                DigitsOnlyInputFormatter(),
+              ],
+              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+              decoration: InputDecoration(
+                labelText: 'quantity'.tr,
+                hintText: 'quantity_optional'.tr,
+                prefixIcon: Icon(Icons.numbers_rounded, size: resp.iconSM),
               ),
-            ],
-          ),
+            ),
+            SizedBox(height: resp.spacingSM),
+            TextField(
+              controller: noteCtrl,
+              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+              decoration: InputDecoration(
+                labelText: 'notes'.tr,
+                hintText: 'note_optional'.tr,
+                prefixIcon: Icon(Icons.notes_rounded, size: resp.iconSM),
+              ),
+            ),
+            SizedBox(height: resp.spacingLG),
+            AppButton(
+              text: 'add'.tr,
+              icon: Icons.add_rounded,
+              onPressed: () {
+                final name = productCtrl.text.trim();
+                if (name.isEmpty) return;
+
+                final qtyStr = qtyCtrl.text.trim();
+                final qty = qtyStr.isEmpty
+                    ? null
+                    : double.tryParse(qtyStr.replaceAll(',', ''));
+
+                final note = noteCtrl.text.trim().isEmpty
+                    ? null
+                    : noteCtrl.text.trim();
+
+                final shortage = MerchantShortage(
+                  merchantId: merchantId,
+                  productName: name,
+                  quantity: qty,
+                  note: note,
+                );
+                Get.back();
+                Get.find<MerchantShortageController>().addShortage(shortage);
+              },
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          TextButton(
-            onPressed: () {
-              final name = productCtrl.text.trim();
-              if (name.isEmpty) return;
-
-              final qtyStr = qtyCtrl.text.trim();
-              final qty = qtyStr.isEmpty
-                  ? null
-                  : double.tryParse(qtyStr.replaceAll(',', ''));
-
-              final note = noteCtrl.text.trim().isEmpty
-                  ? null
-                  : noteCtrl.text.trim();
-
-              final shortage = MerchantShortage(
-                merchantId: merchantId,
-                productName: name,
-                quantity: qty,
-                note: note,
-              ); // merchantId may be null (general shortage)
-              Get.back();
-              Get.find<MerchantShortageController>().addShortage(shortage);
-            },
-            child: Text('add'.tr),
-          ),
-        ],
       ),
     );
   }
@@ -132,81 +176,103 @@ class _SummaryHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sc = Get.find<MerchantShortageController>();
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Obx(() {
       return Container(
-        margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-        padding: EdgeInsets.all(Responsive.isSmall(context) ? 12 : 16),
+        margin: EdgeInsets.symmetric(
+          horizontal: resp.pagePadding,
+          vertical: resp.spacingXS,
+        ),
+        padding: EdgeInsets.all(resp.spacingSM + 2),
         decoration: BoxDecoration(
-          borderRadius: BorderRadius.circular(16),
-          color: Theme.of(context).cardColor,
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(resp.cardRadius),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 1,
+          ),
+          boxShadow: AppShadows.subtle(isDark),
         ),
         child: Row(
           children: [
-            _SumItem(label: 'total'.tr, value: '${sc.totalCount}'),
-            _Divider(),
-            _SumItem(label: 'pending'.tr, value: '${sc.pendingCount}'),
-            _Divider(),
-            _SumItem(label: 'resolved'.tr, value: '${sc.resolvedCount}'),
+            _SumItem(
+              label: 'total'.tr,
+              value: '${sc.totalCount}',
+              color: isDark ? AppColors.darkPrimary : AppColors.primary,
+            ),
+            _divider(isDark, resp),
+            _SumItem(
+              label: 'pending'.tr,
+              value: '${sc.pendingCount}',
+              color: AppColors.warning,
+            ),
+            _divider(isDark, resp),
+            _SumItem(
+              label: 'resolved'.tr,
+              value: '${sc.resolvedCount}',
+              color: AppColors.success,
+            ),
           ],
         ),
       );
     });
   }
+
+  Widget _divider(bool isDark, AppResponsive resp) => Container(
+        width: 1,
+        height: 32,
+        margin: EdgeInsets.symmetric(horizontal: resp.spacing2XS),
+        color: isDark ? AppColors.borderDark : AppColors.borderLight,
+      );
 }
 
 class _SumItem extends StatelessWidget {
   final String label;
   final String value;
-  const _SumItem({required this.label, required this.value});
+  final Color color;
+
+  const _SumItem({
+    required this.label,
+    required this.value,
+    required this.color,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Expanded(
       child: Column(
         children: [
           FittedBox(
-            child: Text(label,
-                style: TextStyle(
-                    color: Theme.of(context).hintColor,
-                    fontSize: Responsive.sp(context, 10))),
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                fontSize: resp.fontXS,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           FittedBox(
-            child: Text(value,
-                style: TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: Responsive.sp(context, 14))),
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: resp.fontLG,
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
-        ],
-      ),
-    );
-  }
-}
-
-class _Divider extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Container(
-      width: 1,
-      height: 36,
-      margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: Theme.of(context).dividerColor,
-    );
-  }
-}
-
-class _Empty extends StatelessWidget {
-  @override
-  Widget build(BuildContext context) {
-    return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.inventory_2_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text('no_shortages'.tr,
-              style:
-                  const TextStyle(color: Colors.grey, fontWeight: FontWeight.bold)),
         ],
       ),
     );
@@ -220,7 +286,9 @@ class _ShortageCard extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sc = Get.find<MerchantShortageController>();
+    final resp = AppResponsive.of(context);
     final resolved = shortage.isResolved;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     final subtitleParts = <String>[];
     if (shortage.quantity != null) {
@@ -232,31 +300,82 @@ class _ShortageCard extends StatelessWidget {
       subtitleParts.add(shortage.note!);
     }
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
-      child: Material(
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        color: Theme.of(context).cardColor,
-        child: ListTile(
-          shape: RoundedRectangleBorder(
-              borderRadius: BorderRadius.circular(Responsive.cardRadius(context))),
-          leading: Checkbox(
-            value: resolved,
-            onChanged: (_) => sc.toggleResolved(shortage),
-          ),
-          title: Text(
-            shortage.productName,
-            style: TextStyle(
-              fontWeight: FontWeight.w700,
-              decoration:
-                  resolved ? TextDecoration.lineThrough : TextDecoration.none,
+    return Container(
+      margin: EdgeInsets.only(bottom: resp.spacingSM),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        border: Border.all(
+          color: resolved
+              ? (isDark ? AppColors.borderDark : AppColors.borderLight)
+              : AppColors.warning.withValues(alpha: isDark ? 0.28 : 0.18),
+          width: 1.2,
+        ),
+        boxShadow: AppShadows.subtle(isDark),
+      ),
+      child: Padding(
+        padding: EdgeInsets.symmetric(
+          horizontal: resp.spacingSM,
+          vertical: resp.spacingXS,
+        ),
+        child: Row(
+          children: [
+            Checkbox(
+              value: resolved,
+              activeColor: AppColors.success,
+              shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(resp.radiusXS)),
+              onChanged: (_) {
+                HapticFeedback.selectionClick();
+                sc.toggleResolved(shortage);
+              },
             ),
-          ),
-          subtitle: subtitleParts.isEmpty ? null : Text(subtitleParts.join(' • ')),
-          trailing: IconButton(
-            icon: const Icon(Icons.delete_outline, color: Colors.red),
-            onPressed: () => sc.deleteShortage(shortage.id),
-          ),
+            SizedBox(width: resp.spacingXS),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                children: [
+                  Text(
+                    shortage.productName,
+                    maxLines: 2,
+                    overflow: TextOverflow.ellipsis,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontWeight: FontWeight.w700,
+                      fontSize: resp.fontMD,
+                      color: resolved
+                          ? (isDark ? AppColors.textMutedDark : AppColors.textMutedLight)
+                          : (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+                      decoration: resolved ? TextDecoration.lineThrough : TextDecoration.none,
+                    ),
+                  ),
+                  if (subtitleParts.isNotEmpty) ...[
+                    const SizedBox(height: 2),
+                    Text(
+                      subtitleParts.join(' • '),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontXS,
+                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                      ),
+                    ),
+                  ],
+                ],
+              ),
+            ),
+            IconButton(
+              icon: Icon(
+                Icons.delete_outline_rounded,
+                color: isDark ? Colors.redAccent : AppColors.error,
+                size: resp.iconSM,
+              ),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                sc.deleteShortage(shortage.id);
+              },
+            ),
+          ],
         ),
       ),
     );

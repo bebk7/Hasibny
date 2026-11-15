@@ -5,8 +5,7 @@ import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:path/path.dart' as p;
 import '../../controllers/settings_controller.dart';
-import '../../themes/app_theme.dart';
-import '../../utils/responsive.dart';
+import '../../core/core.dart';
 
 class StoreProfileView extends StatefulWidget {
   const StoreProfileView({super.key});
@@ -34,7 +33,8 @@ class _StoreProfileViewState extends State<StoreProfileView> {
     _addressCtrl = TextEditingController(text: sc.storeAddress.value);
     _emailCtrl = TextEditingController(text: sc.storeEmail.value);
     _taxCtrl = TextEditingController(text: sc.storeTaxNumber.value);
-    _selectedLogoPath = sc.storeLogoPath.value.isNotEmpty ? sc.storeLogoPath.value : null;
+    _selectedLogoPath =
+        sc.storeLogoPath.value.isNotEmpty ? sc.storeLogoPath.value : null;
   }
 
   @override
@@ -52,10 +52,10 @@ class _StoreProfileViewState extends State<StoreProfileView> {
     final source = await _showImageSourceDialog();
     if (source == null) return;
 
-    final picked = await picker.pickImage(source: source, maxWidth: 512, maxHeight: 512, imageQuality: 85);
+    final picked = await picker.pickImage(
+        source: source, maxWidth: 512, maxHeight: 512, imageQuality: 85);
     if (picked == null) return;
 
-    // Copy to app documents directory
     final appDir = await getApplicationDocumentsDirectory();
     final logoDir = Directory('${appDir.path}/store_logo');
     if (!await logoDir.exists()) await logoDir.create(recursive: true);
@@ -68,50 +68,67 @@ class _StoreProfileViewState extends State<StoreProfileView> {
   }
 
   Future<ImageSource?> _showImageSourceDialog() async {
-    return await showModalBottomSheet<ImageSource>(
+    final resp = AppResponsive.of(context);
+
+    return await AppBottomSheet.show<ImageSource>(
       context: context,
-      backgroundColor: Theme.of(context).cardColor,
-      shape: const RoundedRectangleBorder(
-        borderRadius: BorderRadius.vertical(top: Radius.circular(20)),
-      ),
-      builder: (ctx) => SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(vertical: 20),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          Text(
+            'select_image_source'.tr,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: resp.fontLG,
+              fontWeight: FontWeight.bold,
+            ),
+          ),
+          SizedBox(height: resp.spacingLG),
+          Row(
+            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              Text('select_image_source'.tr,
-                  style: const TextStyle(fontSize: 16, fontWeight: FontWeight.bold)),
-              const SizedBox(height: 20),
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceEvenly,
-                children: [
-                  _sourceOption(Icons.camera_alt_rounded, 'camera'.tr, ImageSource.camera),
-                  _sourceOption(Icons.photo_library_rounded, 'gallery'.tr, ImageSource.gallery),
-                ],
-              ),
+              _sourceOption(
+                  Icons.camera_alt_rounded, 'camera'.tr, ImageSource.camera, resp),
+              _sourceOption(Icons.photo_library_rounded, 'gallery'.tr,
+                  ImageSource.gallery, resp),
             ],
           ),
-        ),
+          SizedBox(height: resp.spacingSM),
+        ],
       ),
     );
   }
 
-  Widget _sourceOption(IconData icon, String label, ImageSource source) {
+  Widget _sourceOption(
+      IconData icon, String label, ImageSource source, AppResponsive resp) {
     return InkWell(
       onTap: () => Navigator.pop(context, source),
-      borderRadius: BorderRadius.circular(16),
+      borderRadius: BorderRadius.circular(resp.cardRadius),
       child: Container(
-        padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 16),
+        padding: EdgeInsets.symmetric(
+          horizontal: resp.spacingLG,
+          vertical: resp.spacingMD,
+        ),
         decoration: BoxDecoration(
-          color: AppTheme.primaryColor.withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(16),
+          color: AppColors.primary.withValues(alpha: 0.08),
+          borderRadius: BorderRadius.circular(resp.cardRadius),
+          border: Border.all(
+            color: AppColors.primary.withValues(alpha: 0.15),
+          ),
         ),
         child: Column(
           children: [
-            Icon(icon, size: 36, color: AppTheme.primaryColor),
-            const SizedBox(height: 8),
-            Text(label, style: TextStyle(color: AppTheme.primaryColor, fontWeight: FontWeight.w600)),
+            Icon(icon, size: resp.iconLG, color: AppColors.primary),
+            SizedBox(height: resp.spacingSM),
+            Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: AppColors.primary,
+                fontWeight: FontWeight.w700,
+                fontSize: resp.fontSM,
+              ),
+            ),
           ],
         ),
       ),
@@ -141,7 +158,7 @@ class _StoreProfileViewState extends State<StoreProfileView> {
     Get.snackbar(
       'success'.tr,
       'store_profile_saved'.tr,
-      backgroundColor: AppTheme.successColor,
+      backgroundColor: AppColors.success,
       colorText: Colors.white,
       snackPosition: SnackPosition.BOTTOM,
     );
@@ -149,183 +166,188 @@ class _StoreProfileViewState extends State<StoreProfileView> {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
     final isAr = Get.find<SettingsController>().isArabic;
+
     return Scaffold(
-      backgroundColor: Theme.of(context).brightness == Brightness.light
-          ? Colors.grey[50]
-          : Colors.grey[900],
       appBar: AppBar(
-        title: Text('store_profile'.tr,
-            style: const TextStyle(fontWeight: FontWeight.bold, color: Colors.white)),
-        centerTitle: true,
-        backgroundColor: AppTheme.primaryColor,
-        iconTheme: const IconThemeData(color: Colors.white),
-        elevation: 0,
+        title: Text(
+          'store_profile'.tr,
+          style: AppTypography.pageTitle(context),
+        ),
         actions: [
-          if (_saving)
-            const Padding(
-              padding: EdgeInsets.all(14),
-              child: SizedBox(
-                  width: 22,
-                  height: 22,
-                  child: CircularProgressIndicator(color: Colors.white, strokeWidth: 2)),
-            )
-          else
-            IconButton(
-              icon: const Icon(Icons.check_rounded, color: Colors.white),
-              tooltip: 'save'.tr,
-              onPressed: _save,
-            ),
+          IconButton(
+            icon: Icon(Icons.check_rounded, size: resp.iconSM),
+            tooltip: 'save'.tr,
+            onPressed: _saving ? null : _save,
+          ),
         ],
       ),
       body: Form(
         key: _formKey,
-        child: ListView(
-          physics: const BouncingScrollPhysics(),
-          padding: Responsive.pagePadding(context),
-          children: [
-            const SizedBox(height: 12),
-            _ProfileHeader(
-              logoPath: _selectedLogoPath,
-              onPickLogo: _pickLogo,
-              onRemoveLogo: _removeLogo,
+        child: AppPageContainer(
+          maxWidth: 560,
+          padding: EdgeInsets.zero,
+          child: ListView(
+            physics: const BouncingScrollPhysics(),
+            padding: EdgeInsets.symmetric(
+              horizontal: resp.spacingSM,
+              vertical: resp.spacingMD,
             ),
-            const SizedBox(height: 20),
-            _buildCard(
-              context,
-              icon: Icons.storefront_rounded,
-              color: AppTheme.primaryColor,
-              title: 'store_basic_info'.tr,
-              children: [
-                _buildField(
-                  controller: _nameCtrl,
-                  label: 'store_name'.tr,
-                  hint: isAr ? 'مثال: متجر النور' : 'e.g. Al Noor Store',
-                  icon: Icons.store_rounded,
-                  validator: (v) =>
-                      (v == null || v.trim().isEmpty) ? 'store_name_required'.tr : null,
-                ),
-                const SizedBox(height: 14),
-                _buildField(
-                  controller: _phoneCtrl,
-                  label: 'phone'.tr,
-                  hint: isAr ? 'مثال: 967-777-123456' : 'e.g. +967-777-123456',
-                  icon: Icons.phone_rounded,
-                  keyboardType: TextInputType.phone,
-                ),
-                const SizedBox(height: 14),
-                _buildField(
-                  controller: _emailCtrl,
-                  label: 'email'.tr,
-                  hint: 'store@example.com',
-                  icon: Icons.email_rounded,
-                  keyboardType: TextInputType.emailAddress,
-                ),
-              ],
-            ),
-            const SizedBox(height: 16),
-            _buildCard(
-              context,
-              icon: Icons.location_on_rounded,
-              color: const Color(0xFF00695C),
-              title: 'store_details'.tr,
-              children: [
-                _buildField(
-                  controller: _addressCtrl,
-                  label: 'address'.tr,
-                  hint: isAr ? 'المدينة، الحي، الشارع' : 'City, District, Street',
-                  icon: Icons.map_rounded,
-                  maxLines: 2,
-                ),
-                const SizedBox(height: 14),
-                _buildField(
-                  controller: _taxCtrl,
-                  label: 'tax_number'.tr,
-                  hint: isAr ? 'الرقم الضريبي (اختياري)' : 'Tax / VAT number (optional)',
-                  icon: Icons.receipt_long_rounded,
-                ),
-              ],
-            ),
-            const SizedBox(height: 24),
-            _PreviewHint(),
-            const SizedBox(height: 40),
-          ],
-        ),
-      ),
-    );
-  }
-
-  Widget _buildCard(
-    BuildContext context, {
-    required IconData icon,
-    required Color color,
-    required String title,
-    required List<Widget> children,
-  }) {
-    return Container(
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(16),
-        boxShadow: [
-          BoxShadow(
-            color: Colors.black.withValues(alpha: 0.04),
-            blurRadius: 10,
-            offset: const Offset(0, 2),
-          ),
-        ],
-      ),
-      padding: const EdgeInsets.all(18),
-      child: Column(
-        crossAxisAlignment: CrossAxisAlignment.start,
-        children: [
-          Row(
             children: [
-              Container(
-                padding: const EdgeInsets.all(7),
-                decoration: BoxDecoration(
-                  color: color.withValues(alpha: 0.1),
-                  borderRadius: BorderRadius.circular(9),
-                ),
-                child: Icon(icon, color: color, size: 18),
+              _ProfileHeader(
+                logoPath: _selectedLogoPath,
+                onPickLogo: _pickLogo,
+                onRemoveLogo: _removeLogo,
               ),
-              const SizedBox(width: 10),
-              Text(title,
-                  style: TextStyle(
-                      fontWeight: FontWeight.bold,
-                      fontSize: 14,
-                      color: color)),
+              SizedBox(height: resp.spacingLG),
+
+              // Basic Info Card
+              AppCard(
+                padding: EdgeInsets.all(resp.spacingMD),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(resp.spacingXS),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(resp.radiusSM),
+                          ),
+                          child: Icon(Icons.storefront_rounded,
+                              color: AppColors.primary, size: resp.iconSM),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Text(
+                          'store_basic_info'.tr,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: resp.fontMD,
+                            color: AppColors.primary,
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingMD),
+                    TextFormField(
+                      controller: _nameCtrl,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                      validator: (v) => (v == null || v.trim().isEmpty)
+                          ? 'store_name_required'.tr
+                          : null,
+                      decoration: InputDecoration(
+                        labelText: 'store_name'.tr,
+                        hintText:
+                            isAr ? 'مثال: متجر النور' : 'e.g. Al Noor Store',
+                        prefixIcon: Icon(Icons.store_rounded, size: resp.iconSM),
+                      ),
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    TextFormField(
+                      controller: _phoneCtrl,
+                      keyboardType: TextInputType.phone,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                      decoration: InputDecoration(
+                        labelText: 'phone'.tr,
+                        hintText: isAr
+                            ? 'مثال: 967-777-123456'
+                            : 'e.g. +967-777-123456',
+                        prefixIcon: Icon(Icons.phone_rounded, size: resp.iconSM),
+                      ),
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    TextFormField(
+                      controller: _emailCtrl,
+                      keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                      decoration: InputDecoration(
+                        labelText: 'email'.tr,
+                        hintText: 'store@example.com',
+                        prefixIcon: Icon(Icons.email_rounded, size: resp.iconSM),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: resp.spacingMD),
+
+              // Details Card
+              AppCard(
+                padding: EdgeInsets.all(resp.spacingMD),
+                child: Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(resp.spacingXS),
+                          decoration: BoxDecoration(
+                            color: const Color(0xFF0D9488).withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(resp.radiusSM),
+                          ),
+                          child: Icon(Icons.location_on_rounded,
+                              color: const Color(0xFF0D9488), size: resp.iconSM),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Text(
+                          'store_details'.tr,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: resp.fontMD,
+                            color: const Color(0xFF0D9488),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingMD),
+                    TextFormField(
+                      controller: _addressCtrl,
+                      maxLines: 2,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                      decoration: InputDecoration(
+                        labelText: 'address'.tr,
+                        hintText: isAr
+                            ? 'المدينة، الحي، الشارع'
+                            : 'City, District, Street',
+                        prefixIcon: Icon(Icons.map_rounded, size: resp.iconSM),
+                      ),
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    TextFormField(
+                      controller: _taxCtrl,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                      decoration: InputDecoration(
+                        labelText: 'tax_number'.tr,
+                        hintText: isAr
+                            ? 'الرقم الضريبي (اختياري)'
+                            : 'Tax / VAT number (optional)',
+                        prefixIcon: Icon(Icons.receipt_long_rounded, size: resp.iconSM),
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+              SizedBox(height: resp.spacingMD),
+
+              // PDF Hint
+              _PreviewHint(),
+              SizedBox(height: resp.spacingLG),
+
+              // Save AppButton
+              AppButton(
+                text: 'save'.tr,
+                icon: Icons.check_rounded,
+                isLoading: _saving,
+                onPressed: _saving ? null : _save,
+              ),
+              SizedBox(height: resp.pagePadding),
             ],
           ),
-          const SizedBox(height: 16),
-          ...children,
-        ],
-      ),
-    );
-  }
-
-  Widget _buildField({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType? keyboardType,
-    int maxLines = 1,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon, size: 20),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
-        filled: true,
-        fillColor: Theme.of(context).scaffoldBackgroundColor,
-        contentPadding:
-            const EdgeInsets.symmetric(horizontal: 14, vertical: 14),
+        ),
       ),
     );
   }
@@ -345,7 +367,11 @@ class _ProfileHeader extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
     final sc = Get.find<SettingsController>();
-    final hasLogo = logoPath != null && logoPath!.isNotEmpty && File(logoPath!).existsSync();
+    final resp = AppResponsive.of(context);
+    final hasLogo = logoPath != null &&
+        logoPath!.isNotEmpty &&
+        File(logoPath!).existsSync();
+    final logoSize = resp.isSmall ? 88.0 : 100.0;
 
     return Obx(() {
       final name = sc.storeName.value;
@@ -357,19 +383,19 @@ class _ProfileHeader extends StatelessWidget {
                 GestureDetector(
                   onTap: onPickLogo,
                   child: Container(
-                    width: 110,
-                    height: 110,
+                    width: logoSize,
+                    height: logoSize,
                     decoration: BoxDecoration(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.12),
+                      color: AppColors.primary.withValues(alpha: 0.1),
                       shape: BoxShape.circle,
                       border: Border.all(
-                        color: AppTheme.primaryColor.withValues(alpha: 0.3),
-                        width: 3,
+                        color: AppColors.primary.withValues(alpha: 0.3),
+                        width: 2.5,
                       ),
                       boxShadow: [
                         BoxShadow(
-                          color: AppTheme.primaryColor.withValues(alpha: 0.15),
-                          blurRadius: 20,
+                          color: AppColors.primary.withValues(alpha: 0.15),
+                          blurRadius: 18,
                           offset: const Offset(0, 6),
                         ),
                       ],
@@ -379,20 +405,21 @@ class _ProfileHeader extends StatelessWidget {
                           ? Image.file(
                               File(logoPath!),
                               fit: BoxFit.cover,
-                              width: 110,
-                              height: 110,
+                              width: logoSize,
+                              height: logoSize,
                             )
                           : Column(
                               mainAxisAlignment: MainAxisAlignment.center,
                               children: [
                                 Icon(Icons.add_a_photo_rounded,
-                                    size: 32, color: AppTheme.primaryColor),
+                                    size: resp.iconLG, color: AppColors.primary),
                                 const SizedBox(height: 4),
                                 Text(
                                   'add_logo'.tr,
                                   style: TextStyle(
-                                    fontSize: 11,
-                                    color: AppTheme.primaryColor,
+                                    fontFamily: 'Cairo',
+                                    fontSize: resp.fontXS,
+                                    color: AppColors.primary,
                                     fontWeight: FontWeight.w600,
                                   ),
                                 ),
@@ -408,40 +435,42 @@ class _ProfileHeader extends StatelessWidget {
                     child: GestureDetector(
                       onTap: onRemoveLogo,
                       child: Container(
-                        width: 32,
-                        height: 32,
+                        width: 28,
+                        height: 28,
                         decoration: BoxDecoration(
-                          color: Colors.red,
+                          color: AppColors.give,
                           shape: BoxShape.circle,
                           border: Border.all(color: Colors.white, width: 2),
-                          boxShadow: [
+                          boxShadow: const [
                             BoxShadow(
-                              color: Colors.black.withValues(alpha: 0.2),
+                              color: Colors.black26,
                               blurRadius: 6,
                             ),
                           ],
                         ),
                         child: const Icon(Icons.close_rounded,
-                            color: Colors.white, size: 18),
+                            color: Colors.white, size: 16),
                       ),
                     ),
                   ),
               ],
             ),
-            const SizedBox(height: 14),
+            SizedBox(height: resp.spacingSM),
             Text(
               name.isEmpty ? 'store_profile'.tr : name,
               style: TextStyle(
-                fontSize: 18,
+                fontFamily: 'Cairo',
+                fontSize: resp.fontLG,
                 fontWeight: FontWeight.bold,
                 color: name.isEmpty ? Colors.grey : null,
               ),
             ),
-            const SizedBox(height: 4),
+            const SizedBox(height: 3),
             Text(
               'logo_hint'.tr,
               style: TextStyle(
-                fontSize: 12,
+                fontFamily: 'Cairo',
+                fontSize: resp.fontXS,
                 color: Theme.of(context).hintColor,
               ),
             ),
@@ -455,26 +484,39 @@ class _ProfileHeader extends StatelessWidget {
 class _PreviewHint extends StatelessWidget {
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+
     return Container(
-      padding: const EdgeInsets.all(14),
+      padding: EdgeInsets.all(resp.spacingSM + 2),
       decoration: BoxDecoration(
-        color: AppTheme.primaryColor.withValues(alpha: 0.07),
-        borderRadius: BorderRadius.circular(12),
+        color: AppColors.primary.withValues(alpha: 0.06),
+        borderRadius: BorderRadius.circular(resp.cardRadius),
         border: Border.all(
-            color: AppTheme.primaryColor.withValues(alpha: 0.2)),
+          color: AppColors.primary.withValues(alpha: 0.18),
+        ),
       ),
       child: Row(
         children: [
-          Icon(Icons.picture_as_pdf_rounded,
-              color: AppTheme.primaryColor, size: 22),
-          const SizedBox(width: 10),
+          Container(
+            padding: EdgeInsets.all(resp.spacingXS),
+            decoration: BoxDecoration(
+              color: AppColors.primary.withValues(alpha: 0.1),
+              borderRadius: BorderRadius.circular(resp.radiusSM),
+            ),
+            child: Icon(Icons.picture_as_pdf_rounded,
+                color: AppColors.primary, size: resp.iconSM),
+          ),
+          SizedBox(width: resp.spacingSM),
           Expanded(
             child: Text(
               'store_profile_pdf_hint'.tr,
               style: TextStyle(
-                  color: AppTheme.primaryColor,
-                  fontSize: 13,
-                  fontWeight: FontWeight.w500),
+                fontFamily: 'Cairo',
+                color: AppColors.primary,
+                fontSize: resp.fontXS,
+                fontWeight: FontWeight.w600,
+                height: 1.4,
+              ),
             ),
           ),
         ],

@@ -1,10 +1,13 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 part 'merchant_shortage.g.dart';
 
 @Collection()
 class MerchantShortage {
   Id id = Isar.autoIncrement;
+
+  String? firestoreId;
+  bool isSynced = false;
 
   @Index()
   int? merchantId;

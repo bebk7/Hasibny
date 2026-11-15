@@ -17,45 +17,90 @@ const CustomerSchema = CollectionSchema(
   name: r'Customer',
   id: -7623823084711604343,
   properties: {
-    r'createdAt': PropertySchema(
+    r'autoSendInvoiceWhatsApp': PropertySchema(
       id: 0,
+      name: r'autoSendInvoiceWhatsApp',
+      type: IsarType.bool,
+    ),
+    r'createdAt': PropertySchema(
+      id: 1,
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
+    r'currencyCode': PropertySchema(
+      id: 2,
+      name: r'currencyCode',
+      type: IsarType.string,
+    ),
+    r'effectiveWhatsAppNumber': PropertySchema(
+      id: 3,
+      name: r'effectiveWhatsAppNumber',
+      type: IsarType.string,
+    ),
+    r'firestoreId': PropertySchema(
+      id: 4,
+      name: r'firestoreId',
+      type: IsarType.string,
+    ),
     r'formattedBalance': PropertySchema(
-      id: 1,
+      id: 5,
       name: r'formattedBalance',
       type: IsarType.string,
     ),
+    r'hasValidWhatsApp': PropertySchema(
+      id: 6,
+      name: r'hasValidWhatsApp',
+      type: IsarType.bool,
+    ),
+    r'hashCode': PropertySchema(
+      id: 7,
+      name: r'hashCode',
+      type: IsarType.long,
+    ),
+    r'isSynced': PropertySchema(
+      id: 8,
+      name: r'isSynced',
+      type: IsarType.bool,
+    ),
     r'name': PropertySchema(
-      id: 2,
+      id: 9,
       name: r'name',
       type: IsarType.string,
     ),
+    r'normalizedWhatsAppNumber': PropertySchema(
+      id: 10,
+      name: r'normalizedWhatsAppNumber',
+      type: IsarType.string,
+    ),
     r'owesMoney': PropertySchema(
-      id: 3,
+      id: 11,
       name: r'owesMoney',
       type: IsarType.bool,
     ),
     r'phoneNumber': PropertySchema(
-      id: 4,
+      id: 12,
       name: r'phoneNumber',
       type: IsarType.string,
     ),
     r'profilePicturePath': PropertySchema(
-      id: 5,
+      id: 13,
       name: r'profilePicturePath',
       type: IsarType.string,
     ),
     r'totalBalance': PropertySchema(
-      id: 6,
+      id: 14,
       name: r'totalBalance',
       type: IsarType.double,
     ),
     r'updatedAt': PropertySchema(
-      id: 7,
+      id: 15,
       name: r'updatedAt',
       type: IsarType.dateTime,
+    ),
+    r'whatsappNumber': PropertySchema(
+      id: 16,
+      name: r'whatsappNumber',
+      type: IsarType.string,
     )
   },
   estimateSize: _customerEstimateSize,
@@ -64,6 +109,19 @@ const CustomerSchema = CollectionSchema(
   deserializeProp: _customerDeserializeProp,
   idName: r'id',
   indexes: {
+    r'currencyCode': IndexSchema(
+      id: -2104065984033596927,
+      name: r'currencyCode',
+      unique: false,
+      replace: false,
+      properties: [
+        IndexPropertySchema(
+          name: r'currencyCode',
+          type: IndexType.hash,
+          caseSensitive: true,
+        )
+      ],
+    ),
     r'createdAt': IndexSchema(
       id: -3433535483987302584,
       name: r'createdAt',
@@ -96,7 +154,7 @@ const CustomerSchema = CollectionSchema(
   getId: _customerGetId,
   getLinks: _customerGetLinks,
   attach: _customerAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _customerEstimateSize(
@@ -105,11 +163,26 @@ int _customerEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  bytesCount += 3 + object.currencyCode.length * 3;
+  bytesCount += 3 + object.effectiveWhatsAppNumber.length * 3;
+  {
+    final value = object.firestoreId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   bytesCount += 3 + object.formattedBalance.length * 3;
   bytesCount += 3 + object.name.length * 3;
+  bytesCount += 3 + object.normalizedWhatsAppNumber.length * 3;
   bytesCount += 3 + object.phoneNumber.length * 3;
   {
     final value = object.profilePicturePath;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
+  {
+    final value = object.whatsappNumber;
     if (value != null) {
       bytesCount += 3 + value.length * 3;
     }
@@ -123,14 +196,23 @@ void _customerSerialize(
   List<int> offsets,
   Map<Type, List<int>> allOffsets,
 ) {
-  writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeString(offsets[1], object.formattedBalance);
-  writer.writeString(offsets[2], object.name);
-  writer.writeBool(offsets[3], object.owesMoney);
-  writer.writeString(offsets[4], object.phoneNumber);
-  writer.writeString(offsets[5], object.profilePicturePath);
-  writer.writeDouble(offsets[6], object.totalBalance);
-  writer.writeDateTime(offsets[7], object.updatedAt);
+  writer.writeBool(offsets[0], object.autoSendInvoiceWhatsApp);
+  writer.writeDateTime(offsets[1], object.createdAt);
+  writer.writeString(offsets[2], object.currencyCode);
+  writer.writeString(offsets[3], object.effectiveWhatsAppNumber);
+  writer.writeString(offsets[4], object.firestoreId);
+  writer.writeString(offsets[5], object.formattedBalance);
+  writer.writeBool(offsets[6], object.hasValidWhatsApp);
+  writer.writeLong(offsets[7], object.hashCode);
+  writer.writeBool(offsets[8], object.isSynced);
+  writer.writeString(offsets[9], object.name);
+  writer.writeString(offsets[10], object.normalizedWhatsAppNumber);
+  writer.writeBool(offsets[11], object.owesMoney);
+  writer.writeString(offsets[12], object.phoneNumber);
+  writer.writeString(offsets[13], object.profilePicturePath);
+  writer.writeDouble(offsets[14], object.totalBalance);
+  writer.writeDateTime(offsets[15], object.updatedAt);
+  writer.writeString(offsets[16], object.whatsappNumber);
 }
 
 Customer _customerDeserialize(
@@ -140,13 +222,18 @@ Customer _customerDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = Customer(
-    name: reader.readString(offsets[2]),
-    phoneNumber: reader.readString(offsets[4]),
-    profilePicturePath: reader.readStringOrNull(offsets[5]),
+    autoSendInvoiceWhatsApp: reader.readBoolOrNull(offsets[0]) ?? false,
+    currencyCode: reader.readStringOrNull(offsets[2]) ?? 'YER',
+    name: reader.readString(offsets[9]),
+    phoneNumber: reader.readString(offsets[12]),
+    profilePicturePath: reader.readStringOrNull(offsets[13]),
+    whatsappNumber: reader.readStringOrNull(offsets[16]),
   );
-  object.createdAt = reader.readDateTime(offsets[0]);
+  object.createdAt = reader.readDateTime(offsets[1]);
+  object.firestoreId = reader.readStringOrNull(offsets[4]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[7]);
+  object.isSynced = reader.readBool(offsets[8]);
+  object.updatedAt = reader.readDateTime(offsets[15]);
   return object;
 }
 
@@ -158,21 +245,39 @@ P _customerDeserializeProp<P>(
 ) {
   switch (propertyId) {
     case 0:
-      return (reader.readDateTime(offset)) as P;
+      return (reader.readBoolOrNull(offset) ?? false) as P;
     case 1:
-      return (reader.readString(offset)) as P;
-    case 2:
-      return (reader.readString(offset)) as P;
-    case 3:
-      return (reader.readBool(offset)) as P;
-    case 4:
-      return (reader.readString(offset)) as P;
-    case 5:
-      return (reader.readStringOrNull(offset)) as P;
-    case 6:
-      return (reader.readDouble(offset)) as P;
-    case 7:
       return (reader.readDateTime(offset)) as P;
+    case 2:
+      return (reader.readStringOrNull(offset) ?? 'YER') as P;
+    case 3:
+      return (reader.readString(offset)) as P;
+    case 4:
+      return (reader.readStringOrNull(offset)) as P;
+    case 5:
+      return (reader.readString(offset)) as P;
+    case 6:
+      return (reader.readBool(offset)) as P;
+    case 7:
+      return (reader.readLong(offset)) as P;
+    case 8:
+      return (reader.readBool(offset)) as P;
+    case 9:
+      return (reader.readString(offset)) as P;
+    case 10:
+      return (reader.readString(offset)) as P;
+    case 11:
+      return (reader.readBool(offset)) as P;
+    case 12:
+      return (reader.readString(offset)) as P;
+    case 13:
+      return (reader.readStringOrNull(offset)) as P;
+    case 14:
+      return (reader.readDouble(offset)) as P;
+    case 15:
+      return (reader.readDateTime(offset)) as P;
+    case 16:
+      return (reader.readStringOrNull(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
   }
@@ -277,6 +382,51 @@ extension CustomerQueryWhere on QueryBuilder<Customer, Customer, QWhereClause> {
         upper: upperId,
         includeUpper: includeUpper,
       ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterWhereClause> currencyCodeEqualTo(
+      String currencyCode) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addWhereClause(IndexWhereClause.equalTo(
+        indexName: r'currencyCode',
+        value: [currencyCode],
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterWhereClause> currencyCodeNotEqualTo(
+      String currencyCode) {
+    return QueryBuilder.apply(this, (query) {
+      if (query.whereSort == Sort.asc) {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'currencyCode',
+              lower: [],
+              upper: [currencyCode],
+              includeUpper: false,
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'currencyCode',
+              lower: [currencyCode],
+              includeLower: false,
+              upper: [],
+            ));
+      } else {
+        return query
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'currencyCode',
+              lower: [currencyCode],
+              includeLower: false,
+              upper: [],
+            ))
+            .addWhereClause(IndexWhereClause.between(
+              indexName: r'currencyCode',
+              lower: [],
+              upper: [currencyCode],
+              includeUpper: false,
+            ));
+      }
     });
   }
 
@@ -463,6 +613,16 @@ extension CustomerQueryWhere on QueryBuilder<Customer, Customer, QWhereClause> {
 
 extension CustomerQueryFilter
     on QueryBuilder<Customer, Customer, QFilterCondition> {
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      autoSendInvoiceWhatsAppEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'autoSendInvoiceWhatsApp',
+        value: value,
+      ));
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterFilterCondition> createdAtEqualTo(
       DateTime value) {
     return QueryBuilder.apply(this, (query) {
@@ -512,6 +672,427 @@ extension CustomerQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      currencyCodeGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'currencyCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      currencyCodeStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'currencyCode',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> currencyCodeMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'currencyCode',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      currencyCodeIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'currencyCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      currencyCodeIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'currencyCode',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'effectiveWhatsAppNumber',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'effectiveWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'effectiveWhatsAppNumber',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'effectiveWhatsAppNumber',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      effectiveWhatsAppNumberIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'effectiveWhatsAppNumber',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      firestoreIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firestoreId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdContains(
+      String value,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firestoreId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> firestoreIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      firestoreIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firestoreId',
+        value: '',
       ));
     });
   }
@@ -652,6 +1233,69 @@ extension CustomerQueryFilter
     });
   }
 
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      hasValidWhatsAppEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hasValidWhatsApp',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> hashCodeEqualTo(
+      int value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'hashCode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> hashCodeGreaterThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'hashCode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> hashCodeLessThan(
+    int value, {
+    bool include = false,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'hashCode',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> hashCodeBetween(
+    int lower,
+    int upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'hashCode',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+      ));
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterFilterCondition> idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -700,6 +1344,16 @@ extension CustomerQueryFilter
         includeLower: includeLower,
         upper: upper,
         includeUpper: includeUpper,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> isSyncedEqualTo(
+      bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isSynced',
+        value: value,
       ));
     });
   }
@@ -829,6 +1483,144 @@ extension CustomerQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.greaterThan(
         property: r'name',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberEqualTo(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberGreaterThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberLessThan(
+    String value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberBetween(
+    String lower,
+    String upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'normalizedWhatsAppNumber',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberContains(String value,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'normalizedWhatsAppNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberMatches(String pattern,
+          {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'normalizedWhatsAppNumber',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'normalizedWhatsAppNumber',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      normalizedWhatsAppNumberIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'normalizedWhatsAppNumber',
         value: '',
       ));
     });
@@ -1245,6 +2037,159 @@ extension CustomerQueryFilter
       ));
     });
   }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'whatsappNumber',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'whatsappNumber',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> whatsappNumberEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> whatsappNumberBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'whatsappNumber',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'whatsappNumber',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition> whatsappNumberMatches(
+      String pattern,
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'whatsappNumber',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'whatsappNumber',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterFilterCondition>
+      whatsappNumberIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'whatsappNumber',
+        value: '',
+      ));
+    });
+  }
 }
 
 extension CustomerQueryObject
@@ -1254,6 +2199,20 @@ extension CustomerQueryLinks
     on QueryBuilder<Customer, Customer, QFilterCondition> {}
 
 extension CustomerQuerySortBy on QueryBuilder<Customer, Customer, QSortBy> {
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByAutoSendInvoiceWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoSendInvoiceWhatsApp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByAutoSendInvoiceWhatsAppDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoSendInvoiceWhatsApp', Sort.desc);
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterSortBy> sortByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1263,6 +2222,44 @@ extension CustomerQuerySortBy on QueryBuilder<Customer, Customer, QSortBy> {
   QueryBuilder<Customer, Customer, QAfterSortBy> sortByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByCurrencyCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currencyCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByCurrencyCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currencyCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByEffectiveWhatsAppNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWhatsAppNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByEffectiveWhatsAppNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWhatsAppNumber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
     });
   }
 
@@ -1278,6 +2275,42 @@ extension CustomerQuerySortBy on QueryBuilder<Customer, Customer, QSortBy> {
     });
   }
 
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByHasValidWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasValidWhatsApp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByHasValidWhatsAppDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasValidWhatsApp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByHashCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hashCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByHashCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hashCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterSortBy> sortByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1287,6 +2320,20 @@ extension CustomerQuerySortBy on QueryBuilder<Customer, Customer, QSortBy> {
   QueryBuilder<Customer, Customer, QAfterSortBy> sortByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByNormalizedWhatsAppNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedWhatsAppNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      sortByNormalizedWhatsAppNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedWhatsAppNumber', Sort.desc);
     });
   }
 
@@ -1350,10 +2397,36 @@ extension CustomerQuerySortBy on QueryBuilder<Customer, Customer, QSortBy> {
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByWhatsappNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'whatsappNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> sortByWhatsappNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'whatsappNumber', Sort.desc);
+    });
+  }
 }
 
 extension CustomerQuerySortThenBy
     on QueryBuilder<Customer, Customer, QSortThenBy> {
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByAutoSendInvoiceWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoSendInvoiceWhatsApp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByAutoSendInvoiceWhatsAppDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'autoSendInvoiceWhatsApp', Sort.desc);
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterSortBy> thenByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.asc);
@@ -1363,6 +2436,44 @@ extension CustomerQuerySortThenBy
   QueryBuilder<Customer, Customer, QAfterSortBy> thenByCreatedAtDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'createdAt', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByCurrencyCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currencyCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByCurrencyCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'currencyCode', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByEffectiveWhatsAppNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWhatsAppNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByEffectiveWhatsAppNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'effectiveWhatsAppNumber', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
     });
   }
 
@@ -1378,6 +2489,30 @@ extension CustomerQuerySortThenBy
     });
   }
 
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByHasValidWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasValidWhatsApp', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByHasValidWhatsAppDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hasValidWhatsApp', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByHashCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hashCode', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByHashCodeDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'hashCode', Sort.desc);
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1390,6 +2525,18 @@ extension CustomerQuerySortThenBy
     });
   }
 
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
+    });
+  }
+
   QueryBuilder<Customer, Customer, QAfterSortBy> thenByName() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.asc);
@@ -1399,6 +2546,20 @@ extension CustomerQuerySortThenBy
   QueryBuilder<Customer, Customer, QAfterSortBy> thenByNameDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'name', Sort.desc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByNormalizedWhatsAppNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedWhatsAppNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy>
+      thenByNormalizedWhatsAppNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'normalizedWhatsAppNumber', Sort.desc);
     });
   }
 
@@ -1462,13 +2623,54 @@ extension CustomerQuerySortThenBy
       return query.addSortBy(r'updatedAt', Sort.desc);
     });
   }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByWhatsappNumber() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'whatsappNumber', Sort.asc);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QAfterSortBy> thenByWhatsappNumberDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'whatsappNumber', Sort.desc);
+    });
+  }
 }
 
 extension CustomerQueryWhereDistinct
     on QueryBuilder<Customer, Customer, QDistinct> {
+  QueryBuilder<Customer, Customer, QDistinct>
+      distinctByAutoSendInvoiceWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'autoSendInvoiceWhatsApp');
+    });
+  }
+
   QueryBuilder<Customer, Customer, QDistinct> distinctByCreatedAt() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByCurrencyCode(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'currencyCode', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByEffectiveWhatsAppNumber(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'effectiveWhatsAppNumber',
+          caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByFirestoreId(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firestoreId', caseSensitive: caseSensitive);
     });
   }
 
@@ -1480,10 +2682,36 @@ extension CustomerQueryWhereDistinct
     });
   }
 
+  QueryBuilder<Customer, Customer, QDistinct> distinctByHasValidWhatsApp() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hasValidWhatsApp');
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByHashCode() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'hashCode');
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSynced');
+    });
+  }
+
   QueryBuilder<Customer, Customer, QDistinct> distinctByName(
       {bool caseSensitive = true}) {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'name', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<Customer, Customer, QDistinct>
+      distinctByNormalizedWhatsAppNumber({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'normalizedWhatsAppNumber',
+          caseSensitive: caseSensitive);
     });
   }
 
@@ -1519,6 +2747,14 @@ extension CustomerQueryWhereDistinct
       return query.addDistinctBy(r'updatedAt');
     });
   }
+
+  QueryBuilder<Customer, Customer, QDistinct> distinctByWhatsappNumber(
+      {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'whatsappNumber',
+          caseSensitive: caseSensitive);
+    });
+  }
 }
 
 extension CustomerQueryProperty
@@ -1529,9 +2765,35 @@ extension CustomerQueryProperty
     });
   }
 
+  QueryBuilder<Customer, bool, QQueryOperations>
+      autoSendInvoiceWhatsAppProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'autoSendInvoiceWhatsApp');
+    });
+  }
+
   QueryBuilder<Customer, DateTime, QQueryOperations> createdAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'createdAt');
+    });
+  }
+
+  QueryBuilder<Customer, String, QQueryOperations> currencyCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'currencyCode');
+    });
+  }
+
+  QueryBuilder<Customer, String, QQueryOperations>
+      effectiveWhatsAppNumberProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'effectiveWhatsAppNumber');
+    });
+  }
+
+  QueryBuilder<Customer, String?, QQueryOperations> firestoreIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firestoreId');
     });
   }
 
@@ -1541,9 +2803,34 @@ extension CustomerQueryProperty
     });
   }
 
+  QueryBuilder<Customer, bool, QQueryOperations> hasValidWhatsAppProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hasValidWhatsApp');
+    });
+  }
+
+  QueryBuilder<Customer, int, QQueryOperations> hashCodeProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'hashCode');
+    });
+  }
+
+  QueryBuilder<Customer, bool, QQueryOperations> isSyncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSynced');
+    });
+  }
+
   QueryBuilder<Customer, String, QQueryOperations> nameProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'name');
+    });
+  }
+
+  QueryBuilder<Customer, String, QQueryOperations>
+      normalizedWhatsAppNumberProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'normalizedWhatsAppNumber');
     });
   }
 
@@ -1575,6 +2862,12 @@ extension CustomerQueryProperty
   QueryBuilder<Customer, DateTime, QQueryOperations> updatedAtProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'updatedAt');
+    });
+  }
+
+  QueryBuilder<Customer, String?, QQueryOperations> whatsappNumberProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'whatsappNumber');
     });
   }
 }

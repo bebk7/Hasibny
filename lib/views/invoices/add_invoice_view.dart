@@ -1,16 +1,26 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
+import '../../controllers/customer_controller.dart';
 import '../../controllers/invoice_controller.dart';
+import '../../controllers/merchant_controller.dart';
+import '../../core/core.dart';
+import '../../models/customer.dart';
 import '../../models/invoice.dart';
-import '../../themes/app_theme.dart';
-import '../../utils/currency_formatter.dart';
-import '../../utils/responsive.dart';
+import '../../models/merchant.dart';
+import '../../services/whatsapp_service.dart';
 import '../../widgets/amount_field.dart';
 
 class AddInvoiceView extends StatefulWidget {
-  final int merchantId;
+  final int? merchantId;
+  final int? customerId;
   final Invoice? invoice;
-  const AddInvoiceView({super.key, required this.merchantId, this.invoice});
+
+  const AddInvoiceView({
+    super.key,
+    this.merchantId,
+    this.customerId,
+    this.invoice,
+  });
 
   @override
   State<AddInvoiceView> createState() => _AddInvoiceViewState();
@@ -33,8 +43,9 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
   @override
   void initState() {
     super.initState();
-    _numberCtrl =
-        TextEditingController(text: widget.invoice?.invoiceNumber ?? '');
+    final defaultNum = widget.invoice?.invoiceNumber ??
+        'INV-${DateTime.now().millisecondsSinceEpoch.toString().substring(7)}';
+    _numberCtrl = TextEditingController(text: defaultNum);
     _paidCtrl = TextEditingController(
         text: widget.invoice != null
             ? widget.invoice!.paidAmount.toString()
@@ -58,75 +69,238 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
     final nameCtrl = TextEditingController();
     final qtyCtrl = TextEditingController(text: '1');
     final priceCtrl = TextEditingController();
+    final resp = AppResponsive.of(context);
 
-    Get.dialog(
-      AlertDialog(
-        title: Text('add_item'.tr),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'item_name'.tr,
-                  prefixIcon: const Icon(Icons.inventory_2_rounded),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
+    AppDialog.show(
+      context: context,
+      maxWidth: 420,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(resp.spacingXS),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(resp.radiusSM),
+                  ),
+                  child: Icon(
+                    Icons.add_shopping_cart_rounded,
+                    color: AppColors.primary,
+                    size: resp.iconSM,
+                  ),
                 ),
+                SizedBox(width: resp.spacingSM),
+                Text(
+                  'add_item'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontLG,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingMD),
+            TextField(
+              controller: nameCtrl,
+              autofocus: true,
+              style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+              decoration: InputDecoration(
+                labelText: 'item_name'.tr,
+                prefixIcon: Icon(Icons.inventory_2_rounded, size: resp.iconSM),
               ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: qtyCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'quantity'.tr,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
+            ),
+            SizedBox(height: resp.spacingSM),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [
+                      DigitsOnlyInputFormatter(),
+                    ],
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                    decoration: InputDecoration(
+                      labelText: 'quantity'.tr,
+                      prefixIcon: Icon(Icons.numbers_rounded, size: resp.iconSM),
                     ),
                   ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: priceCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'unit_price'.tr,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: TextField(
+                    controller: priceCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [
+                      DigitsOnlyInputFormatter(),
+                    ],
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                    decoration: InputDecoration(
+                      labelText: 'unit_price'.tr,
+                      prefixIcon: Icon(Icons.payments_rounded, size: resp.iconSM),
                     ),
                   ),
-                ],
-              ),
-            ],
-          ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingLG),
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    text: 'cancel'.tr,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: AppButton(
+                    text: 'add'.tr,
+                    icon: Icons.check_rounded,
+                    onPressed: () {
+                      final name = nameCtrl.text.trim();
+                      final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1;
+                      final price =
+                          double.tryParse(priceCtrl.text.trim()) ?? 0;
+                      if (name.isEmpty || price <= 0) return;
+                      setState(() {
+                        _items.add(InvoiceItem(
+                            name: name, quantity: qty, unitPrice: price));
+                      });
+                      Get.back();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
         ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          TextButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1;
-              final price = double.tryParse(priceCtrl.text.trim()) ?? 0;
-              if (name.isEmpty || price <= 0) return;
-              setState(() {
-                _items.add(InvoiceItem(
-                    name: name, quantity: qty, unitPrice: price));
-              });
-              Get.back();
-            },
-            child: Text('add'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
+      ),
+    );
+  }
+
+  void _editItem(int index) {
+    final item = _items[index];
+    final nameCtrl = TextEditingController(text: item.name);
+    final qtyCtrl = TextEditingController(text: item.quantity.toString());
+    final priceCtrl = TextEditingController(text: item.unitPrice.toString());
+    final resp = AppResponsive.of(context);
+
+    AppDialog.show(
+      context: context,
+      maxWidth: 420,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(resp.spacingXS),
+                  decoration: BoxDecoration(
+                    color: AppColors.primary.withValues(alpha: 0.1),
+                    borderRadius: BorderRadius.circular(resp.radiusSM),
+                  ),
+                  child: Icon(
+                    Icons.edit_note_rounded,
+                    color: AppColors.primary,
+                    size: resp.iconSM,
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Text(
+                  'edit_item'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontLG,
+                    fontWeight: FontWeight.bold,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingMD),
+            TextField(
+              controller: nameCtrl,
+              style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+              decoration: InputDecoration(
+                labelText: 'item_name'.tr,
+                prefixIcon: Icon(Icons.inventory_2_rounded, size: resp.iconSM),
+              ),
+            ),
+            SizedBox(height: resp.spacingSM),
+            Row(
+              children: [
+                Expanded(
+                  child: TextField(
+                    controller: qtyCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [
+                      DigitsOnlyInputFormatter(),
+                    ],
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                    decoration: InputDecoration(
+                      labelText: 'quantity'.tr,
+                      prefixIcon: Icon(Icons.numbers_rounded, size: resp.iconSM),
+                    ),
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: TextField(
+                    controller: priceCtrl,
+                    keyboardType: TextInputType.number,
+                    inputFormatters: const [
+                      DigitsOnlyInputFormatter(),
+                    ],
+                    style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                    decoration: InputDecoration(
+                      labelText: 'unit_price'.tr,
+                      prefixIcon: Icon(Icons.payments_rounded, size: resp.iconSM),
+                    ),
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingLG),
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    text: 'cancel'.tr,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => Get.back(),
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: AppButton(
+                    text: 'save'.tr,
+                    icon: Icons.check_rounded,
+                    onPressed: () {
+                      final name = nameCtrl.text.trim();
+                      final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1;
+                      final price =
+                          double.tryParse(priceCtrl.text.trim()) ?? 0;
+                      if (name.isEmpty || price <= 0) return;
+                      setState(() {
+                        _items[index] = InvoiceItem(
+                            name: name, quantity: qty, unitPrice: price);
+                      });
+                      Get.back();
+                    },
+                  ),
+                ),
+              ],
+            ),
+          ],
+        ),
       ),
     );
   }
@@ -134,8 +308,13 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
   Future<void> _save() async {
     if (!_formKey.currentState!.validate()) return;
     if (_items.isEmpty) {
-      Get.snackbar('error'.tr, 'add_at_least_one_item'.tr,
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      Get.snackbar(
+        'error'.tr,
+        'add_at_least_one_item'.tr,
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
     setState(() => _saving = true);
@@ -143,6 +322,24 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
     final ic = Get.find<InvoiceController>();
     final total = _computedTotal;
     final paid = double.tryParse(_paidCtrl.text.trim()) ?? 0.0;
+
+    Customer? customer;
+    if ((widget.customerId ?? widget.invoice?.customerId) != null &&
+        Get.isRegistered<CustomerController>()) {
+      customer = Get.find<CustomerController>()
+          .getCustomerById(widget.customerId ?? widget.invoice!.customerId!);
+    }
+
+    Merchant? merchant;
+    if ((widget.merchantId ?? widget.invoice?.merchantId) != null &&
+        Get.isRegistered<MerchantController>()) {
+      merchant = Get.find<MerchantController>()
+          .getMerchantById(widget.merchantId ?? widget.invoice!.merchantId!);
+    }
+
+    final currCode = customer?.currencyCode ??
+        widget.invoice?.currencyCode ??
+        'YER';
 
     if (isEditing) {
       final inv = widget.invoice!;
@@ -157,7 +354,9 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
     } else {
       final inv = Invoice(
         merchantId: widget.merchantId,
+        customerId: widget.customerId,
         invoiceNumber: _numberCtrl.text.trim(),
+        currencyCode: currCode,
         totalAmount: total,
         paidAmount: paid,
         notes:
@@ -165,243 +364,361 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
       );
       inv.items = _items;
       Get.back();
-      ic.addInvoice(inv);
+      ic.addInvoice(inv, customer: customer, merchant: merchant);
     }
   }
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    Customer? customer;
+    if ((widget.customerId ?? widget.invoice?.customerId) != null &&
+        Get.isRegistered<CustomerController>()) {
+      customer = Get.find<CustomerController>()
+          .getCustomerById(widget.customerId ?? widget.invoice!.customerId!);
+    }
+
+    Merchant? merchant;
+    if ((widget.merchantId ?? widget.invoice?.merchantId) != null &&
+        Get.isRegistered<MerchantController>()) {
+      merchant = Get.find<MerchantController>()
+          .getMerchantById(widget.merchantId ?? widget.invoice!.merchantId!);
+    }
+
+    final currCode = customer?.currencyCode ??
+        widget.invoice?.currencyCode ??
+        'YER';
+
+    final willAutoSend = customer != null &&
+        WhatsAppService.shouldAutoSend(customer: customer);
+
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       appBar: AppBar(
         title: Text(
           isEditing ? 'edit_invoice'.tr : 'add_invoice_title'.tr,
-          style: const TextStyle(fontWeight: FontWeight.bold),
+          style: AppTypography.pageTitle(context),
         ),
       ),
-      body: SingleChildScrollView(
-        padding: Responsive.pagePadding(context),
-        child: Form(
-          key: _formKey,
-          child: Column(
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              const SizedBox(height: 8),
-              _field(
-                controller: _numberCtrl,
-                label: 'invoice_number'.tr,
-                hint: 'enter_invoice_number'.tr,
-                icon: Icons.tag_rounded,
-                validator: (v) => v == null || v.trim().isEmpty
-                    ? 'enter_invoice_number'.tr
-                    : null,
-              ),
-              const SizedBox(height: 20),
+      body: AppPageContainer(
+        maxWidth: 600,
+        padding: EdgeInsets.zero,
+        child: SingleChildScrollView(
+          padding: EdgeInsets.symmetric(
+            horizontal: resp.spacingSM,
+            vertical: resp.spacingMD,
+          ),
+          physics: const BouncingScrollPhysics(),
+          child: Form(
+            key: _formKey,
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.stretch,
+              children: [
+                // Recipient banner
+                if (customer != null || merchant != null)
+                  AppCard(
+                    margin: EdgeInsets.only(bottom: resp.spacingMD),
+                    padding: EdgeInsets.all(resp.spacingSM + 2),
+                    child: Row(
+                      children: [
+                        Container(
+                          width: 44,
+                          height: 44,
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.12),
+                            borderRadius: BorderRadius.circular(resp.radiusSM),
+                          ),
+                          child: Icon(
+                            customer != null
+                                ? Icons.person_rounded
+                                : Icons.storefront_rounded,
+                            color: AppColors.primary,
+                            size: resp.iconMD,
+                          ),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Expanded(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
+                            children: [
+                              Text(
+                                customer?.name ?? merchant?.name ?? '',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontWeight: FontWeight.bold,
+                                  fontSize: resp.fontMD,
+                                ),
+                                maxLines: 1,
+                                overflow: TextOverflow.ellipsis,
+                              ),
+                              const SizedBox(height: 2),
+                              Text(
+                                '${'account_currency'.tr}: $currCode',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: resp.fontXS,
+                                  color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                ),
+                              ),
+                            ],
+                          ),
+                        ),
+                        if (willAutoSend)
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: resp.spacingSM,
+                              vertical: resp.spacing2XS,
+                            ),
+                            decoration: BoxDecoration(
+                              color: const Color(0xFF25D366).withValues(alpha: 0.12),
+                              borderRadius: BorderRadius.circular(resp.radiusSM),
+                              border: Border.all(
+                                color: const Color(0xFF25D366).withValues(alpha: 0.3),
+                              ),
+                            ),
+                            child: Row(
+                              mainAxisSize: MainAxisSize.min,
+                              children: [
+                                const Icon(Icons.chat_bubble_rounded,
+                                    color: Color(0xFF25D366), size: 14),
+                                SizedBox(width: resp.spacing2XS),
+                                const Text(
+                                  'WhatsApp',
+                                  style: TextStyle(
+                                    fontSize: 11,
+                                    fontWeight: FontWeight.bold,
+                                    color: Color(0xFF25D366),
+                                  ),
+                                ),
+                              ],
+                            ),
+                          ),
+                      ],
+                    ),
+                  ),
 
-              // ─── Items section ─────────────────────────────
-              Row(
-                mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                children: [
-                  Text('invoice_items'.tr,
-                      style: const TextStyle(
-                          fontWeight: FontWeight.bold, fontSize: 15)),
-                  TextButton.icon(
-                    onPressed: _addItem,
-                    icon: const Icon(Icons.add_circle_outline, size: 20),
-                    label: Text('add_item'.tr),
+                // Invoice number field
+                TextFormField(
+                  controller: _numberCtrl,
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                  validator: (v) => v == null || v.trim().isEmpty
+                      ? 'enter_invoice_number'.tr
+                      : null,
+                  decoration: InputDecoration(
+                    labelText: 'invoice_number'.tr,
+                    hintText: 'enter_invoice_number'.tr,
+                    prefixIcon: Icon(Icons.tag_rounded, size: resp.iconSM),
                   ),
-                ],
-              ),
-              const SizedBox(height: 4),
-              if (_items.isEmpty)
-                Container(
-                  padding: const EdgeInsets.all(24),
-                  decoration: BoxDecoration(
-                    color: Colors.grey.withValues(alpha: 0.05),
-                    borderRadius: BorderRadius.circular(12),
-                    border: Border.all(
-                        color: Colors.grey.withValues(alpha: 0.15)),
-                  ),
-                  child: Center(
-                    child: Text('no_items_yet'.tr,
-                        style: TextStyle(color: Colors.grey[400])),
-                  ),
-                )
-              else
-                ...List.generate(_items.length, (i) => _ItemTile(
-                      item: _items[i],
-                      onDelete: () => setState(() => _items.removeAt(i)),
-                      onEdit: () => _editItem(i),
-                    )),
-
-              // ─── Total ────────────────────────────────────
-              const SizedBox(height: 12),
-              Container(
-                padding:
-                    const EdgeInsets.symmetric(horizontal: 16, vertical: 12),
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.06),
-                  borderRadius: BorderRadius.circular(12),
-                  border: Border.all(
-                      color: AppTheme.primaryColor.withValues(alpha: 0.15)),
                 ),
-                child: Row(
+                SizedBox(height: resp.spacingLG),
+
+                // Items section header
+                Row(
                   mainAxisAlignment: MainAxisAlignment.spaceBetween,
                   children: [
-                    Text('total_amount_label'.tr,
-                        style: const TextStyle(fontWeight: FontWeight.bold)),
-                    Text(CurrencyFormatter.format(_computedTotal),
-                        style: const TextStyle(
-                            fontWeight: FontWeight.w900,
-                            fontSize: 18,
-                            color: AppTheme.primaryColor)),
+                    Row(
+                      children: [
+                        Container(
+                          padding: EdgeInsets.all(resp.spacingXS),
+                          decoration: BoxDecoration(
+                            color: AppColors.primary.withValues(alpha: 0.1),
+                            borderRadius: BorderRadius.circular(resp.radiusXS),
+                          ),
+                          child: Icon(Icons.format_list_bulleted_rounded,
+                              color: AppColors.primary, size: resp.iconSM - 2),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Text(
+                          'invoice_items'.tr,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.bold,
+                            fontSize: resp.fontLG,
+                          ),
+                        ),
+                        if (_items.isNotEmpty) ...[
+                          SizedBox(width: resp.spacingSM),
+                          Container(
+                            padding: EdgeInsets.symmetric(
+                              horizontal: resp.spacingSM,
+                              vertical: 2,
+                            ),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(resp.radiusSM),
+                            ),
+                            child: Text(
+                              '${_items.length}',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                fontSize: resp.fontXS,
+                                fontWeight: FontWeight.bold,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ],
+                    ),
+                    TextButton.icon(
+                      onPressed: _addItem,
+                      icon: Icon(Icons.add_circle_outline_rounded, size: resp.iconSM - 2),
+                      label: Text('add_item'.tr),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    ),
                   ],
                 ),
-              ),
-              const SizedBox(height: 16),
-              AmountField(
-                controller: _paidCtrl,
-                label: 'paid_amount_label'.tr,
-                hint: '0',
-                icon: Icons.payments_rounded,
-              ),
-              const SizedBox(height: 16),
-              _field(
-                controller: _notesCtrl,
-                label: 'notes'.tr,
-                hint: 'enter_notes'.tr,
-                icon: Icons.notes_rounded,
-                maxLines: 3,
-              ),
-              const SizedBox(height: 32),
-              SizedBox(
-                height: 55,
-                child: ElevatedButton(
-                  onPressed: _saving ? null : _save,
-                  style: ElevatedButton.styleFrom(
-                    backgroundColor: AppTheme.primaryColor,
-                    shape: RoundedRectangleBorder(
-                        borderRadius: BorderRadius.circular(12)),
+                SizedBox(height: resp.spacingXS),
+
+                // Items List or Empty Box
+                if (_items.isEmpty)
+                  Container(
+                    padding: EdgeInsets.symmetric(
+                      vertical: resp.spacingXL,
+                      horizontal: resp.spacingMD,
+                    ),
+                    decoration: BoxDecoration(
+                      color: isDark
+                          ? Colors.white.withValues(alpha: 0.02)
+                          : Colors.grey.withValues(alpha: 0.04),
+                      borderRadius: BorderRadius.circular(resp.cardRadius),
+                      border: Border.all(
+                        color: isDark
+                            ? Colors.white.withValues(alpha: 0.08)
+                            : Colors.grey.withValues(alpha: 0.15),
+                      ),
+                    ),
+                    child: Center(
+                      child: Column(
+                        children: [
+                          Icon(Icons.inventory_2_outlined,
+                              size: 40,
+                              color: isDark ? Colors.grey[600] : Colors.grey[400]),
+                          SizedBox(height: resp.spacingSM),
+                          Text(
+                            'no_items_yet'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              color: isDark ? Colors.grey[400] : Colors.grey[500],
+                              fontSize: resp.fontSM,
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  )
+                else
+                  ...List.generate(
+                    _items.length,
+                    (i) => _ItemTile(
+                      item: _items[i],
+                      currencyCode: currCode,
+                      onDelete: () => setState(() => _items.removeAt(i)),
+                      onEdit: () => _editItem(i),
+                    ),
                   ),
-                  child: _saving
-                      ? const SizedBox(
-                          width: 24,
-                          height: 24,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white))
-                      : Text(
-                          isEditing ? 'save'.tr : 'add_invoice_title'.tr,
-                          style: const TextStyle(
-                              color: Colors.white,
+
+                SizedBox(height: resp.spacingMD),
+
+                // Computed total summary card
+                Container(
+                  padding: EdgeInsets.symmetric(
+                    horizontal: resp.spacingMD,
+                    vertical: resp.spacingSM + 2,
+                  ),
+                  decoration: BoxDecoration(
+                    gradient: LinearGradient(
+                      colors: [
+                        AppColors.primary.withValues(alpha: 0.08),
+                        AppColors.primary.withValues(alpha: 0.02),
+                      ],
+                    ),
+                    borderRadius: BorderRadius.circular(resp.cardRadius),
+                    border: Border.all(
+                      color: AppColors.primary.withValues(alpha: 0.2),
+                    ),
+                  ),
+                  child: Row(
+                    mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                    children: [
+                      Row(
+                        children: [
+                          Icon(Icons.calculate_outlined,
+                              color: AppColors.primary, size: resp.iconSM),
+                          SizedBox(width: resp.spacingSM),
+                          Text(
+                            'total_amount_label'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
                               fontWeight: FontWeight.bold,
-                              fontSize: 16),
+                              fontSize: resp.fontMD,
+                            ),
+                          ),
+                        ],
+                      ),
+                      Flexible(
+                        child: FittedBox(
+                          fit: BoxFit.scaleDown,
+                          alignment: AlignmentDirectional.centerEnd,
+                          child: Text(
+                            CurrencyFormatter.format(_computedTotal,
+                                currencyCode: currCode),
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.w900,
+                              fontSize: resp.fontXL,
+                              color: AppColors.primary,
+                            ),
+                          ),
                         ),
+                      ),
+                    ],
+                  ),
                 ),
-              ),
-              const SizedBox(height: 24),
-            ],
+
+                SizedBox(height: resp.spacingMD),
+
+                // Paid amount field
+                AmountField(
+                  controller: _paidCtrl,
+                  label: 'paid_amount_label'.tr,
+                  hint: '0',
+                  icon: Icons.payments_rounded,
+                ),
+
+                SizedBox(height: resp.spacingMD),
+
+                // Notes field
+                TextFormField(
+                  controller: _notesCtrl,
+                  maxLines: 3,
+                  style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                  decoration: InputDecoration(
+                    labelText: 'notes'.tr,
+                    hintText: 'enter_notes'.tr,
+                    prefixIcon: Icon(Icons.notes_rounded, size: resp.iconSM),
+                  ),
+                ),
+
+                SizedBox(height: resp.spacingXL),
+
+                // Submit button
+                AppButton(
+                  text: isEditing ? 'save'.tr : 'add_invoice_title'.tr,
+                  icon: Icons.check_circle_outline_rounded,
+                  isLoading: _saving,
+                  onPressed: _saving ? null : _save,
+                ),
+
+                SizedBox(height: resp.pagePadding),
+              ],
+            ),
           ),
         ),
-      ),
-    );
-  }
-
-  void _editItem(int index) {
-    final item = _items[index];
-    final nameCtrl = TextEditingController(text: item.name);
-    final qtyCtrl = TextEditingController(text: item.quantity.toString());
-    final priceCtrl = TextEditingController(text: item.unitPrice.toString());
-
-    Get.dialog(
-      AlertDialog(
-        title: Text('edit_item'.tr),
-        shape: RoundedRectangleBorder(borderRadius: BorderRadius.circular(16)),
-        content: SingleChildScrollView(
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              TextField(
-                controller: nameCtrl,
-                decoration: InputDecoration(
-                  labelText: 'item_name'.tr,
-                  prefixIcon: const Icon(Icons.inventory_2_rounded),
-                  border: OutlineInputBorder(
-                      borderRadius: BorderRadius.circular(12)),
-                ),
-              ),
-              const SizedBox(height: 12),
-              Row(
-                children: [
-                  Expanded(
-                    child: TextField(
-                      controller: qtyCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'quantity'.tr,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                  const SizedBox(width: 12),
-                  Expanded(
-                    child: TextField(
-                      controller: priceCtrl,
-                      keyboardType: const TextInputType.numberWithOptions(
-                          decimal: true),
-                      decoration: InputDecoration(
-                        labelText: 'unit_price'.tr,
-                        border: OutlineInputBorder(
-                            borderRadius: BorderRadius.circular(12)),
-                      ),
-                    ),
-                  ),
-                ],
-              ),
-            ],
-          ),
-        ),
-        actions: [
-          TextButton(onPressed: () => Get.back(), child: Text('cancel'.tr)),
-          TextButton(
-            onPressed: () {
-              final name = nameCtrl.text.trim();
-              final qty = double.tryParse(qtyCtrl.text.trim()) ?? 1;
-              final price = double.tryParse(priceCtrl.text.trim()) ?? 0;
-              if (name.isEmpty || price <= 0) return;
-              setState(() {
-                _items[index] = InvoiceItem(
-                    name: name, quantity: qty, unitPrice: price);
-              });
-              Get.back();
-            },
-            child: Text('save'.tr,
-                style: const TextStyle(fontWeight: FontWeight.bold)),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _field({
-    required TextEditingController controller,
-    required String label,
-    required String hint,
-    required IconData icon,
-    TextInputType keyboardType = TextInputType.text,
-    String? Function(String?)? validator,
-    int maxLines = 1,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      maxLines: maxLines,
-      validator: validator,
-      decoration: InputDecoration(
-        labelText: label,
-        hintText: hint,
-        prefixIcon: Icon(icon),
-        border: OutlineInputBorder(borderRadius: BorderRadius.circular(12)),
       ),
     );
   }
@@ -409,55 +726,110 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
 
 class _ItemTile extends StatelessWidget {
   final InvoiceItem item;
+  final String currencyCode;
   final VoidCallback onDelete;
   final VoidCallback onEdit;
-  const _ItemTile(
-      {required this.item, required this.onDelete, required this.onEdit});
+
+  const _ItemTile({
+    required this.item,
+    required this.currencyCode,
+    required this.onDelete,
+    required this.onEdit,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      margin: const EdgeInsets.only(bottom: 8),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(12),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.12)),
+      margin: EdgeInsets.only(bottom: resp.spacingSM),
+      padding: EdgeInsets.symmetric(
+        horizontal: resp.spacingSM + 2,
+        vertical: resp.spacingSM,
       ),
-      child: ListTile(
-        dense: true,
-        contentPadding: const EdgeInsets.symmetric(horizontal: 12),
-        leading: CircleAvatar(
-          radius: 18,
-          backgroundColor: AppTheme.primaryColor.withValues(alpha: 0.08),
-          child: const Icon(Icons.inventory_2_rounded,
-              size: 18, color: AppTheme.primaryColor),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        border: Border.all(
+          color: isDark
+              ? Colors.white.withValues(alpha: 0.08)
+              : Colors.black.withValues(alpha: 0.06),
         ),
-        title: Text(item.name,
-            style: const TextStyle(fontWeight: FontWeight.bold, fontSize: 13)),
-        subtitle: Text(
-            '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice)}',
-            style: TextStyle(color: Colors.grey[500], fontSize: 11)),
-        trailing: Row(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Text(CurrencyFormatter.format(item.total),
-                style: const TextStyle(
-                    fontWeight: FontWeight.w900,
-                    fontSize: 13,
-                    color: AppTheme.primaryColor)),
-            const SizedBox(width: 4),
-            InkWell(
-              onTap: onEdit,
-              child: const Icon(Icons.edit_outlined,
-                  size: 18, color: Colors.grey),
+      ),
+      child: Row(
+        children: [
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              children: [
+                Text(
+                  item.name,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w700,
+                    fontSize: resp.fontMD,
+                  ),
+                  maxLines: 1,
+                  overflow: TextOverflow.ellipsis,
+                ),
+                const SizedBox(height: 4),
+                Wrap(
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: resp.spacingXS,
+                  runSpacing: 4,
+                  children: [
+                    Container(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: resp.spacingXS,
+                        vertical: 2,
+                      ),
+                      decoration: BoxDecoration(
+                        color: AppColors.primary.withValues(alpha: 0.08),
+                        borderRadius: BorderRadius.circular(resp.radiusXS),
+                      ),
+                      child: Text(
+                        '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currencyCode: currencyCode)}',
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontXS,
+                          fontWeight: FontWeight.w600,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                    ),
+                    Text(
+                      '= ${CurrencyFormatter.format(item.total, currencyCode: currencyCode)}',
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontXS + 1,
+                        fontWeight: FontWeight.bold,
+                        color: isDark ? Colors.grey[300] : Colors.grey[700],
+                      ),
+                    ),
+                  ],
+                ),
+              ],
             ),
-            const SizedBox(width: 4),
-            InkWell(
-              onTap: onDelete,
-              child: Icon(Icons.close, size: 18, color: Colors.red[300]),
-            ),
-          ],
-        ),
+          ),
+          IconButton(
+            icon: Icon(Icons.edit_outlined, size: resp.iconSM),
+            padding: EdgeInsets.all(resp.spacingXS),
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+            color: AppColors.primary,
+            onPressed: onEdit,
+          ),
+          SizedBox(width: resp.spacing2XS),
+          IconButton(
+            icon: Icon(Icons.delete_outline_rounded,
+                color: AppColors.give, size: resp.iconSM),
+            padding: EdgeInsets.all(resp.spacingXS),
+            constraints: const BoxConstraints(),
+            visualDensity: VisualDensity.compact,
+            onPressed: onDelete,
+          ),
+        ],
       ),
     );
   }

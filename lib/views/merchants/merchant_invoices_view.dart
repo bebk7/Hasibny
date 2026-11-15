@@ -1,12 +1,12 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:intl/intl.dart';
 import '../../controllers/invoice_controller.dart';
 import '../../controllers/merchant_controller.dart';
+import '../../core/core.dart';
 import '../../models/invoice.dart';
-import '../../themes/app_theme.dart';
-import '../../utils/currency_formatter.dart';
-import '../../utils/responsive.dart';
+import '../../services/export_service.dart';
 import '../invoices/add_invoice_view.dart';
 import '../invoices/invoice_detail_view.dart';
 
@@ -18,153 +18,229 @@ class MerchantInvoicesView extends StatelessWidget {
   Widget build(BuildContext context) {
     final ic = Get.find<InvoiceController>();
     final mc = Get.find<MerchantController>();
+    final resp = AppResponsive.of(context);
     final merchant = mc.getMerchantById(merchantId);
 
     Future.microtask(() => ic.loadInvoicesForMerchant(merchantId));
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(merchant?.name ?? 'invoices'.tr,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          merchant?.name ?? 'invoices'.tr,
+          style: AppTypography.pageTitle(context),
+        ),
         actions: [
-          if (merchant != null)
+          if (merchant != null) ...[
             IconButton(
-              icon: const Icon(Icons.info_outline),
+              tooltip: 'preview_report'.tr,
+              icon: Icon(Icons.visibility_outlined, size: resp.iconSM),
+              onPressed: () => ExportService.previewMerchantReport(
+                merchant: merchant,
+                invoices: ic.invoices,
+              ),
+            ),
+            IconButton(
+              tooltip: 'export_pdf'.tr,
+              icon: Icon(Icons.picture_as_pdf_rounded, size: resp.iconSM),
+              onPressed: () => _exportPDF(context, merchant, ic.invoices),
+            ),
+            IconButton(
+              tooltip: 'merchant_info'.tr,
+              icon: Icon(Icons.info_outline_rounded, size: resp.iconSM),
               onPressed: () => _showMerchantInfo(context, merchant),
             ),
+          ],
+          SizedBox(width: resp.spacing2XS),
         ],
       ),
-      body: Column(
-        children: [
-          _buildSummaryHeader(context, ic),
-          Expanded(
-            child: Obx(() {
-              if (ic.isLoading.value) {
-                return const Center(child: CircularProgressIndicator());
-              }
-              if (ic.invoices.isEmpty) {
-                return _buildEmpty(context);
-              }
-              return ListView.builder(
-                padding: Responsive.pagePadding(context),
-                physics: const BouncingScrollPhysics(),
-                itemCount: ic.invoices.length,
-                itemBuilder: (ctx, i) => _InvoiceCard(invoice: ic.invoices[i]),
-              );
-            }),
-          ),
-        ],
+      body: AppPageContainer(
+        padding: EdgeInsets.zero,
+        child: Column(
+          children: [
+            _buildSummaryHeader(context, ic, resp),
+            Expanded(
+              child: Obx(() {
+                if (ic.isLoading.value) {
+                  return const Center(child: AppLoading());
+                }
+                if (ic.invoices.isEmpty) {
+                  return Center(
+                    child: AppEmptyState(
+                      icon: Icons.receipt_long_rounded,
+                      title: 'no_invoices'.tr,
+                      actionLabel: 'add_invoice'.tr,
+                      actionIcon: Icons.add_rounded,
+                      onAction: () => Get.to(() => AddInvoiceView(merchantId: merchantId)),
+                    ),
+                  );
+                }
+                return ListView.builder(
+                  padding: EdgeInsets.fromLTRB(
+                    resp.pagePadding,
+                    resp.spacing2XS,
+                    resp.pagePadding,
+                    resp.pagePadding + resp.bottomInset,
+                  ),
+                  physics: const AlwaysScrollableScrollPhysics(
+                    parent: BouncingScrollPhysics(),
+                  ),
+                  itemCount: ic.invoices.length,
+                  itemBuilder: (ctx, i) => _InvoiceCard(invoice: ic.invoices[i]),
+                );
+              }),
+            ),
+          ],
+        ),
       ),
       floatingActionButton: FloatingActionButton(
         heroTag: 'add_invoice_fab',
-        onPressed: () =>
-            Get.to(() => AddInvoiceView(merchantId: merchantId)),
-        child: const Icon(Icons.add),
+        onPressed: () {
+          HapticFeedback.lightImpact();
+          Get.to(() => AddInvoiceView(merchantId: merchantId));
+        },
+        child: const Icon(Icons.add_rounded),
       ),
     );
   }
 
-  Widget _buildSummaryHeader(BuildContext context, InvoiceController ic) {
+  Widget _buildSummaryHeader(
+      BuildContext context, InvoiceController ic, AppResponsive resp) {
     return Obx(() => Container(
-          margin: const EdgeInsets.fromLTRB(16, 8, 16, 4),
-          padding: EdgeInsets.all(Responsive.isSmall(context) ? 12 : 16),
+          margin: EdgeInsets.symmetric(
+            horizontal: resp.pagePadding,
+            vertical: resp.spacingXS,
+          ),
+          padding: EdgeInsets.all(resp.spacingSM + 2),
           decoration: BoxDecoration(
             gradient: const LinearGradient(
-              colors: [AppTheme.primaryColor, Color(0xFF1E88E5)],
+              colors: [Color(0xFF0F766E), Color(0xFF14B8A6)],
+              begin: Alignment.topLeft,
+              end: Alignment.bottomRight,
             ),
-            borderRadius: BorderRadius.circular(16),
+            borderRadius: BorderRadius.circular(resp.cardRadius),
+            boxShadow: [
+              BoxShadow(
+                color: const Color(0xFF0F766E).withValues(alpha: 0.25),
+                blurRadius: 12,
+                offset: const Offset(0, 4),
+              ),
+            ],
           ),
           child: Row(
             children: [
               _SumItem(
-                  label: 'total_invoices_amount'.tr,
-                  value: CurrencyFormatter.format(ic.totalAmount),
-                  color: Colors.white),
+                label: 'total_invoices_amount'.tr,
+                value: CurrencyFormatter.format(ic.totalAmount),
+                color: Colors.white,
+              ),
               _divider(),
               _SumItem(
-                  label: 'total_paid'.tr,
-                  value: CurrencyFormatter.format(ic.totalPaid),
-                  color: Colors.greenAccent),
+                label: 'total_paid'.tr,
+                value: CurrencyFormatter.format(ic.totalPaid),
+                color: const Color(0xFF6EE7B7), // Mint green
+              ),
               _divider(),
               _SumItem(
-                  label: 'total_remaining'.tr,
-                  value: CurrencyFormatter.format(ic.totalRemaining),
-                  color: Colors.orangeAccent),
+                label: 'total_remaining'.tr,
+                value: CurrencyFormatter.format(ic.totalRemaining),
+                color: const Color(0xFFFDBA74), // Orange
+              ),
             ],
           ),
         ));
   }
 
   Widget _divider() => Container(
-      width: 1, height: 36, margin: const EdgeInsets.symmetric(horizontal: 4),
-      color: Colors.white24);
+        width: 1,
+        height: 36,
+        margin: const EdgeInsets.symmetric(horizontal: 4),
+        color: Colors.white24,
+      );
 
-  Widget _buildEmpty(BuildContext context) {
-    return Center(
+  void _showMerchantInfo(BuildContext context, dynamic merchant) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    AppBottomSheet.show(
+      context: context,
       child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Icon(Icons.receipt_long_outlined, size: 80, color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text('no_invoices'.tr,
-              style: const TextStyle(
-                  color: Colors.grey, fontWeight: FontWeight.bold)),
+          Row(
+            children: [
+              Container(
+                padding: EdgeInsets.all(resp.spacingSM),
+                decoration: BoxDecoration(
+                  color: AppColors.primary.withValues(alpha: 0.12),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(Icons.store_rounded, color: AppColors.primary, size: resp.iconMD),
+              ),
+              SizedBox(width: resp.spacingSM),
+              Expanded(
+                child: Text(
+                  merchant.name,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontWeight: FontWeight.w800,
+                    fontSize: resp.fontLG,
+                  ),
+                ),
+              ),
+            ],
+          ),
+          SizedBox(height: resp.spacingSM),
+          const Divider(height: 1),
+          SizedBox(height: resp.spacingSM),
+          if (merchant.phone.isNotEmpty)
+            _infoRow(Icons.phone_rounded, 'phone_number'.tr, merchant.phone, isDark, resp),
+          if (merchant.address.isNotEmpty)
+            _infoRow(Icons.location_on_rounded, 'address'.tr, merchant.address, isDark, resp),
+          if (merchant.notes != null && merchant.notes!.isNotEmpty)
+            _infoRow(Icons.notes_rounded, 'notes'.tr, merchant.notes!, isDark, resp),
         ],
       ),
     );
   }
 
-  void _showMerchantInfo(BuildContext context, dynamic merchant) {
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(24),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Center(
-              child: Container(
-                  width: 40, height: 4,
-                  decoration: BoxDecoration(
-                      color: Colors.grey[300],
-                      borderRadius: BorderRadius.circular(2))),
+  Widget _infoRow(IconData icon, String label, String value, bool isDark, AppResponsive resp) {
+    return Padding(
+      padding: EdgeInsets.only(bottom: resp.spacingSM),
+      child: Row(
+        children: [
+          Icon(icon, size: resp.iconSM - 2, color: isDark ? AppColors.darkPrimary : AppColors.primary),
+          SizedBox(width: resp.spacingSM),
+          Text(
+            '$label: ',
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+              fontSize: resp.fontSM,
             ),
-            const SizedBox(height: 20),
-            Text(merchant.name,
-                style:
-                    const TextStyle(fontSize: 20, fontWeight: FontWeight.bold)),
-            if (merchant.phone.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(children: [
-                const Icon(Icons.phone, size: 18, color: Colors.grey),
-                const SizedBox(width: 8),
-                Text(merchant.phone),
-              ]),
-            ],
-            if (merchant.address.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(children: [
-                const Icon(Icons.location_on, size: 18, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(child: Text(merchant.address)),
-              ]),
-            ],
-            if (merchant.notes != null && merchant.notes!.isNotEmpty) ...[
-              const SizedBox(height: 8),
-              Row(crossAxisAlignment: CrossAxisAlignment.start, children: [
-                const Icon(Icons.notes, size: 18, color: Colors.grey),
-                const SizedBox(width: 8),
-                Expanded(child: Text(merchant.notes!)),
-              ]),
-            ],
-            const SizedBox(height: 16),
-          ],
-        ),
+          ),
+          Expanded(
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.w700,
+                fontSize: resp.fontSM,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+              ),
+              overflow: TextOverflow.ellipsis,
+            ),
+          ),
+        ],
       ),
+    );
+  }
+
+  void _exportPDF(BuildContext context, dynamic merchant, List<Invoice> invoices) async {
+    HapticFeedback.lightImpact();
+    await ExportService.exportMerchantInvoicesToPDF(
+      merchant: merchant,
+      invoices: invoices,
     );
   }
 }
@@ -178,22 +254,36 @@ class _SumItem extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+
     return Expanded(
       child: Column(
         children: [
           FittedBox(
-            child: Text(label,
-                style: TextStyle(
-                    color: Colors.white70,
-                    fontSize: Responsive.sp(context, 10))),
+            fit: BoxFit.scaleDown,
+            child: Text(
+              label,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: Colors.white.withValues(alpha: 0.8),
+                fontSize: resp.fontXS,
+                fontWeight: FontWeight.w600,
+              ),
+            ),
           ),
-          const SizedBox(height: 4),
+          const SizedBox(height: 2),
           FittedBox(
-            child: Text(value,
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: Responsive.sp(context, 14))),
+            fit: BoxFit.scaleDown,
+            child: Text(
+              value,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: resp.fontMD,
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
         ],
       ),
@@ -207,82 +297,133 @@ class _InvoiceCard extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
     final paid = invoice.isFullyPaid;
-    final color = paid ? AppTheme.gotColor : AppTheme.giveColor;
+    final color = paid ? AppColors.got : AppColors.give;
     final pct = invoice.paymentPercentage;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Padding(
-      padding: const EdgeInsets.only(bottom: 10),
+    return Container(
+      margin: EdgeInsets.only(bottom: resp.spacingSM),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.22 : 0.14),
+          width: 1.2,
+        ),
+        boxShadow: AppShadows.subtle(isDark),
+      ),
       child: Material(
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        color: Theme.of(context).cardColor,
+        color: Colors.transparent,
         child: InkWell(
-          borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-          onTap: () =>
-              Get.to(() => InvoiceDetailView(invoice: invoice)),
-          onLongPress: () => _showOptions(context),
+          borderRadius: BorderRadius.circular(resp.cardRadius),
+          onTap: () {
+            HapticFeedback.lightImpact();
+            Get.to(() => InvoiceDetailView(invoice: invoice));
+          },
+          onLongPress: () {
+            HapticFeedback.mediumImpact();
+            _showOptions(context);
+          },
           child: Padding(
-            padding: EdgeInsets.all(Responsive.isSmall(context) ? 12 : 14),
+            padding: EdgeInsets.all(resp.spacingSM + 2),
             child: Column(
               crossAxisAlignment: CrossAxisAlignment.start,
               children: [
                 Row(
                   children: [
-                    CircleAvatar(
-                      radius: 20,
-                      backgroundColor: color.withValues(alpha: 0.1),
-                      child: Icon(
-                          paid
-                              ? Icons.check_circle_outline
-                              : Icons.receipt_outlined,
+                    Container(
+                      width: 40,
+                      height: 40,
+                      decoration: BoxDecoration(
+                        color: color.withValues(alpha: isDark ? 0.22 : 0.12),
+                        borderRadius: BorderRadius.circular(resp.radiusSM),
+                        border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
+                      ),
+                      child: Center(
+                        child: Icon(
+                          paid ? Icons.check_circle_rounded : Icons.receipt_long_rounded,
                           color: color,
-                          size: 20),
+                          size: resp.iconSM,
+                        ),
+                      ),
                     ),
-                    const SizedBox(width: 12),
+                    SizedBox(width: resp.spacingSM),
                     Expanded(
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.start,
                         children: [
-                          Text('#${invoice.invoiceNumber}',
-                              style: TextStyle(
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: Responsive.sp(context, 14))),
+                          Text(
+                            '#${invoice.invoiceNumber}',
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.w800,
+                              fontSize: resp.fontMD,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                            ),
+                          ),
                           Text(
                             DateFormat('yyyy/MM/dd').format(invoice.date),
                             style: TextStyle(
-                                color: Colors.grey[500],
-                                fontSize: Responsive.sp(context, 11)),
+                              fontFamily: 'Cairo',
+                              color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                              fontSize: resp.fontXS,
+                            ),
                           ),
                         ],
                       ),
                     ),
-                    Column(
-                      crossAxisAlignment: CrossAxisAlignment.end,
-                      children: [
-                        Text(CurrencyFormatter.format(invoice.totalAmount),
-                            style: TextStyle(
+                    SizedBox(width: resp.spacingSM),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: resp.isTablet ? 170 : 135,
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        mainAxisSize: MainAxisSize.min,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              CurrencyFormatter.format(invoice.totalAmount),
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
                                 fontWeight: FontWeight.w900,
-                                fontSize: Responsive.sp(context, 14))),
-                        Text(
-                          paid
-                              ? 'fully_paid'.tr
-                              : '${'remaining'.tr}: ${CurrencyFormatter.format(invoice.remainingAmount)}',
-                          style: TextStyle(
-                              color: color,
-                              fontSize: Responsive.sp(context, 10),
-                              fontWeight: FontWeight.w600),
-                        ),
-                      ],
+                                fontSize: resp.fontMD,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              paid
+                                  ? 'fully_paid'.tr
+                                  : '${'remaining'.tr}: ${CurrencyFormatter.format(invoice.remainingAmount)}',
+                              style: TextStyle(
+                                fontFamily: 'Cairo',
+                                color: color,
+                                fontSize: resp.fontXS,
+                                fontWeight: FontWeight.w700,
+                              ),
+                            ),
+                          ),
+                        ],
+                      ),
                     ),
                   ],
                 ),
-                const SizedBox(height: 10),
+                SizedBox(height: resp.spacingSM),
                 ClipRRect(
-                  borderRadius: BorderRadius.circular(4),
+                  borderRadius: BorderRadius.circular(resp.radiusXS),
                   child: LinearProgressIndicator(
                     value: pct,
                     minHeight: 5,
-                    backgroundColor: Colors.grey[200],
+                    backgroundColor: isDark ? Colors.white12 : Colors.grey[200],
                     valueColor: AlwaysStoppedAnimation(color),
                   ),
                 ),
@@ -296,63 +437,68 @@ class _InvoiceCard extends StatelessWidget {
 
   void _showOptions(BuildContext context) {
     final ic = Get.find<InvoiceController>();
-    Get.bottomSheet(
-      Container(
-        padding: const EdgeInsets.all(20),
-        decoration: BoxDecoration(
-          color: Theme.of(context).scaffoldBackgroundColor,
-          borderRadius: const BorderRadius.vertical(top: Radius.circular(20)),
-        ),
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          children: [
-            Container(
-                width: 40, height: 4,
-                decoration: BoxDecoration(
-                    color: Colors.grey[300],
-                    borderRadius: BorderRadius.circular(2))),
-            const SizedBox(height: 20),
-            ListTile(
-              leading: const Icon(Icons.edit_outlined,
-                  color: AppTheme.primaryColor),
-              title: Text('edit_invoice'.tr),
-              onTap: () {
-                Get.back();
-                Get.to(() => AddInvoiceView(
-                    merchantId: invoice.merchantId, invoice: invoice));
-              },
+
+    AppBottomSheet.show(
+      context: context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        children: [
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.primary.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.edit_outlined, color: AppColors.primary, size: 20),
             ),
-            ListTile(
-              leading: const Icon(Icons.delete_outline,
-                  color: AppTheme.errorColor),
-              title: Text('delete_invoice'.tr,
-                  style: const TextStyle(color: AppTheme.errorColor)),
-              onTap: () {
-                Get.back();
-                Get.dialog(AlertDialog(
-                  title: Text('delete_invoice'.tr),
-                  content: Text('delete_invoice_confirm'.tr),
-                  shape: RoundedRectangleBorder(
-                      borderRadius: BorderRadius.circular(16)),
-                  actions: [
-                    TextButton(
-                        onPressed: () => Get.back(),
-                        child: Text('cancel'.tr)),
-                    TextButton(
-                      onPressed: () {
-                        ic.deleteInvoice(invoice.id);
-                        Get.back();
-                      },
-                      child: Text('delete'.tr,
-                          style: const TextStyle(color: Colors.red)),
-                    ),
-                  ],
-                ));
-              },
+            title: Text(
+              'edit_invoice'.tr,
+              style: const TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w700),
             ),
-          ],
-        ),
+            onTap: () {
+              Get.back();
+              Get.to(() => AddInvoiceView(
+                    merchantId: invoice.merchantId,
+                    invoice: invoice,
+                  ));
+            },
+          ),
+          ListTile(
+            leading: Container(
+              padding: const EdgeInsets.all(8),
+              decoration: BoxDecoration(
+                color: AppColors.error.withValues(alpha: 0.12),
+                shape: BoxShape.circle,
+              ),
+              child: const Icon(Icons.delete_outline_rounded, color: AppColors.error, size: 20),
+            ),
+            title: Text(
+              'delete_invoice'.tr,
+              style: const TextStyle(
+                fontFamily: 'Cairo',
+                fontWeight: FontWeight.w700,
+                color: AppColors.error,
+              ),
+            ),
+            onTap: () {
+              Get.back();
+              _confirmDelete(context, ic);
+            },
+          ),
+        ],
       ),
+    );
+  }
+
+  void _confirmDelete(BuildContext context, InvoiceController ic) {
+    AppDialog.confirm(
+      context: context,
+      title: 'delete_invoice'.tr,
+      message: 'delete_invoice_confirm'.tr,
+      confirmLabel: 'delete'.tr,
+      isDestructive: true,
+      onConfirm: () => ic.deleteInvoice(invoice.id),
     );
   }
 }

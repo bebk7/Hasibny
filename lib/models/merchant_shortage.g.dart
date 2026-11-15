@@ -22,33 +22,43 @@ const MerchantShortageSchema = CollectionSchema(
       name: r'createdAt',
       type: IsarType.dateTime,
     ),
-    r'isResolved': PropertySchema(
+    r'firestoreId': PropertySchema(
       id: 1,
+      name: r'firestoreId',
+      type: IsarType.string,
+    ),
+    r'isResolved': PropertySchema(
+      id: 2,
       name: r'isResolved',
       type: IsarType.bool,
     ),
+    r'isSynced': PropertySchema(
+      id: 3,
+      name: r'isSynced',
+      type: IsarType.bool,
+    ),
     r'merchantId': PropertySchema(
-      id: 2,
+      id: 4,
       name: r'merchantId',
       type: IsarType.long,
     ),
     r'note': PropertySchema(
-      id: 3,
+      id: 5,
       name: r'note',
       type: IsarType.string,
     ),
     r'productName': PropertySchema(
-      id: 4,
+      id: 6,
       name: r'productName',
       type: IsarType.string,
     ),
     r'quantity': PropertySchema(
-      id: 5,
+      id: 7,
       name: r'quantity',
       type: IsarType.double,
     ),
     r'updatedAt': PropertySchema(
-      id: 6,
+      id: 8,
       name: r'updatedAt',
       type: IsarType.dateTime,
     )
@@ -104,7 +114,7 @@ const MerchantShortageSchema = CollectionSchema(
   getId: _merchantShortageGetId,
   getLinks: _merchantShortageGetLinks,
   attach: _merchantShortageAttach,
-  version: '3.1.0+1',
+  version: '3.3.2',
 );
 
 int _merchantShortageEstimateSize(
@@ -113,6 +123,12 @@ int _merchantShortageEstimateSize(
   Map<Type, List<int>> allOffsets,
 ) {
   var bytesCount = offsets.last;
+  {
+    final value = object.firestoreId;
+    if (value != null) {
+      bytesCount += 3 + value.length * 3;
+    }
+  }
   {
     final value = object.note;
     if (value != null) {
@@ -130,12 +146,14 @@ void _merchantShortageSerialize(
   Map<Type, List<int>> allOffsets,
 ) {
   writer.writeDateTime(offsets[0], object.createdAt);
-  writer.writeBool(offsets[1], object.isResolved);
-  writer.writeLong(offsets[2], object.merchantId);
-  writer.writeString(offsets[3], object.note);
-  writer.writeString(offsets[4], object.productName);
-  writer.writeDouble(offsets[5], object.quantity);
-  writer.writeDateTime(offsets[6], object.updatedAt);
+  writer.writeString(offsets[1], object.firestoreId);
+  writer.writeBool(offsets[2], object.isResolved);
+  writer.writeBool(offsets[3], object.isSynced);
+  writer.writeLong(offsets[4], object.merchantId);
+  writer.writeString(offsets[5], object.note);
+  writer.writeString(offsets[6], object.productName);
+  writer.writeDouble(offsets[7], object.quantity);
+  writer.writeDateTime(offsets[8], object.updatedAt);
 }
 
 MerchantShortage _merchantShortageDeserialize(
@@ -145,15 +163,17 @@ MerchantShortage _merchantShortageDeserialize(
   Map<Type, List<int>> allOffsets,
 ) {
   final object = MerchantShortage(
-    isResolved: reader.readBoolOrNull(offsets[1]) ?? false,
-    merchantId: reader.readLongOrNull(offsets[2]),
-    note: reader.readStringOrNull(offsets[3]),
-    productName: reader.readString(offsets[4]),
-    quantity: reader.readDoubleOrNull(offsets[5]),
+    isResolved: reader.readBoolOrNull(offsets[2]) ?? false,
+    merchantId: reader.readLongOrNull(offsets[4]),
+    note: reader.readStringOrNull(offsets[5]),
+    productName: reader.readString(offsets[6]),
+    quantity: reader.readDoubleOrNull(offsets[7]),
   );
   object.createdAt = reader.readDateTime(offsets[0]);
+  object.firestoreId = reader.readStringOrNull(offsets[1]);
   object.id = id;
-  object.updatedAt = reader.readDateTime(offsets[6]);
+  object.isSynced = reader.readBool(offsets[3]);
+  object.updatedAt = reader.readDateTime(offsets[8]);
   return object;
 }
 
@@ -167,16 +187,20 @@ P _merchantShortageDeserializeProp<P>(
     case 0:
       return (reader.readDateTime(offset)) as P;
     case 1:
-      return (reader.readBoolOrNull(offset) ?? false) as P;
-    case 2:
-      return (reader.readLongOrNull(offset)) as P;
-    case 3:
       return (reader.readStringOrNull(offset)) as P;
+    case 2:
+      return (reader.readBoolOrNull(offset) ?? false) as P;
+    case 3:
+      return (reader.readBool(offset)) as P;
     case 4:
-      return (reader.readString(offset)) as P;
+      return (reader.readLongOrNull(offset)) as P;
     case 5:
-      return (reader.readDoubleOrNull(offset)) as P;
+      return (reader.readStringOrNull(offset)) as P;
     case 6:
+      return (reader.readString(offset)) as P;
+    case 7:
+      return (reader.readDoubleOrNull(offset)) as P;
+    case 8:
       return (reader.readDateTime(offset)) as P;
     default:
       throw IsarError('Unknown property with id $propertyId');
@@ -613,6 +637,160 @@ extension MerchantShortageQueryFilter
   }
 
   QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdIsNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdIsNotNull() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(const FilterCondition.isNotNull(
+        property: r'firestoreId',
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdEqualTo(
+    String? value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdGreaterThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdLessThan(
+    String? value, {
+    bool include = false,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.lessThan(
+        include: include,
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdBetween(
+    String? lower,
+    String? upper, {
+    bool includeLower = true,
+    bool includeUpper = true,
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.between(
+        property: r'firestoreId',
+        lower: lower,
+        includeLower: includeLower,
+        upper: upper,
+        includeUpper: includeUpper,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdStartsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.startsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdEndsWith(
+    String value, {
+    bool caseSensitive = true,
+  }) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.endsWith(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdContains(String value, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.contains(
+        property: r'firestoreId',
+        value: value,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdMatches(String pattern, {bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.matches(
+        property: r'firestoreId',
+        wildcard: pattern,
+        caseSensitive: caseSensitive,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdIsEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      firestoreIdIsNotEmpty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.greaterThan(
+        property: r'firestoreId',
+        value: '',
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
       idEqualTo(Id value) {
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
@@ -673,6 +851,16 @@ extension MerchantShortageQueryFilter
     return QueryBuilder.apply(this, (query) {
       return query.addFilterCondition(FilterCondition.equalTo(
         property: r'isResolved',
+        value: value,
+      ));
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterFilterCondition>
+      isSyncedEqualTo(bool value) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addFilterCondition(FilterCondition.equalTo(
+        property: r'isSynced',
         value: value,
       ));
     });
@@ -1206,6 +1394,20 @@ extension MerchantShortageQuerySortBy
   }
 
   QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      sortByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      sortByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
       sortByIsResolved() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isResolved', Sort.asc);
@@ -1216,6 +1418,20 @@ extension MerchantShortageQuerySortBy
       sortByIsResolvedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isResolved', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      sortByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      sortByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1305,6 +1521,20 @@ extension MerchantShortageQuerySortThenBy
     });
   }
 
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      thenByFirestoreId() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      thenByFirestoreIdDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'firestoreId', Sort.desc);
+    });
+  }
+
   QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy> thenById() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'id', Sort.asc);
@@ -1329,6 +1559,20 @@ extension MerchantShortageQuerySortThenBy
       thenByIsResolvedDesc() {
     return QueryBuilder.apply(this, (query) {
       return query.addSortBy(r'isResolved', Sort.desc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      thenByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.asc);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QAfterSortBy>
+      thenByIsSyncedDesc() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addSortBy(r'isSynced', Sort.desc);
     });
   }
 
@@ -1412,9 +1656,23 @@ extension MerchantShortageQueryWhereDistinct
   }
 
   QueryBuilder<MerchantShortage, MerchantShortage, QDistinct>
+      distinctByFirestoreId({bool caseSensitive = true}) {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'firestoreId', caseSensitive: caseSensitive);
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QDistinct>
       distinctByIsResolved() {
     return QueryBuilder.apply(this, (query) {
       return query.addDistinctBy(r'isResolved');
+    });
+  }
+
+  QueryBuilder<MerchantShortage, MerchantShortage, QDistinct>
+      distinctByIsSynced() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addDistinctBy(r'isSynced');
     });
   }
 
@@ -1469,9 +1727,22 @@ extension MerchantShortageQueryProperty
     });
   }
 
+  QueryBuilder<MerchantShortage, String?, QQueryOperations>
+      firestoreIdProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'firestoreId');
+    });
+  }
+
   QueryBuilder<MerchantShortage, bool, QQueryOperations> isResolvedProperty() {
     return QueryBuilder.apply(this, (query) {
       return query.addPropertyName(r'isResolved');
+    });
+  }
+
+  QueryBuilder<MerchantShortage, bool, QQueryOperations> isSyncedProperty() {
+    return QueryBuilder.apply(this, (query) {
+      return query.addPropertyName(r'isSynced');
     });
   }
 

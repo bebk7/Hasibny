@@ -1,14 +1,13 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
-import '../../controllers/transaction_controller.dart';
 import '../../controllers/customer_controller.dart';
-import '../../controllers/settings_controller.dart';
-import '../../models/transaction.dart';
+import '../../controllers/transaction_controller.dart';
+import '../../core/core.dart';
+import '../../models/app_currency.dart';
 import '../../models/customer.dart';
+import '../../models/transaction.dart';
 import '../../services/export_service.dart';
-import '../../themes/app_theme.dart';
-import '../../utils/currency_formatter.dart';
-import '../../utils/responsive.dart';
 
 class TransactionsView extends StatelessWidget {
   const TransactionsView({super.key});
@@ -17,152 +16,256 @@ class TransactionsView extends StatelessWidget {
   Widget build(BuildContext context) {
     final tc = Get.find<TransactionController>();
     final cc = Get.find<CustomerController>();
-    final sc = Get.find<SettingsController>();
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     return Scaffold(
       appBar: AppBar(
-        title: Text('all_transactions'.tr,
-            style: const TextStyle(fontWeight: FontWeight.bold)),
+        title: Text(
+          'all_transactions'.tr,
+          style: AppTypography.pageTitle(context),
+        ),
         actions: [
           IconButton(
-            icon: const Icon(Icons.refresh_rounded),
-            onPressed: () => tc.loadAllTransactions(),
+            tooltip: 'preview_report'.tr,
+            icon: Container(
+              padding: EdgeInsets.all(resp.spacingXS),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.visibility_rounded,
+                size: resp.iconSM,
+                color: isDark ? AppColors.darkPrimary : AppColors.primary,
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              ExportService.previewAllReportPDF(
+                customers: cc.customers.toList(),
+                balances: Map<int, double>.from(cc.customerBalances),
+                transactions: tc.allTransactions.toList(),
+              );
+            },
           ),
+          IconButton(
+            tooltip: 'refresh'.tr,
+            icon: Container(
+              padding: EdgeInsets.all(resp.spacingXS),
+              decoration: BoxDecoration(
+                color: isDark ? Colors.white10 : AppColors.primary.withValues(alpha: 0.08),
+                shape: BoxShape.circle,
+              ),
+              child: Icon(
+                Icons.refresh_rounded,
+                size: resp.iconSM,
+                color: isDark ? AppColors.darkPrimary : AppColors.primary,
+              ),
+            ),
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              tc.loadAllTransactions();
+            },
+          ),
+          SizedBox(width: resp.spacingXS),
         ],
       ),
       body: Obx(() {
         if (tc.isLoading.value) {
-          return const Center(child: CircularProgressIndicator());
+          return const Center(child: AppLoading());
         }
 
-        return Column(
-          children: [
-            _buildSummaryHeader(context, tc, sc),
-            _buildFilterBar(context, tc),
-            Expanded(
-              child: Obx(() {
-                final list = tc.filteredAllTransactions;
-                if (list.isEmpty) return _buildEmptyState(context);
+        return AppPageContainer(
+          padding: EdgeInsets.zero,
+          child: Column(
+            children: [
+              _buildCurrencyFilterBar(context, tc, resp),
+              _buildTypeFilterBar(context, tc, resp),
+              _buildSummaryHeader(context, tc, resp),
+              Expanded(
+                child: Obx(() {
+                  final list = tc.filteredAllTransactions;
+                  if (list.isEmpty) return _buildEmptyState(context);
 
-                final isTablet = Responsive.isLarge(context);
+                  final isTablet = resp.isTablet;
 
-                if (isTablet) {
-                  return GridView.builder(
-                    padding: Responsive.pagePadding(context),
-                    physics: const BouncingScrollPhysics(),
-                    gridDelegate:
-                        const SliverGridDelegateWithFixedCrossAxisCount(
-                      crossAxisCount: 2,
-                      childAspectRatio: 3.2,
-                      crossAxisSpacing: 12,
-                      mainAxisSpacing: 10,
+                  if (isTablet) {
+                    final cardExtent = resp.textScaleFactor > 1.2 ? 104.0 : 92.0;
+                    return GridView.builder(
+                      padding: EdgeInsets.fromLTRB(
+                        resp.pagePadding,
+                        resp.spacingSM,
+                        resp.pagePadding,
+                        resp.pagePadding + resp.bottomInset,
+                      ),
+                      physics: const BouncingScrollPhysics(),
+                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                        maxCrossAxisExtent: 480,
+                        mainAxisExtent: cardExtent,
+                        crossAxisSpacing: resp.spacingMD,
+                        mainAxisSpacing: resp.spacingSM,
+                      ),
+                      itemCount: list.length,
+                      itemBuilder: (context, index) {
+                        final transaction = list[index];
+                        final customer = cc.getCustomerById(transaction.customerId);
+                        return _TransactionCard(
+                          transaction: transaction,
+                          customer: customer,
+                          onShare: () => _shareInvoice(transaction, customer),
+                        );
+                      },
+                    );
+                  }
+
+                  return ListView.builder(
+                    padding: EdgeInsets.fromLTRB(
+                      resp.pagePadding,
+                      resp.spacingSM,
+                      resp.pagePadding,
+                      resp.pagePadding + resp.bottomInset,
+                    ),
+                    physics: const AlwaysScrollableScrollPhysics(
+                      parent: BouncingScrollPhysics(),
                     ),
                     itemCount: list.length,
                     itemBuilder: (context, index) {
                       final transaction = list[index];
-                      final customer =
-                          cc.getCustomerById(transaction.customerId);
+                      final customer = cc.getCustomerById(transaction.customerId);
                       return _TransactionCard(
                         transaction: transaction,
                         customer: customer,
-                        currencySymbol: sc.currencySymbol,
                         onShare: () => _shareInvoice(transaction, customer),
                       );
                     },
                   );
-                }
-
-                return ListView.builder(
-                  padding: Responsive.pagePadding(context),
-                  physics: const BouncingScrollPhysics(),
-                  itemCount: list.length,
-                  itemBuilder: (context, index) {
-                    final transaction = list[index];
-                    final customer = cc.getCustomerById(transaction.customerId);
-                    return _TransactionCard(
-                      transaction: transaction,
-                      customer: customer,
-                      currencySymbol: sc.currencySymbol,
-                      onShare: () => _shareInvoice(transaction, customer),
-                    );
-                  },
-                );
-              }),
-            ),
-          ],
+                }),
+              ),
+            ],
+          ),
         );
       }),
     );
   }
 
-  Widget _buildSummaryHeader(
-      BuildContext context, TransactionController tc, SettingsController sc) {
-    final p = Responsive.isSmall(context) ? 10.0 : 16.0;
-    return Container(
-      padding: EdgeInsets.all(p),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.vertical(
-            bottom: Radius.circular(Responsive.cardRadius(context) * 2)),
-        boxShadow: [
-          BoxShadow(
-              color: Colors.black.withValues(alpha: 0.03),
-              blurRadius: 10,
-              offset: const Offset(0, 4))
+  Widget _buildCurrencyFilterBar(
+      BuildContext context, TransactionController tc, AppResponsive resp) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        resp.pagePadding,
+        resp.spacingSM,
+        resp.pagePadding,
+        resp.spacing2XS,
+      ),
+      child: Row(
+        children: [
+          AppFilterChip(
+            label: 'all_currencies'.tr,
+            isSelected: tc.selectedCurrencyFilter.value == 'all',
+            onTap: () => tc.setCurrencyFilter('all'),
+          ),
+          SizedBox(width: resp.spacingSM),
+          ...AppCurrency.supportedCurrencies.map((c) {
+            return Padding(
+              padding: EdgeInsetsDirectional.only(end: resp.spacingSM),
+              child: AppFilterChip(
+                label: '${c.flag} ${c.code}',
+                isSelected: tc.selectedCurrencyFilter.value == c.code,
+                onTap: () => tc.setCurrencyFilter(c.code),
+              ),
+            );
+          }),
         ],
+      ),
+    );
+  }
+
+  Widget _buildTypeFilterBar(
+      BuildContext context, TransactionController tc, AppResponsive resp) {
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
+      padding: EdgeInsets.fromLTRB(
+        resp.pagePadding,
+        resp.spacing2XS,
+        resp.pagePadding,
+        resp.spacingSM,
+      ),
+      child: Row(
+        children: [
+          AppFilterChip(
+            label: 'all_transactions_filter'.tr,
+            isSelected: tc.currentFilter.value == 'all',
+            onTap: () => tc.setFilter('all'),
+          ),
+          SizedBox(width: resp.spacingSM),
+          AppFilterChip(
+            label: 'only_give'.tr,
+            isSelected: tc.currentFilter.value == 'give',
+            color: AppColors.give,
+            onTap: () => tc.setFilter('give'),
+          ),
+          SizedBox(width: resp.spacingSM),
+          AppFilterChip(
+            label: 'only_got'.tr,
+            isSelected: tc.currentFilter.value == 'got',
+            color: AppColors.got,
+            onTap: () => tc.setFilter('got'),
+          ),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildSummaryHeader(
+      BuildContext context, TransactionController tc, AppResponsive resp) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final activeCurrency = tc.selectedCurrencyFilter.value == 'all'
+        ? 'YER'
+        : tc.selectedCurrencyFilter.value;
+
+    final totalGive = tc.getTotalGive(activeCurrency);
+    final totalGot = tc.getTotalGot(activeCurrency);
+
+    return Container(
+      margin: EdgeInsets.symmetric(
+        horizontal: resp.pagePadding,
+        vertical: resp.spacing2XS,
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: resp.spacingMD,
+        vertical: resp.spacingSM,
+      ),
+      decoration: BoxDecoration(
+        color: isDark ? AppColors.darkCard : Colors.white,
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+          width: 1,
+        ),
+        boxShadow: AppShadows.card(isDark),
       ),
       child: Row(
         children: [
           Expanded(
             child: _SummaryCard(
               icon: Icons.arrow_upward_rounded,
-              color: AppTheme.giveColor,
+              color: AppColors.give,
               label: 'total_given'.tr,
-              amount: CurrencyFormatter.format(tc.totalGiveAll,
-                  symbol: sc.currencySymbol),
+              amount: CurrencyFormatter.format(totalGive, currencyCode: activeCurrency),
             ),
           ),
-          SizedBox(width: Responsive.isSmall(context) ? 8 : 12),
+          SizedBox(width: resp.spacingSM),
           Expanded(
             child: _SummaryCard(
               icon: Icons.arrow_downward_rounded,
-              color: AppTheme.gotColor,
+              color: AppColors.got,
               label: 'total_got'.tr,
-              amount: CurrencyFormatter.format(tc.totalGotAll,
-                  symbol: sc.currencySymbol),
+              amount: CurrencyFormatter.format(totalGot, currencyCode: activeCurrency),
             ),
-          ),
-        ],
-      ),
-    );
-  }
-
-  Widget _buildFilterBar(BuildContext context, TransactionController tc) {
-    return SizedBox(
-      height: Responsive.isSmall(context) ? 50 : 60,
-      child: ListView(
-        scrollDirection: Axis.horizontal,
-        padding: EdgeInsets.symmetric(
-            horizontal: Responsive.isSmall(context) ? 12 : 16, vertical: 10),
-        children: [
-          _FilterChip(
-            label: 'all_transactions_filter'.tr,
-            selected: tc.currentFilter.value == 'all',
-            onTap: () => tc.setFilter('all'),
-          ),
-          const SizedBox(width: 10),
-          _FilterChip(
-            label: 'only_give'.tr,
-            selected: tc.currentFilter.value == 'give',
-            color: AppTheme.giveColor,
-            onTap: () => tc.setFilter('give'),
-          ),
-          const SizedBox(width: 10),
-          _FilterChip(
-            label: 'only_got'.tr,
-            selected: tc.currentFilter.value == 'got',
-            color: AppTheme.gotColor,
-            onTap: () => tc.setFilter('got'),
           ),
         ],
       ),
@@ -171,18 +274,10 @@ class TransactionsView extends StatelessWidget {
 
   Widget _buildEmptyState(BuildContext context) {
     return Center(
-      child: Column(
-        mainAxisAlignment: MainAxisAlignment.center,
-        children: [
-          Icon(Icons.receipt_long_rounded,
-              size: Responsive.sp(context, 80), color: Colors.grey[300]),
-          const SizedBox(height: 16),
-          Text('no_transactions'.tr,
-              style: TextStyle(
-                  color: Colors.grey,
-                  fontWeight: FontWeight.bold,
-                  fontSize: Responsive.sp(context, 14))),
-        ],
+      child: AppEmptyState(
+        icon: Icons.receipt_long_rounded,
+        title: 'no_transactions'.tr,
+        subtitle: 'quick_actions'.tr,
       ),
     );
   }
@@ -203,85 +298,62 @@ class _SummaryCard extends StatelessWidget {
   final String label;
   final String amount;
 
-  const _SummaryCard(
-      {required this.icon,
-      required this.color,
-      required this.label,
-      required this.amount});
+  const _SummaryCard({
+    required this.icon,
+    required this.color,
+    required this.label,
+    required this.amount,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
-      padding: EdgeInsets.all(Responsive.isSmall(context) ? 8 : 12),
+      padding: EdgeInsets.symmetric(
+        horizontal: resp.spacingSM,
+        vertical: resp.spacingXS,
+      ),
       decoration: BoxDecoration(
-        color: color.withValues(alpha: 0.06),
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        border: Border.all(color: color.withValues(alpha: 0.1)),
+        color: color.withValues(alpha: isDark ? 0.14 : 0.06),
+        borderRadius: BorderRadius.circular(resp.cardRadius * 0.75),
+        border: Border.all(color: color.withValues(alpha: isDark ? 0.25 : 0.15)),
       ),
       child: Column(
+        mainAxisSize: MainAxisSize.min,
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
             children: [
-              Icon(icon, color: color, size: Responsive.sp(context, 16)),
-              const SizedBox(width: 4),
+              Icon(icon, color: color, size: resp.iconXS),
+              SizedBox(width: resp.spacing2XS),
               Flexible(
-                child: Text(label,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        color: Colors.grey[600],
-                        fontSize: Responsive.sp(context, 11),
-                        fontWeight: FontWeight.w600)),
+                child: Text(
+                  label,
+                  overflow: TextOverflow.ellipsis,
+                  style: AppTypography.caption(context).copyWith(
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
               ),
             ],
           ),
-          const SizedBox(height: 4),
+          SizedBox(height: resp.spacing2XS),
           FittedBox(
-            child: Text(amount,
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: Responsive.sp(context, 18))),
+            fit: BoxFit.scaleDown,
+            child: Text(
+              amount,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: resp.fontLG,
+                letterSpacing: -0.3,
+              ),
+            ),
           ),
         ],
-      ),
-    );
-  }
-}
-
-class _FilterChip extends StatelessWidget {
-  final String label;
-  final bool selected;
-  final Color color;
-  final VoidCallback onTap;
-
-  const _FilterChip(
-      {required this.label,
-      required this.selected,
-      this.color = AppTheme.primaryColor,
-      required this.onTap});
-
-  @override
-  Widget build(BuildContext context) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(12),
-      child: AnimatedContainer(
-        duration: const Duration(milliseconds: 200),
-        padding: EdgeInsets.symmetric(
-            horizontal: Responsive.isSmall(context) ? 12 : 16),
-        alignment: Alignment.center,
-        decoration: BoxDecoration(
-          color: selected ? color : color.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(12),
-        ),
-        child: Text(
-          label,
-          style: TextStyle(
-              color: selected ? Colors.white : color,
-              fontWeight: FontWeight.bold,
-              fontSize: Responsive.sp(context, 13)),
-        ),
       ),
     );
   }
@@ -290,83 +362,179 @@ class _FilterChip extends StatelessWidget {
 class _TransactionCard extends StatelessWidget {
   final TransactionModel transaction;
   final Customer? customer;
-  final String currencySymbol;
   final VoidCallback onShare;
 
-  const _TransactionCard(
-      {required this.transaction,
-      required this.customer,
-      required this.currencySymbol,
-      required this.onShare});
+  const _TransactionCard({
+    required this.transaction,
+    required this.customer,
+    required this.onShare,
+  });
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
     final isGive = transaction.type == TransactionType.give;
-    final color = isGive ? AppTheme.giveColor : AppTheme.gotColor;
-    final isSmall = Responsive.isSmall(context);
+    final color = isGive ? AppColors.give : AppColors.got;
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final curr = AppCurrency.fromCode(transaction.currencyCode);
+    final avatarSize = resp.isSmall ? 36.0 : 40.0;
 
-    return Container(
-      margin: const EdgeInsets.only(bottom: 10),
-      padding: EdgeInsets.symmetric(
-          horizontal: isSmall ? 10 : 12, vertical: isSmall ? 8 : 10),
-      decoration: BoxDecoration(
-        color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(Responsive.cardRadius(context)),
-        border: Border.all(color: Colors.grey.withValues(alpha: 0.1)),
-      ),
-      child: Row(
-        children: [
-          CircleAvatar(
-            radius: isSmall ? 18 : 22,
-            backgroundColor: color.withValues(alpha: 0.1),
-            child: Icon(
-                isGive ? Icons.upload_rounded : Icons.download_rounded,
-                color: color,
-                size: isSmall ? 16 : 20),
+    return InkWell(
+      borderRadius: BorderRadius.circular(resp.cardRadius),
+      onTap: customer != null
+          ? () {
+              HapticFeedback.lightImpact();
+              ExportService.previewTransactionReceipt(
+                transaction: transaction,
+                customer: customer!,
+              );
+            }
+          : null,
+      child: Container(
+        margin: EdgeInsets.only(bottom: resp.spacingSM),
+        padding: EdgeInsets.symmetric(
+          horizontal: resp.spacingSM + 2,
+          vertical: resp.spacingSM,
+        ),
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCard : Colors.white,
+          borderRadius: BorderRadius.circular(resp.cardRadius),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: 1,
           ),
-          SizedBox(width: isSmall ? 8 : 12),
-          Expanded(
-            child: Column(
-              crossAxisAlignment: CrossAxisAlignment.start,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(customer?.name ?? 'unknown_customer'.tr,
-                    overflow: TextOverflow.ellipsis,
-                    style: TextStyle(
-                        fontWeight: FontWeight.bold,
-                        fontSize: Responsive.sp(context, 13))),
-                Text(transaction.formattedDate,
-                    style: TextStyle(
-                        color: Colors.grey[500],
-                        fontSize: Responsive.sp(context, 11))),
-              ],
-            ),
-          ),
-          const SizedBox(width: 4),
-          Flexible(
-            flex: 0,
-            child: FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, symbol: currencySymbol)}',
-                style: TextStyle(
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: Responsive.sp(context, 14)),
+          boxShadow: AppShadows.subtle(isDark),
+        ),
+        child: Row(
+          children: [
+            Container(
+              width: avatarSize,
+              height: avatarSize,
+              decoration: BoxDecoration(
+                color: color.withValues(alpha: isDark ? 0.22 : 0.12),
+                borderRadius: BorderRadius.circular(resp.radiusSM),
+                border: Border.all(color: color.withValues(alpha: 0.25), width: 1),
+              ),
+              child: Center(
+                child: Icon(
+                  isGive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                  color: color,
+                  size: resp.iconSM,
+                ),
               ),
             ),
-          ),
-          SizedBox(
-            width: isSmall ? 32 : 40,
-            child: IconButton(
+            SizedBox(width: resp.spacingSM),
+            Expanded(
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.start,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  Row(
+                    children: [
+                      Expanded(
+                        child: Text(
+                          customer?.name ??
+                              (transaction.description.isNotEmpty
+                                  ? transaction.description
+                                  : 'unknown_customer'.tr),
+                          overflow: TextOverflow.ellipsis,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontWeight: FontWeight.w700,
+                            fontSize: resp.fontMD,
+                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                          ),
+                        ),
+                      ),
+                      SizedBox(width: resp.spacing2XS),
+                      AppBadge(
+                        label: '${curr.flag} ${curr.code}',
+                        fontSize: 10,
+                        padding: EdgeInsets.symmetric(
+                          horizontal: resp.spacingXS,
+                          vertical: 1,
+                        ),
+                      ),
+                    ],
+                  ),
+                  SizedBox(height: resp.spacing2XS),
+                  Row(
+                    children: [
+                      if (transaction.description.isNotEmpty && customer != null) ...[
+                        Flexible(
+                          child: Text(
+                            transaction.description,
+                            style: AppTypography.caption(context),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                        ),
+                        SizedBox(width: resp.spacing2XS),
+                        Text(
+                          '•',
+                          style: TextStyle(
+                            color: isDark ? Colors.white30 : Colors.black26,
+                            fontSize: 10,
+                          ),
+                        ),
+                        SizedBox(width: resp.spacing2XS),
+                      ],
+                      Text(
+                        transaction.formattedDate,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          fontSize: resp.fontXS,
+                        ),
+                      ),
+                    ],
+                  ),
+                ],
+              ),
+            ),
+            SizedBox(width: resp.spacingXS),
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: resp.isTablet ? 160 : 130,
+              ),
+              child: FittedBox(
+                fit: BoxFit.scaleDown,
+                alignment: AlignmentDirectional.centerEnd,
+                child: Text(
+                  '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode)}',
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: color,
+                    fontWeight: FontWeight.w900,
+                    fontSize: resp.fontMD,
+                    letterSpacing: -0.3,
+                  ),
+                ),
+              ),
+            ),
+            SizedBox(width: resp.spacingXS),
+            IconButton(
               padding: EdgeInsets.zero,
               constraints: const BoxConstraints(),
-              icon: Icon(Icons.ios_share_rounded,
-                  size: isSmall ? 16 : 20, color: Colors.grey[400]),
-              onPressed: onShare,
+              icon: Container(
+                padding: EdgeInsets.all(resp.spacingXS),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.share_rounded,
+                  size: resp.iconXS + 2,
+                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                ),
+              ),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                onShare();
+              },
             ),
-          ),
-        ],
+          ],
+        ),
       ),
     );
   }

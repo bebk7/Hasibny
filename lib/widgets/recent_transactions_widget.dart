@@ -1,11 +1,9 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../controllers/customer_controller.dart';
-import '../controllers/settings_controller.dart';
 import '../models/transaction.dart';
-import '../themes/app_theme.dart';
-import '../utils/currency_formatter.dart';
-import '../utils/responsive.dart';
+import '../core/core.dart';
+import '../views/customer_details/customer_details_view.dart';
 
 class RecentTransactionsWidget extends StatelessWidget {
   final List<TransactionModel> transactions;
@@ -17,117 +15,186 @@ class RecentTransactionsWidget extends StatelessWidget {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = AppColors.isDark(context);
+
     if (transactions.isEmpty) {
       return Container(
-        padding: const EdgeInsets.all(16),
-        child: Center(
-          child: Column(
-            children: [
-              Icon(
-                Icons.receipt_long_outlined,
-                size: 48,
-                color: Colors.grey[400],
-              ),
-              const SizedBox(height: 16),
-              Text(
-                'no_transactions'.tr,
-                style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                      color: Colors.grey[600],
-                    ),
-              ),
-            ],
+        decoration: BoxDecoration(
+          color: isDark ? AppColors.darkCardColor : Colors.white,
+          borderRadius: BorderRadius.circular(18),
+          border: Border.all(
+            color: isDark ? AppColors.borderDark : AppColors.borderLight,
+            width: AppSizes.borderThin,
           ),
+        ),
+        child: AppEmptyState(
+          icon: Icons.receipt_long_rounded,
+          title: 'no_transactions'.tr,
+          subtitle: 'quick_actions'.tr,
+          isCompact: true,
         ),
       );
     }
 
+    final cc = Get.find<CustomerController>();
+
     return Column(
-      children: [
-        ...transactions
-            .map((transaction) => Container(
-                  margin: const EdgeInsets.only(bottom: 8),
-                  decoration: BoxDecoration(
-                    color: Theme.of(context).cardColor,
-                    borderRadius: BorderRadius.circular(8),
-                    boxShadow: [
-                      BoxShadow(
-                        color: Colors.black.withValues(alpha: 0.05),
-                        blurRadius: 4,
-                        offset: const Offset(0, 2),
-                      ),
-                    ],
-                  ),
-                  child: ListTile(
-                    contentPadding: EdgeInsets.symmetric(
-                      horizontal: Responsive.isSmall(context) ? 12 : 16,
-                      vertical: Responsive.isSmall(context) ? 4 : 8,
-                    ),
-                    leading: Container(
-                      width: Responsive.isSmall(context) ? 34 : 40,
-                      height: Responsive.isSmall(context) ? 34 : 40,
+      children: transactions.map((transaction) {
+        final isGive = transaction.type == TransactionType.give;
+        final color = isGive ? AppColors.giveColor : AppColors.gotColor;
+        final customer = cc.getCustomerById(transaction.customerId);
+
+        return Container(
+          margin: const EdgeInsets.only(bottom: 8),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkCardColor : Colors.white,
+            borderRadius: BorderRadius.circular(AppRadius.md),
+            border: Border.all(
+              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+              width: AppSizes.borderThin,
+            ),
+            boxShadow: [
+              BoxShadow(
+                color: Colors.black.withValues(alpha: isDark ? 0.08 : 0.02),
+                blurRadius: 6,
+                offset: const Offset(0, 2),
+              ),
+            ],
+          ),
+          child: Material(
+            color: Colors.transparent,
+            child: InkWell(
+              onTap: customer != null
+                  ? () => Get.to(() => CustomerDetailsView(customerId: customer.id))
+                  : null,
+              borderRadius: BorderRadius.circular(AppRadius.md),
+              child: Padding(
+                padding: EdgeInsets.symmetric(
+                  horizontal: resp.isExtraCompact ? 10 : (resp.isSmall ? 12 : 14),
+                  vertical: resp.isSmall ? 10 : 12,
+                ),
+                child: Row(
+                  children: [
+                    Container(
+                      width: resp.isSmall ? 38 : 42,
+                      height: resp.isSmall ? 38 : 42,
                       decoration: BoxDecoration(
-                        color: transaction.type == TransactionType.got
-                            ? AppTheme.gotColor.withValues(alpha: 0.2)
-                            : AppTheme.giveColor.withValues(alpha: 0.2),
-                        borderRadius: BorderRadius.circular(
-                            Responsive.isSmall(context) ? 17 : 20),
-                      ),
-                      child: Icon(
-                        transaction.type == TransactionType.got
-                            ? Icons.arrow_downward
-                            : Icons.arrow_upward,
-                        color: transaction.type == TransactionType.got
-                            ? AppTheme.gotColor
-                            : AppTheme.giveColor,
-                        size: Responsive.isSmall(context) ? 16 : 20,
-                      ),
-                    ),
-                    title: Text(
-                      Get.find<CustomerController>()
-                              .getCustomerById(transaction.customerId)
-                              ?.name ??
-                          transaction.description,
-                      style: Theme.of(context).textTheme.bodyMedium?.copyWith(
-                            fontWeight: FontWeight.w600,
-                          ),
-                    ),
-                    subtitle: Column(
-                      crossAxisAlignment: CrossAxisAlignment.start,
-                      children: [
-                        if (transaction.description.isNotEmpty)
-                          Text(
-                            transaction.description,
-                            style:
-                                Theme.of(context).textTheme.bodySmall?.copyWith(
-                                      color: Colors.grey[600],
-                                    ),
-                          ),
-                        Text(
-                          transaction.formattedDate,
-                          style:
-                              Theme.of(context).textTheme.bodySmall?.copyWith(
-                                    color: Colors.grey[500],
-                                  ),
+                        color: color.withValues(alpha: isDark ? 0.2 : 0.1),
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        border: Border.all(
+                          color: color.withValues(alpha: 0.25),
+                          width: AppSizes.borderThin,
                         ),
-                      ],
+                      ),
+                      child: Center(
+                        child: Icon(
+                          isGive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                          color: color,
+                          size: resp.isSmall ? 20 : 22,
+                        ),
+                      ),
                     ),
-                    trailing: Obx(() {
-                      Get.find<SettingsController>().currencySymbol;
-                      final isGive = transaction.type == TransactionType.give;
-                      return Text(
-                        '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount)}',
-                        style: Theme.of(context).textTheme.bodyLarge?.copyWith(
-                              color: isGive
-                                  ? AppTheme.giveColor
-                                  : AppTheme.gotColor,
-                              fontWeight: FontWeight.bold,
+                    const SizedBox(width: 12),
+                    Expanded(
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Text(
+                            customer?.name ??
+                                (transaction.description.isNotEmpty
+                                    ? transaction.description
+                                    : 'unknown_customer'.tr),
+                            style: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              fontWeight: FontWeight.w700,
+                              fontSize: resp.fontSize(resp.isSmall ? 13 : 14),
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                             ),
-                      );
-                    }),
-                  ),
-                ))
-            .toList(),
-      ],
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
+                          ),
+                          const SizedBox(height: 2),
+                          Row(
+                            children: [
+                              if (transaction.description.isNotEmpty && customer != null) ...[
+                                Flexible(
+                                  child: Text(
+                                    transaction.description,
+                                    style: TextStyle(
+                                      fontFamily: AppTypography.fontFamily,
+                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                      fontSize: resp.fontSize(11),
+                                    ),
+                                    maxLines: 1,
+                                    overflow: TextOverflow.ellipsis,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                                Text(
+                                  '•',
+                                  style: TextStyle(
+                                    color: isDark ? Colors.white38 : Colors.black26,
+                                    fontSize: 10,
+                                  ),
+                                ),
+                                const SizedBox(width: 4),
+                              ],
+                              Text(
+                                transaction.formattedDate,
+                                style: TextStyle(
+                                  fontFamily: AppTypography.fontFamily,
+                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textMutedLight,
+                                  fontSize: resp.fontSize(11),
+                                ),
+                              ),
+                            ],
+                          ),
+                        ],
+                      ),
+                    ),
+                    const SizedBox(width: 8),
+                    ConstrainedBox(
+                      constraints: BoxConstraints(
+                        maxWidth: resp.isExtraCompact ? 95 : (resp.isSmall ? 110 : 130),
+                      ),
+                      child: Column(
+                        crossAxisAlignment: CrossAxisAlignment.end,
+                        children: [
+                          FittedBox(
+                            fit: BoxFit.scaleDown,
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: Text(
+                              '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode)}',
+                              style: TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                color: color,
+                                fontWeight: FontWeight.w900,
+                                fontSize: resp.fontSize(resp.isSmall ? 14 : 15),
+                                letterSpacing: -0.3,
+                              ),
+                            ),
+                          ),
+                          const SizedBox(height: 1),
+                          Text(
+                            isGive ? 'total_to_give'.tr : 'total_to_get'.tr,
+                            style: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              fontSize: resp.fontSize(10),
+                              fontWeight: FontWeight.w600,
+                              color: color.withValues(alpha: 0.8),
+                            ),
+                          ),
+                        ],
+                      ),
+                    ),
+                  ],
+                ),
+              ),
+            ),
+          ),
+        );
+      }).toList(),
     );
   }
 }

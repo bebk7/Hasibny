@@ -21,6 +21,12 @@
             "request": "launch",
             "type": "dart",
             "flutterMode": "release"
+        },
+        {
+            "name": "windsurf-project (Flutter SM A546E)",
+            "request": "launch",
+            "type": "dart",
+            "deviceId": "SM A546E"
         }
     ]
 }

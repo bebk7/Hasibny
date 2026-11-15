@@ -1,7 +1,8 @@
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/lock_controller.dart';
-import '../../themes/app_theme.dart';
+import '../../core/core.dart';
 
 class LockView extends StatefulWidget {
   const LockView({super.key});
@@ -10,20 +11,42 @@ class LockView extends StatefulWidget {
   State<LockView> createState() => _LockViewState();
 }
 
-class _LockViewState extends State<LockView> {
+class _LockViewState extends State<LockView>
+    with SingleTickerProviderStateMixin {
   final LockController _lockController = Get.find<LockController>();
   final List<String> _enteredPin = [];
   bool _hasError = false;
   bool _isChecking = false;
 
+  late AnimationController _shakeCtrl;
+  late Animation<double> _shakeAnim;
+
   @override
   void initState() {
     super.initState();
+    _shakeCtrl = AnimationController(
+      vsync: this,
+      duration: const Duration(milliseconds: 350),
+    );
+    _shakeAnim = TweenSequence<double>([
+      TweenSequenceItem(tween: Tween(begin: 0.0, end: -12.0), weight: 1),
+      TweenSequenceItem(tween: Tween(begin: -12.0, end: 12.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 12.0, end: -8.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: -8.0, end: 8.0), weight: 2),
+      TweenSequenceItem(tween: Tween(begin: 8.0, end: 0.0), weight: 1),
+    ]).animate(CurvedAnimation(parent: _shakeCtrl, curve: Curves.easeInOut));
+
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (_lockController.isBioEnabled.value) {
         _tryBiometric();
       }
     });
+  }
+
+  @override
+  void dispose() {
+    _shakeCtrl.dispose();
+    super.dispose();
   }
 
   Future<void> _tryBiometric() async {
@@ -34,6 +57,7 @@ class _LockViewState extends State<LockView> {
 
   void _onKeyTap(String key) {
     if (_enteredPin.length >= 4) return;
+    HapticFeedback.selectionClick();
     setState(() {
       _enteredPin.add(key);
       _hasError = false;
@@ -45,6 +69,7 @@ class _LockViewState extends State<LockView> {
 
   void _onDelete() {
     if (_enteredPin.isEmpty) return;
+    HapticFeedback.lightImpact();
     setState(() {
       _enteredPin.removeLast();
       _hasError = false;
@@ -61,6 +86,8 @@ class _LockViewState extends State<LockView> {
         if (!ok) {
           _hasError = true;
           _enteredPin.clear();
+          HapticFeedback.heavyImpact();
+          _shakeCtrl.forward(from: 0.0);
         }
       });
     }
@@ -68,118 +95,194 @@ class _LockViewState extends State<LockView> {
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Scaffold(
       backgroundColor: Theme.of(context).scaffoldBackgroundColor,
       body: SafeArea(
-        child: Padding(
-          padding: const EdgeInsets.symmetric(horizontal: 32, vertical: 24),
-          child: Column(
-            mainAxisAlignment: MainAxisAlignment.center,
-            children: [
-              // Icon
-              Container(
-                width: 80,
-                height: 80,
-                decoration: BoxDecoration(
-                  color: AppTheme.primaryColor.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-                child: const Icon(
-                  Icons.lock_outline,
-                  size: 40,
-                  color: AppTheme.primaryColor,
-                ),
-              ),
-              const SizedBox(height: 24),
-              Text(
-                'app_lock'.tr,
-                style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-                      fontWeight: FontWeight.bold,
+        child: LayoutBuilder(
+          builder: (context, constraints) {
+            final isShort = constraints.maxHeight < 680;
+            final keySize = (isShort ? 58.0 : 70.0).clamp(48.0, 72.0);
+            final lockIconSize = isShort ? 60.0 : 72.0;
+
+            return Center(
+              child: AppPageContainer(
+                maxWidth: 380,
+                padding: EdgeInsets.zero,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  child: ConstrainedBox(
+                    constraints: BoxConstraints(
+                      minHeight: constraints.maxHeight,
+                      maxWidth: 380,
                     ),
-              ),
-              const SizedBox(height: 8),
-              Text(
-                _lockController.isPinEnabled.value
-                    ? 'enter_pin'.tr
-                    : 'use_biometric'.tr,
-                style: Theme.of(context)
-                    .textTheme
-                    .bodyMedium
-                    ?.copyWith(color: Colors.grey[600]),
-              ),
-              const SizedBox(height: 40),
-
-              // PIN dots
-              if (_lockController.isPinEnabled.value) ...[
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.center,
-                  children: List.generate(4, (i) {
-                    final filled = i < _enteredPin.length;
-                    return AnimatedContainer(
-                      duration: const Duration(milliseconds: 150),
-                      margin: const EdgeInsets.symmetric(horizontal: 10),
-                      width: 18,
-                      height: 18,
-                      decoration: BoxDecoration(
-                        shape: BoxShape.circle,
-                        color: _hasError
-                            ? AppTheme.errorColor
-                            : filled
-                                ? AppTheme.primaryColor
-                                : Colors.grey[300],
-                        border: Border.all(
-                          color: _hasError
-                              ? AppTheme.errorColor
-                              : AppTheme.primaryColor,
-                          width: 2,
-                        ),
+                    child: Padding(
+                      padding: EdgeInsets.symmetric(
+                        horizontal: resp.spacingLG,
+                        vertical: resp.spacingMD,
                       ),
-                    );
-                  }),
-                ),
-                if (_hasError) ...[
-                  const SizedBox(height: 12),
-                  Text(
-                    'wrong_pin'.tr,
-                    style: const TextStyle(
-                        color: AppTheme.errorColor, fontSize: 13),
-                  ),
-                ],
-                const SizedBox(height: 40),
+                      child: Column(
+                        mainAxisAlignment: MainAxisAlignment.center,
+                        children: [
+                          // Glowing Lock Icon
+                          Container(
+                            width: lockIconSize,
+                            height: lockIconSize,
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              shape: BoxShape.circle,
+                              border: Border.all(
+                                color: AppColors.primary.withValues(alpha: 0.2),
+                                width: 2,
+                              ),
+                              boxShadow: [
+                                BoxShadow(
+                                  color: AppColors.primary.withValues(alpha: 0.12),
+                                  blurRadius: 20,
+                                  offset: const Offset(0, 6),
+                                ),
+                              ],
+                            ),
+                            child: Icon(
+                              Icons.lock_rounded,
+                              size: isShort ? 28 : 34,
+                              color: AppColors.primary,
+                            ),
+                          ),
+                          SizedBox(height: isShort ? resp.spacingSM : resp.spacingMD),
+                          Text(
+                            'app_lock'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: isShort ? resp.fontXL : resp.font2XL,
+                              fontWeight: FontWeight.bold,
+                            ),
+                          ),
+                          SizedBox(height: resp.spacing2XS),
+                          Text(
+                            _lockController.isPinEnabled.value
+                                ? 'enter_pin'.tr
+                                : 'use_biometric'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: resp.fontSM,
+                              color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                            ),
+                          ),
+                          SizedBox(height: isShort ? resp.spacingMD : resp.spacingXL),
 
-                // Numpad
-                _buildNumpad(),
-              ],
+                          // PIN dots with shake animation
+                          if (_lockController.isPinEnabled.value) ...[
+                            AnimatedBuilder(
+                              animation: _shakeAnim,
+                              builder: (context, child) => Transform.translate(
+                                offset: Offset(_shakeAnim.value, 0),
+                                child: child,
+                              ),
+                              child: Row(
+                                mainAxisAlignment: MainAxisAlignment.center,
+                                children: List.generate(4, (i) {
+                                  final filled = i < _enteredPin.length;
+                                  return AnimatedContainer(
+                                    duration: const Duration(milliseconds: 180),
+                                    margin: EdgeInsets.symmetric(horizontal: resp.spacingSM),
+                                    width: filled ? 18 : 14,
+                                    height: filled ? 18 : 14,
+                                    decoration: BoxDecoration(
+                                      shape: BoxShape.circle,
+                                      color: _hasError
+                                          ? AppColors.give
+                                          : (filled
+                                              ? AppColors.primary
+                                              : Colors.transparent),
+                                      border: Border.all(
+                                        color: _hasError
+                                            ? AppColors.give
+                                            : (filled
+                                                ? AppColors.primary
+                                                : (isDark
+                                                    ? Colors.grey[600]!
+                                                    : Colors.grey[400]!)),
+                                        width: 2,
+                                      ),
+                                      boxShadow: filled && !_hasError
+                                          ? [
+                                              BoxShadow(
+                                                color: AppColors.primary
+                                                    .withValues(alpha: 0.35),
+                                                blurRadius: 8,
+                                                offset: const Offset(0, 2),
+                                              ),
+                                            ]
+                                          : null,
+                                    ),
+                                  );
+                                }),
+                              ),
+                            ),
+                            if (_hasError) ...[
+                              SizedBox(height: resp.spacingSM),
+                              Text(
+                                'wrong_pin'.tr,
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  color: AppColors.give,
+                                  fontSize: resp.fontSM,
+                                  fontWeight: FontWeight.w600,
+                                ),
+                              ),
+                            ],
+                            SizedBox(height: isShort ? resp.spacingLG : resp.spacingXL),
 
-              // Biometric only
-              if (!_lockController.isPinEnabled.value &&
-                  _lockController.isBioEnabled.value) ...[
-                const SizedBox(height: 20),
-                ElevatedButton.icon(
-                  onPressed: _isChecking ? null : _tryBiometric,
-                  icon: _isChecking
-                      ? const SizedBox(
-                          width: 20,
-                          height: 20,
-                          child: CircularProgressIndicator(
-                              strokeWidth: 2, color: Colors.white),
-                        )
-                      : const Icon(Icons.fingerprint),
-                  label: Text('use_biometric'.tr),
-                  style: ElevatedButton.styleFrom(
-                    padding: const EdgeInsets.symmetric(
-                        horizontal: 32, vertical: 14),
+                            // Modern Fintech Numpad
+                            _buildNumpad(keySize, isShort, resp),
+                          ],
+
+                          // Biometric only button
+                          if (!_lockController.isPinEnabled.value &&
+                              _lockController.isBioEnabled.value) ...[
+                            SizedBox(height: resp.spacingLG),
+                            ElevatedButton.icon(
+                              onPressed: _isChecking ? null : _tryBiometric,
+                              icon: _isChecking
+                                  ? const SizedBox(
+                                      width: 20,
+                                      height: 20,
+                                      child: CircularProgressIndicator(
+                                        strokeWidth: 2,
+                                        color: Colors.white,
+                                      ),
+                                    )
+                                  : Icon(Icons.fingerprint_rounded, size: resp.iconMD),
+                              label: Text('use_biometric'.tr,
+                                  style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD)),
+                              style: ElevatedButton.styleFrom(
+                                backgroundColor: AppColors.primary,
+                                foregroundColor: Colors.white,
+                                padding: EdgeInsets.symmetric(
+                                    horizontal: resp.spacingXL, vertical: resp.spacingSM + 2),
+                                shape: RoundedRectangleBorder(
+                                  borderRadius: BorderRadius.circular(resp.buttonRadius),
+                                ),
+                              ),
+                            ),
+                          ],
+                        ],
+                      ),
+                    ),
                   ),
                 ),
-              ],
-            ],
-          ),
+              ),
+            );
+          },
         ),
       ),
     );
   }
 
-  Widget _buildNumpad() {
+  Widget _buildNumpad(double keySize, bool isShort, AppResponsive resp) {
     return Column(
       children: [
         for (var row in [
@@ -189,75 +292,110 @@ class _LockViewState extends State<LockView> {
           [
             _lockController.isBioEnabled.value ? 'bio' : '',
             '0',
-            'del'
+            'del',
           ],
         ])
           Padding(
-            padding: const EdgeInsets.symmetric(vertical: 6),
+            padding: EdgeInsets.symmetric(vertical: isShort ? 3 : 5),
             child: Row(
-              mainAxisAlignment: MainAxisAlignment.center,
-              children: row.map((key) => _buildKey(key)).toList(),
+              mainAxisAlignment: MainAxisAlignment.spaceEvenly,
+              children: row
+                  .map((key) => _buildKey(key, keySize, isShort, resp))
+                  .toList(),
             ),
           ),
       ],
     );
   }
 
-  Widget _buildKey(String key) {
-    if (key.isEmpty) return const SizedBox(width: 80, height: 64);
+  Widget _buildKey(String key, double keySize, bool isShort, AppResponsive resp) {
+    if (key.isEmpty) {
+      return SizedBox(width: keySize, height: keySize);
+    }
 
     if (key == 'del') {
       return _KeyButton(
+        size: keySize,
         onTap: _onDelete,
-        child: const Icon(Icons.backspace_outlined, size: 22),
+        child: Icon(Icons.backspace_outlined, size: resp.iconSM),
       );
     }
 
     if (key == 'bio') {
       return _KeyButton(
+        size: keySize,
         onTap: _isChecking ? null : _tryBiometric,
-        child: const Icon(Icons.fingerprint, size: 26, color: AppTheme.primaryColor),
+        child: Icon(Icons.fingerprint_rounded,
+            size: resp.iconMD + 4, color: AppColors.primary),
       );
     }
 
     return _KeyButton(
+      size: keySize,
       onTap: () => _onKeyTap(key),
       child: Text(
         key,
-        style: Theme.of(context).textTheme.headlineSmall?.copyWith(
-              fontWeight: FontWeight.w500,
-            ),
+        style: TextStyle(
+          fontFamily: 'Cairo',
+          fontSize: isShort ? resp.fontXL : resp.font2XL,
+          fontWeight: FontWeight.w600,
+        ),
       ),
     );
   }
 }
 
-class _KeyButton extends StatelessWidget {
+class _KeyButton extends StatefulWidget {
   final VoidCallback? onTap;
   final Widget child;
+  final double size;
 
-  const _KeyButton({required this.onTap, required this.child});
+  const _KeyButton({
+    required this.onTap,
+    required this.child,
+    required this.size,
+  });
+
+  @override
+  State<_KeyButton> createState() => _KeyButtonState();
+}
+
+class _KeyButtonState extends State<_KeyButton> {
+  bool _pressed = false;
 
   @override
   Widget build(BuildContext context) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return GestureDetector(
-      onTap: onTap,
-      child: Container(
-        width: 80,
-        height: 64,
-        margin: const EdgeInsets.symmetric(horizontal: 8),
-        decoration: BoxDecoration(
-          color: Theme.of(context).cardColor,
-          borderRadius: BorderRadius.circular(12),
-          boxShadow: [
-            BoxShadow(
-              color: Colors.black.withValues(alpha: 0.06),
-              blurRadius: 4,
-              offset: const Offset(0, 2),
+      onTapDown: (_) => setState(() => _pressed = true),
+      onTapUp: (_) {
+        setState(() => _pressed = false);
+        widget.onTap?.call();
+      },
+      onTapCancel: () => setState(() => _pressed = false),
+      child: AnimatedScale(
+        scale: _pressed ? 0.92 : 1.0,
+        duration: const Duration(milliseconds: 100),
+        child: Container(
+          width: widget.size,
+          height: widget.size,
+          decoration: BoxDecoration(
+            shape: BoxShape.circle,
+            color: _pressed
+                ? AppColors.primary.withValues(alpha: 0.15)
+                : (isDark
+                    ? Colors.white.withValues(alpha: 0.05)
+                    : Colors.black.withValues(alpha: 0.03)),
+            border: Border.all(
+              color: isDark
+                  ? Colors.white.withValues(alpha: 0.08)
+                  : Colors.black.withValues(alpha: 0.06),
             ),
-          ],
+          ),
+          alignment: Alignment.center,
+          child: widget.child,
         ),
-        child: Center(child: child),
       ),
     );
   }

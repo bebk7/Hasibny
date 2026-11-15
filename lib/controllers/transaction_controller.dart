@@ -14,6 +14,7 @@ class TransactionController extends GetxController {
   var isLoading = false.obs;
   var selectedCustomerId = 0.obs;
   var currentFilter = 'all'.obs;
+  var selectedCurrencyFilter = 'all'.obs;
 
   @override
   void onInit() {
@@ -28,8 +29,10 @@ class TransactionController extends GetxController {
       allTransactions.assignAll(all);
       _applyFilter();
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_transactions'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_transactions'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }
@@ -40,30 +43,42 @@ class TransactionController extends GetxController {
     _applyFilter();
   }
 
-  void _applyFilter() {
-    switch (currentFilter.value) {
-      case 'give':
-        filteredAllTransactions.assignAll(
-          allTransactions.where((t) => t.type == TransactionType.give).toList(),
-        );
-        break;
-      case 'got':
-        filteredAllTransactions.assignAll(
-          allTransactions.where((t) => t.type == TransactionType.got).toList(),
-        );
-        break;
-      default:
-        filteredAllTransactions.assignAll(allTransactions);
-    }
+  void setCurrencyFilter(String currency) {
+    selectedCurrencyFilter.value = currency;
+    _applyFilter();
   }
 
-  double get totalGiveAll => allTransactions
-      .where((t) => t.type == TransactionType.give)
-      .fold(0.0, (s, t) => s + t.amount);
+  void _applyFilter() {
+    var result = allTransactions.toList();
 
-  double get totalGotAll => allTransactions
-      .where((t) => t.type == TransactionType.got)
-      .fold(0.0, (s, t) => s + t.amount);
+    // Currency filter
+    if (selectedCurrencyFilter.value != 'all') {
+      result = result
+          .where((t) => t.currencyCode == selectedCurrencyFilter.value)
+          .toList();
+    }
+
+    // Type filter
+    if (currentFilter.value == 'give') {
+      result = result.where((t) => t.type == TransactionType.give).toList();
+    } else if (currentFilter.value == 'got') {
+      result = result.where((t) => t.type == TransactionType.got).toList();
+    }
+
+    filteredAllTransactions.assignAll(result);
+  }
+
+  double getTotalGive(String currencyCode) {
+    return allTransactions
+        .where((t) => t.currencyCode == currencyCode && t.type == TransactionType.give)
+        .fold(0.0, (s, t) => s + t.amount);
+  }
+
+  double getTotalGot(String currencyCode) {
+    return allTransactions
+        .where((t) => t.currencyCode == currencyCode && t.type == TransactionType.got)
+        .fold(0.0, (s, t) => s + t.amount);
+  }
 
   Future<void> loadTransactionsForCustomer(int customerId) async {
     selectedCustomerId.value = customerId;
@@ -73,8 +88,10 @@ class TransactionController extends GetxController {
           await DatabaseService.getTransactionsForCustomer(customerId);
       transactions.assignAll(customerTransactions);
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_transactions'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_transactions'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }
@@ -85,21 +102,50 @@ class TransactionController extends GetxController {
     required double amount,
     required TransactionType type,
     required String description,
+    String? currencyCode,
+    DateTime? createdAt,
   }) async {
     try {
+      // If currencyCode not provided, fetch from customer
+      String effectiveCurrency = currencyCode ?? 'YER';
+      if (currencyCode == null) {
+        final customer = await DatabaseService.getCustomerById(customerId);
+        if (customer != null && customer.currencyCode.isNotEmpty) {
+          effectiveCurrency = customer.currencyCode;
+        }
+      }
+
       final transaction = TransactionModel(
         amount: amount,
         type: type,
         description: description,
         customerId: customerId,
+        currencyCode: effectiveCurrency,
       );
+      if (createdAt != null) {
+        transaction.createdAt = createdAt;
+      }
 
       await DatabaseService.addTransaction(transaction);
       SyncService.uploadTransaction(transaction);
+
+      // Immediately adjust balance in memory for zero-latency screen update
+      if (Get.isRegistered<CustomerController>()) {
+        final customerController = Get.find<CustomerController>();
+        customerController.adjustCustomerBalance(
+          customerId: customerId,
+          amount: amount,
+          type: type,
+        );
+      }
+
       await loadTransactionsForCustomer(customerId);
       await loadAllTransactions();
-      final customerController = Get.find<CustomerController>();
-      await customerController.loadCustomerBalances();
+      
+      if (Get.isRegistered<CustomerController>()) {
+        final customerController = Get.find<CustomerController>();
+        await customerController.loadCustomerBalances();
+      }
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshDashboard();
       }
@@ -114,10 +160,15 @@ class TransactionController extends GetxController {
       await DatabaseService.updateTransaction(transaction);
       SyncService.uploadTransaction(transaction);
       await loadTransactionsForCustomer(selectedCustomerId.value);
+      await loadAllTransactions();
 
-      // Refresh customer controller to update balances
-      final customerController = Get.find<CustomerController>();
-      await customerController.loadCustomerBalances();
+      if (Get.isRegistered<CustomerController>()) {
+        final customerController = Get.find<CustomerController>();
+        await customerController.loadCustomerBalances();
+      }
+      if (Get.isRegistered<DashboardController>()) {
+        Get.find<DashboardController>().refreshDashboard();
+      }
 
       Get.snackbar('success'.tr, 'transaction_updated_success'.tr,
           backgroundColor: AppTheme.successColor, colorText: Colors.white);
@@ -127,14 +178,32 @@ class TransactionController extends GetxController {
     }
   }
 
-  Future<void> deleteTransaction(int transactionId) async {
+  Future<void> deleteTransaction(int transactionId, [int? customerId]) async {
     try {
+      final target = transactions.firstWhereOrNull((t) => t.id == transactionId) ??
+          allTransactions.firstWhereOrNull((t) => t.id == transactionId);
+
       await DatabaseService.deleteTransaction(transactionId);
       SyncService.deleteTransactionRemote(transactionId);
+
+      if (target != null && Get.isRegistered<CustomerController>()) {
+        final customerController = Get.find<CustomerController>();
+        customerController.adjustCustomerBalance(
+          customerId: target.customerId,
+          amount: target.amount,
+          type: target.type == TransactionType.give
+              ? TransactionType.got
+              : TransactionType.give,
+        );
+      }
+
       await loadTransactionsForCustomer(selectedCustomerId.value);
       await loadAllTransactions();
-      final customerController = Get.find<CustomerController>();
-      await customerController.loadCustomerBalances();
+      
+      if (Get.isRegistered<CustomerController>()) {
+        final customerController = Get.find<CustomerController>();
+        await customerController.loadCustomerBalances();
+      }
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshDashboard();
       }
@@ -171,6 +240,9 @@ class TransactionController extends GetxController {
   double getTotalGotAmount() {
     return getGotTransactions().fold(0.0, (sum, t) => sum + t.amount);
   }
+
+  double get totalGiveForCustomer => getTotalGiveAmount();
+  double get totalGotForCustomer => getTotalGotAmount();
 
   Future<void> clearAllData() async {
     transactions.clear();

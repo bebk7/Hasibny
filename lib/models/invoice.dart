@@ -1,6 +1,5 @@
-// ignore_for_file: duplicate_ignore, non_constant_identifier_names, constant_identifier_names, invalid_use_of_protected_member, unnecessary_cast, prefer_const_constructors, lines_longer_than_80_chars, require_trailing_commas, inference_failure_on_function_invocation, unnecessary_parenthesis, unnecessary_raw_strings, unnecessary_null_checks, join_return_with_assignment, prefer_final_locals, avoid_js_rounded_ints, avoid_positional_boolean_parameters, always_specify_types
 import 'dart:convert';
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 
 part 'invoice.g.dart';
 
@@ -34,15 +33,38 @@ class InvoiceItem {
 class Invoice {
   Id id = Isar.autoIncrement;
 
+  String? firestoreId;
+  bool isSynced = false;
+
   @Index()
-  late int merchantId;
+  int? merchantId;
+
+  @Index()
+  int? customerId;
 
   late String invoiceNumber;
   late double totalAmount;
   late double paidAmount;
 
+  /// Currency code is immutable per invoice (YER, SAR, USD)
+  String currencyCode = 'YER';
+
   String? notes;
   String? itemsJson;
+
+  // ─── WhatsApp Delivery Tracking ──────────────────────────────────────────
+  bool whatsappSendingEnabled = false;
+
+  /// Delivery status: 'none' | 'pending' | 'sending' | 'sent' | 'failed'
+  String whatsappStatus = 'none';
+
+  String? whatsappMessageId;
+  DateTime? whatsappSentAt;
+  String? whatsappError;
+  String? pdfUrl;
+
+  /// Unique token per dispatch operation to prevent duplicate WhatsApp deliveries
+  String? idempotencyKey;
 
   @Index()
   late DateTime date;
@@ -51,17 +73,29 @@ class Invoice {
   late DateTime updatedAt;
 
   Invoice({
-    required this.merchantId,
+    this.merchantId,
+    this.customerId,
     required this.invoiceNumber,
     required this.totalAmount,
     this.paidAmount = 0.0,
+    this.currencyCode = 'YER',
     this.notes,
     this.itemsJson,
+    this.whatsappSendingEnabled = false,
+    this.whatsappStatus = 'none',
+    this.whatsappMessageId,
+    this.whatsappSentAt,
+    this.whatsappError,
+    this.pdfUrl,
+    this.idempotencyKey,
   }) {
     date = DateTime.now();
     createdAt = DateTime.now();
     updatedAt = DateTime.now();
   }
+
+  bool get isCustomerInvoice => customerId != null;
+  bool get isMerchantInvoice => merchantId != null;
 
   double get remainingAmount => totalAmount - paidAmount;
 
@@ -73,8 +107,14 @@ class Invoice {
   @ignore
   List<InvoiceItem> get items {
     if (itemsJson == null || itemsJson!.isEmpty) return [];
-    final list = jsonDecode(itemsJson!) as List;
-    return list.map((e) => InvoiceItem.fromMap(e as Map<String, dynamic>)).toList();
+    try {
+      final list = jsonDecode(itemsJson!) as List;
+      return list
+          .map((e) => InvoiceItem.fromMap(e as Map<String, dynamic>))
+          .toList();
+    } catch (_) {
+      return [];
+    }
   }
 
   set items(List<InvoiceItem> value) {

@@ -1,7 +1,58 @@
 import 'package:get/get.dart';
 import '../controllers/settings_controller.dart';
+import '../models/app_currency.dart';
 
 class CurrencyFormatter {
+  static String format(
+    double amount, {
+    String? currencyCode,
+    String? symbol,
+    bool showSign = false,
+  }) {
+    final isAr = Get.locale?.languageCode == 'ar';
+    if (currencyCode != null && currencyCode.isNotEmpty) {
+      return AppCurrency.formatAmount(
+        amount,
+        currencyCode: currencyCode,
+        isArabic: isAr,
+        showSign: showSign,
+      );
+    }
+
+    if (symbol != null) {
+      final formattedNum = _formatNumber(amount.abs());
+      final sign = amount < 0 ? '- ' : (showSign ? '+ ' : '');
+      if (symbol == '\$') {
+        return '$sign\$$formattedNum';
+      }
+      return '$sign$formattedNum $symbol';
+    }
+
+    final defaultCode = Get.isRegistered<SettingsController>()
+        ? Get.find<SettingsController>().currentCurrency.value
+        : 'YER';
+
+    return AppCurrency.formatAmount(
+      amount,
+      currencyCode: defaultCode,
+      isArabic: isAr,
+      showSign: showSign,
+    );
+  }
+
+  static String formatAbs(
+    double amount, {
+    String? currencyCode,
+    String? symbol,
+  }) {
+    return format(
+      amount.abs(),
+      currencyCode: currencyCode,
+      symbol: symbol,
+      showSign: false,
+    );
+  }
+
   static String _formatNumber(double amount) {
     String value;
     if (amount == amount.truncateToDouble()) {
@@ -34,17 +85,7 @@ class CurrencyFormatter {
     return parts.length > 1 ? '$formatted.${parts[1]}' : formatted;
   }
 
-  static String format(double amount, {String? symbol}) {
-    final sym = symbol ?? Get.find<SettingsController>().currencySymbol;
-    return '${_formatNumber(amount)} $sym';
-  }
-
-  static String formatAbs(double amount, {String? symbol}) {
-    final sym = symbol ?? Get.find<SettingsController>().currencySymbol;
-    return '${_formatNumber(amount.abs())} $sym';
-  }
-
-  // ─── Amount to Arabic words ──────────────────────────────────────────
+  // ─── Amount to words with currency support ───────────────────────────
 
   static const _onesAr = [
     '', 'واحد', 'اثنان', 'ثلاثة', 'أربعة', 'خمسة',
@@ -70,12 +111,15 @@ class CurrencyFormatter {
     'Sixty', 'Seventy', 'Eighty', 'Ninety',
   ];
 
-  static String amountToWords(double amount) {
-    final sc = Get.find<SettingsController>();
-    final isAr = sc.isArabic;
+  static String amountToWords(double amount, {String? currencyCode}) {
+    final isAr = Get.locale?.languageCode == 'ar';
     final n = amount.truncate().abs();
-    if (n == 0) return isAr ? 'صفر' : 'Zero';
-    return isAr ? _toWordsAr(n) : _toWordsEn(n);
+    final curr = currencyCode != null ? AppCurrency.fromCode(currencyCode) : null;
+    final currName = curr != null ? ' ${curr.getName(isArabic: isAr)}' : '';
+
+    if (n == 0) return (isAr ? 'صفر' : 'Zero') + currName;
+    final words = isAr ? _toWordsAr(n) : _toWordsEn(n);
+    return words + currName;
   }
 
   static String _toWordsAr(int n) {

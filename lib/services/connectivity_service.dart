@@ -3,26 +3,32 @@ import 'package:get/get.dart';
 
 class ConnectivityService extends GetxService {
   final Connectivity _connectivity = Connectivity();
-  
+
   final RxBool isOnline = true.obs;
 
   @override
   void onInit() {
     super.onInit();
     _checkInitialConnection();
-    _connectivity.onConnectivityChanged.listen((List<ConnectivityResult> results) {
-      _updateConnectionStatus(results);
+    _connectivity.onConnectivityChanged.listen((dynamic event) {
+      _handleEvent(event);
     });
   }
 
   Future<void> _checkInitialConnection() async {
-    final results = await _connectivity.checkConnectivity();
-    _updateConnectionStatus(results);
+    try {
+      final dynamic res = await _connectivity.checkConnectivity();
+      _handleEvent(res);
+    } catch (_) {
+      isOnline.value = true;
+    }
   }
 
-  void _updateConnectionStatus(List<ConnectivityResult> results) {
-    if (results.contains(ConnectivityResult.none)) {
-      isOnline.value = false;
+  void _handleEvent(dynamic event) {
+    if (event is List<ConnectivityResult>) {
+      isOnline.value = !event.contains(ConnectivityResult.none) && event.isNotEmpty;
+    } else if (event is ConnectivityResult) {
+      isOnline.value = event != ConnectivityResult.none;
     } else {
       isOnline.value = true;
     }

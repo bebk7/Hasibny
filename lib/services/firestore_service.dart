@@ -53,6 +53,9 @@ class FirestoreService {
         'name': c.name,
         'phoneNumber': c.phoneNumber,
         'profilePicturePath': c.profilePicturePath,
+        'currencyCode': c.currencyCode,
+        'autoSendInvoiceWhatsApp': c.autoSendInvoiceWhatsApp,
+        'whatsappNumber': c.whatsappNumber,
         'createdAt': c.createdAt.toIso8601String(),
         'updatedAt': c.updatedAt.toIso8601String(),
         'firestoreId': c.firestoreId,
@@ -63,6 +66,9 @@ class FirestoreService {
       name: d['name'] ?? '',
       phoneNumber: d['phoneNumber'] ?? '',
       profilePicturePath: d['profilePicturePath'] as String?,
+      currencyCode: d['currencyCode'] as String? ?? 'YER',
+      autoSendInvoiceWhatsApp: d['autoSendInvoiceWhatsApp'] as bool? ?? false,
+      whatsappNumber: d['whatsappNumber'] as String?,
     );
     c.id = (d['id'] as num).toInt();
     c.createdAt = DateTime.parse(d['createdAt'] as String);
@@ -99,6 +105,7 @@ class FirestoreService {
         'type': t.type.name,
         'description': t.description,
         'customerId': t.customerId,
+        'currencyCode': t.currencyCode,
         'createdAt': t.createdAt.toIso8601String(),
         'firestoreId': t.firestoreId,
       };
@@ -109,6 +116,7 @@ class FirestoreService {
       type: d['type'] == 'give' ? TransactionType.give : TransactionType.got,
       description: d['description'] ?? '',
       customerId: (d['customerId'] as num).toInt(),
+      currencyCode: d['currencyCode'] as String? ?? 'YER',
     );
     t.id = (d['id'] as num).toInt();
     t.createdAt = DateTime.parse(d['createdAt'] as String);
@@ -192,11 +200,20 @@ class FirestoreService {
   static Map<String, dynamic> _invoiceToMap(Invoice inv) => {
         'id': inv.id,
         'merchantId': inv.merchantId,
+        'customerId': inv.customerId,
         'invoiceNumber': inv.invoiceNumber,
         'totalAmount': inv.totalAmount,
         'paidAmount': inv.paidAmount,
+        'currencyCode': inv.currencyCode,
         'notes': inv.notes,
         'itemsJson': inv.itemsJson,
+        'whatsappSendingEnabled': inv.whatsappSendingEnabled,
+        'whatsappStatus': inv.whatsappStatus,
+        'whatsappMessageId': inv.whatsappMessageId,
+        'whatsappSentAt': inv.whatsappSentAt?.toIso8601String(),
+        'whatsappError': inv.whatsappError,
+        'pdfUrl': inv.pdfUrl,
+        'idempotencyKey': inv.idempotencyKey,
         'date': inv.date.toIso8601String(),
         'createdAt': inv.createdAt.toIso8601String(),
         'updatedAt': inv.updatedAt.toIso8601String(),
@@ -205,12 +222,23 @@ class FirestoreService {
 
   static Invoice invoiceFromMap(Map<String, dynamic> d) {
     final inv = Invoice(
-      merchantId: (d['merchantId'] as num).toInt(),
+      merchantId: d['merchantId'] != null ? (d['merchantId'] as num).toInt() : null,
+      customerId: d['customerId'] != null ? (d['customerId'] as num).toInt() : null,
       invoiceNumber: d['invoiceNumber'] ?? '',
       totalAmount: (d['totalAmount'] as num).toDouble(),
       paidAmount: (d['paidAmount'] as num? ?? 0).toDouble(),
+      currencyCode: d['currencyCode'] as String? ?? 'YER',
       notes: d['notes'] as String?,
       itemsJson: d['itemsJson'] as String?,
+      whatsappSendingEnabled: d['whatsappSendingEnabled'] as bool? ?? false,
+      whatsappStatus: d['whatsappStatus'] as String? ?? 'none',
+      whatsappMessageId: d['whatsappMessageId'] as String?,
+      whatsappSentAt: d['whatsappSentAt'] != null
+          ? DateTime.tryParse(d['whatsappSentAt'] as String)
+          : null,
+      whatsappError: d['whatsappError'] as String?,
+      pdfUrl: d['pdfUrl'] as String?,
+      idempotencyKey: d['idempotencyKey'] as String?,
     );
     inv.id = (d['id'] as num).toInt();
     inv.date = DateTime.parse(d['date'] as String);

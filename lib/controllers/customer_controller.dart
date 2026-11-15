@@ -1,6 +1,7 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../models/customer.dart';
+import '../models/transaction.dart';
 import '../services/database_service.dart';
 import '../services/sync_service.dart';
 import '../themes/app_theme.dart';
@@ -10,6 +11,7 @@ class CustomerController extends GetxController {
   var customers = <Customer>[].obs;
   var isLoading = false.obs;
   var searchQuery = ''.obs;
+  var selectedCurrencyFilter = 'all'.obs;
   var filteredCustomers = <Customer>[].obs;
   var customerBalances = <int, double>{}.obs;
 
@@ -18,6 +20,7 @@ class CustomerController extends GetxController {
     super.onInit();
     loadCustomers();
     searchQuery.listen((_) => filterCustomers());
+    selectedCurrencyFilter.listen((_) => filterCustomers());
   }
 
   Future<void> loadCustomers() async {
@@ -28,8 +31,10 @@ class CustomerController extends GetxController {
       await loadCustomerBalances();
       filterCustomers();
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_customers'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_customers'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }
@@ -38,50 +43,126 @@ class CustomerController extends GetxController {
   Future<void> loadCustomerBalances() async {
     final balances = await DatabaseService.getAllCustomerBalances();
     customerBalances.assignAll(balances);
+    customerBalances.refresh();
+  }
+
+  void adjustCustomerBalance({
+    required int customerId,
+    required double amount,
+    required TransactionType type,
+  }) {
+    final current = customerBalances[customerId] ?? 0.0;
+    customerBalances[customerId] = type == TransactionType.give
+        ? current - amount
+        : current + amount;
+    customerBalances.refresh();
+  }
+
+  Future<void> updateCustomerBalance(int customerId) async {
+    final balance = await DatabaseService.getCustomerBalance(customerId);
+    customerBalances[customerId] = balance;
+    customerBalances.refresh();
+  }
+
+  void setCurrencyFilter(String filter) {
+    selectedCurrencyFilter.value = filter;
   }
 
   void filterCustomers() {
-    if (searchQuery.value.isEmpty) {
-      filteredCustomers.assignAll(customers);
-    } else {
-      filteredCustomers.assignAll(
-        customers
-            .where((customer) =>
-                customer.name
-                    .toLowerCase()
-                    .contains(searchQuery.value.toLowerCase()) ||
-                customer.phoneNumber
-                    .toLowerCase()
-                    .contains(searchQuery.value.toLowerCase()))
-            .toList(),
-      );
+    var result = customers.toList();
+
+    if (selectedCurrencyFilter.value != 'all') {
+      result = result
+          .where((c) => c.currencyCode == selectedCurrencyFilter.value)
+          .toList();
     }
+
+    if (searchQuery.value.isNotEmpty) {
+      final q = searchQuery.value.toLowerCase().trim();
+      result = result
+          .where((c) =>
+              c.name.toLowerCase().contains(q) ||
+              c.phoneNumber.toLowerCase().contains(q))
+          .toList();
+    }
+
+    filteredCustomers.assignAll(result);
   }
 
-  Future<void> addCustomer(Customer customer) async {
+  bool customerExists({
+    required String name,
+    required String currencyCode,
+    int? excludeId,
+  }) {
+    final normalizedName = name.trim().toLowerCase();
+    final normalizedCurr = currencyCode.trim().toUpperCase();
+    return customers.any((c) =>
+        c.id != excludeId &&
+        c.name.trim().toLowerCase() == normalizedName &&
+        c.currencyCode.trim().toUpperCase() == normalizedCurr);
+  }
+
+  Future<int?> addCustomer(Customer customer) async {
+    if (customerExists(
+      name: customer.name,
+      currencyCode: customer.currencyCode,
+    )) {
+      Get.snackbar(
+        'error'.tr,
+        'customer_already_exists_currency'.tr,
+        backgroundColor: AppTheme.errorColor,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return null;
+    }
+
     try {
-      await DatabaseService.addCustomer(customer);
+      final id = await DatabaseService.addCustomer(customer);
+      customer.id = id;
       SyncService.uploadCustomer(customer);
       await loadCustomers();
       if (Get.isRegistered<DashboardController>()) {
         Get.find<DashboardController>().refreshDashboard();
       }
+      return id;
     } catch (e) {
       Get.snackbar('error'.tr, '${'failed_add_customer'.tr}: $e',
           backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      return null;
     }
   }
 
-  Future<void> updateCustomer(Customer customer) async {
+  Future<bool> updateCustomer(Customer customer) async {
+    if (customerExists(
+      name: customer.name,
+      currencyCode: customer.currencyCode,
+      excludeId: customer.id,
+    )) {
+      Get.snackbar(
+        'error'.tr,
+        'customer_already_exists_currency'.tr,
+        backgroundColor: AppTheme.errorColor,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
+      return false;
+    }
+
     try {
       await DatabaseService.updateCustomer(customer);
       SyncService.uploadCustomer(customer);
       await loadCustomers();
+      if (Get.isRegistered<DashboardController>()) {
+        Get.find<DashboardController>().refreshDashboard();
+      }
       Get.snackbar('success'.tr, 'customer_updated_success'.tr,
           backgroundColor: AppTheme.successColor, colorText: Colors.white);
+      return true;
     } catch (e) {
       Get.snackbar('error'.tr, '${'failed_update_customer'.tr}: $e',
           backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      return false;
     }
   }
 
@@ -111,21 +192,18 @@ class CustomerController extends GetxController {
     }
   }
 
-  // Get customers who owe money (negative balance)
   List<Customer> get debtors {
     return customers
         .where((customer) => getCustomerBalance(customer.id) < 0)
         .toList();
   }
 
-  // Get customers who are owed money (positive balance)
   List<Customer> get creditors {
     return customers
         .where((customer) => getCustomerBalance(customer.id) > 0)
         .toList();
   }
 
-  // Get customers with settled accounts (zero balance)
   List<Customer> get settled {
     return customers
         .where((customer) => getCustomerBalance(customer.id) == 0)

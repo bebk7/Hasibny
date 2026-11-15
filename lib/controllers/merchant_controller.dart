@@ -27,8 +27,10 @@ class MerchantController extends GetxController {
       await loadMerchantTotals();
       _applyFilter();
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_load_merchants'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_load_merchants'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     } finally {
       isLoading.value = false;
     }

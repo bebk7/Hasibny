@@ -11,6 +11,9 @@
 .svn/
 .swiftpm/
 migrate_working_dir/
+*.tmp
+*.bak
+scratch_candidates.txt
 
 # IntelliJ related
 *.iml
@@ -31,18 +34,36 @@ migrate_working_dir/
 .flutter-plugins-dependencies
 .pub-cache/
 .pub/
-/build/
+build/
+**/build/
+
+# Android build & Gradle
+.gradle/
+**/android/.gradle/
+**/android/build/
+**/android/app/build/
+android/local.properties
+/android/app/debug
+/android/app/profile
+/android/app/release
+
+# iOS build artifacts
+ios/Flutter/Generated.xcconfig
+ios/Flutter/app.flx
+ios/Flutter/flutter_assets/
+ios/Flutter/Flutter.framework
+ios/Flutter/Flutter.podspec
+Pods/
+.symlinks/
+
+# Functions / Node
+functions/node_modules/
 
 # Symbolication related
 app.*.symbols
 
 # Obfuscation related
 app.*.map.json
-
-# Android Studio will place build artifacts here
-/android/app/debug
-/android/app/profile
-/android/app/release
 
 # Firebase config (contains API keys)
 lib/firebase_options.dart

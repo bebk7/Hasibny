@@ -1,4 +1,4 @@
-import 'package:isar/isar.dart';
+import 'package:isar_community/isar.dart';
 import 'package:path_provider/path_provider.dart';
 import '../models/customer.dart';
 import '../models/transaction.dart';
@@ -39,9 +39,18 @@ class DatabaseService {
     }
   }
 
-  // Customer operations
+  // ─── Customer operations ───────────────────────────────────────────────────
+
   static Future<List<Customer>> getAllCustomers() async {
     return await _isar.customers.where().sortByUpdatedAtDesc().findAll();
+  }
+
+  static Future<List<Customer>> getCustomersByCurrency(String currencyCode) async {
+    return await _isar.customers
+        .filter()
+        .currencyCodeEqualTo(currencyCode)
+        .sortByUpdatedAtDesc()
+        .findAll();
   }
 
   static Future<Customer?> getCustomerById(int id) async {
@@ -84,9 +93,20 @@ class DatabaseService {
       // Then delete the customer
       await _isar.customers.delete(id);
     });
+
+    // Also delete any customer invoices
+    await _isarMerchants.writeTxn(() async {
+      final invoices = await _isarMerchants.invoices
+          .filter()
+          .customerIdEqualTo(id)
+          .findAll();
+      await _isarMerchants.invoices
+          .deleteAll(invoices.map((i) => i.id).toList());
+    });
   }
 
-  // Transaction operations
+  // ─── Transaction operations ────────────────────────────────────────────────
+
   static Future<List<TransactionModel>> getTransactionsForCustomer(
       int customerId) async {
     return await _isar.transactionModels
@@ -99,6 +119,15 @@ class DatabaseService {
   static Future<List<TransactionModel>> getAllTransactions() async {
     return await _isar.transactionModels
         .where()
+        .sortByCreatedAtDesc()
+        .findAll();
+  }
+
+  static Future<List<TransactionModel>> getTransactionsByCurrency(
+      String currencyCode) async {
+    return await _isar.transactionModels
+        .filter()
+        .currencyCodeEqualTo(currencyCode)
         .sortByCreatedAtDesc()
         .findAll();
   }
@@ -129,23 +158,57 @@ class DatabaseService {
     });
   }
 
-  // Analytics operations
-  static Future<double> getTotalToGive() async {
+  // ─── Multi-Currency Analytics operations ───────────────────────────────────
+
+  static Future<double> getTotalToGiveByCurrency(String currencyCode) async {
     final transactions = await _isar.transactionModels
         .filter()
+        .currencyCodeEqualTo(currencyCode)
+        .and()
         .typeEqualTo(TransactionType.give)
         .findAll();
 
     return transactions.fold<double>(0.0, (sum, t) => sum + t.amount);
   }
 
-  static Future<double> getTotalToGet() async {
+  static Future<double> getTotalToGetByCurrency(String currencyCode) async {
     final transactions = await _isar.transactionModels
         .filter()
+        .currencyCodeEqualTo(currencyCode)
+        .and()
         .typeEqualTo(TransactionType.got)
         .findAll();
 
     return transactions.fold<double>(0.0, (sum, t) => sum + t.amount);
+  }
+
+  static Future<Map<String, Map<String, double>>> getTotalsByCurrency() async {
+    final all = await getAllTransactions();
+    final Map<String, Map<String, double>> result = {
+      'YER': {'toGive': 0.0, 'toGet': 0.0, 'net': 0.0},
+      'SAR': {'toGive': 0.0, 'toGet': 0.0, 'net': 0.0},
+      'USD': {'toGive': 0.0, 'toGet': 0.0, 'net': 0.0},
+    };
+
+    for (final t in all) {
+      final code = t.currencyCode.isNotEmpty ? t.currencyCode : 'YER';
+      if (!result.containsKey(code)) {
+        result[code] = {'toGive': 0.0, 'toGet': 0.0, 'net': 0.0};
+      }
+      if (t.type == TransactionType.give) {
+        result[code]!['toGive'] = (result[code]!['toGive'] ?? 0.0) + t.amount;
+      } else {
+        result[code]!['toGet'] = (result[code]!['toGet'] ?? 0.0) + t.amount;
+      }
+    }
+
+    for (final entry in result.entries) {
+      final toGive = entry.value['toGive'] ?? 0.0;
+      final toGet = entry.value['toGet'] ?? 0.0;
+      entry.value['net'] = toGet - toGive;
+    }
+
+    return result;
   }
 
   static Future<double> getCustomerBalance(int customerId) async {
@@ -164,11 +227,19 @@ class DatabaseService {
   }
 
   static Future<Map<int, double>> getAllCustomerBalances() async {
+    final allTransactions = await getAllTransactions();
     final customers = await getAllCustomers();
     final Map<int, double> balances = {};
 
     for (final customer in customers) {
-      balances[customer.id] = await getCustomerBalance(customer.id);
+      balances[customer.id] = 0.0;
+    }
+
+    for (final t in allTransactions) {
+      final current = balances[t.customerId] ?? 0.0;
+      balances[t.customerId] = t.type == TransactionType.give
+          ? current - t.amount
+          : current + t.amount;
     }
 
     return balances;
@@ -189,7 +260,10 @@ class DatabaseService {
   // ─── Merchant operations ─────────────────────────────────────────────────
 
   static Future<List<Merchant>> getAllMerchants() async {
-    return await _isarMerchants.merchants.where().sortByUpdatedAtDesc().findAll();
+    return await _isarMerchants.merchants
+        .where()
+        .sortByUpdatedAtDesc()
+        .findAll();
   }
 
   static Future<Merchant?> getMerchantById(int id) async {
@@ -226,7 +300,8 @@ class DatabaseService {
     await _isarMerchants.writeTxn(() async {
       final invoices =
           await _isarMerchants.invoices.where().merchantIdEqualTo(id).findAll();
-      await _isarMerchants.invoices.deleteAll(invoices.map((i) => i.id).toList());
+      await _isarMerchants.invoices
+          .deleteAll(invoices.map((i) => i.id).toList());
       await _isarMerchants.merchants.delete(id);
     });
   }
@@ -235,8 +310,16 @@ class DatabaseService {
 
   static Future<List<Invoice>> getInvoicesForMerchant(int merchantId) async {
     return await _isarMerchants.invoices
-        .where()
+        .filter()
         .merchantIdEqualTo(merchantId)
+        .sortByDateDesc()
+        .findAll();
+  }
+
+  static Future<List<Invoice>> getInvoicesForCustomer(int customerId) async {
+    return await _isarMerchants.invoices
+        .filter()
+        .customerIdEqualTo(customerId)
         .sortByDateDesc()
         .findAll();
   }
@@ -277,10 +360,8 @@ class DatabaseService {
       String query) async {
     if (query.trim().isEmpty) return [];
     final q = query.trim().toLowerCase();
-    final allInvoices =
-        await _isarMerchants.invoices.where().findAll();
-    final allMerchants =
-        await _isarMerchants.merchants.where().findAll();
+    final allInvoices = await _isarMerchants.invoices.where().findAll();
+    final allMerchants = await _isarMerchants.merchants.where().findAll();
     final merchantMap = {for (final m in allMerchants) m.id: m};
 
     final List<Map<String, dynamic>> results = [];
@@ -295,6 +376,7 @@ class DatabaseService {
             'invoiceDate': inv.date,
             'merchantName': merchantMap[inv.merchantId]?.name ?? '-',
             'merchantId': inv.merchantId,
+            'currencyCode': inv.currencyCode,
           });
         }
       }
@@ -347,6 +429,32 @@ class DatabaseService {
   static Future<void> deleteMerchantShortage(int id) async {
     await _isarMerchants.writeTxn(() async {
       await _isarMerchants.merchantShortages.delete(id);
+    });
+  }
+
+  // ─── Bulk & Restore operations ──────────────────────────────────────────
+
+  static Future<void> restoreAllData({
+    required List<Customer> customers,
+    required List<TransactionModel> transactions,
+    required List<Merchant> merchants,
+    required List<Invoice> invoices,
+    required List<MerchantShortage> shortages,
+  }) async {
+    await _isar.writeTxn(() async {
+      await _isar.transactionModels.clear();
+      await _isar.customers.clear();
+      await _isar.customers.putAll(customers);
+      await _isar.transactionModels.putAll(transactions);
+    });
+
+    await _isarMerchants.writeTxn(() async {
+      await _isarMerchants.merchantShortages.clear();
+      await _isarMerchants.invoices.clear();
+      await _isarMerchants.merchants.clear();
+      await _isarMerchants.merchants.putAll(merchants);
+      await _isarMerchants.invoices.putAll(invoices);
+      await _isarMerchants.merchantShortages.putAll(shortages);
     });
   }
 }

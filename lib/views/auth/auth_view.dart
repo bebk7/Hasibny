@@ -3,7 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
-import '../../themes/app_theme.dart';
+import '../../core/core.dart';
 
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
@@ -32,21 +32,20 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     super.initState();
     _bgAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(seconds: 20),
+      duration: const Duration(seconds: 24),
     );
 
     _cardAnimCtrl = AnimationController(
       vsync: this,
-      duration: const Duration(milliseconds: 600),
+      duration: const Duration(milliseconds: 500),
     );
-    _cardSlide = Tween<double>(begin: 50, end: 0).animate(
+    _cardSlide = Tween<double>(begin: 40, end: 0).animate(
       CurvedAnimation(parent: _cardAnimCtrl, curve: Curves.easeOutCubic),
     );
     _cardFade = Tween<double>(begin: 0, end: 1).animate(
       CurvedAnimation(parent: _cardAnimCtrl, curve: Curves.easeOut),
     );
 
-    // Defer heavy animations to after first frame
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) {
         _bgAnimCtrl.repeat();
@@ -68,103 +67,134 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
 
   void _toggleMode() {
     HapticFeedback.lightImpact();
+    FocusScope.of(context).unfocus();
     _cardAnimCtrl.reset();
+    _formKey.currentState?.reset();
     setState(() => _isLogin = !_isLogin);
     _cardAnimCtrl.forward();
   }
 
   Future<void> _submit() async {
+    FocusScope.of(context).unfocus();
     if (!_formKey.currentState!.validate()) return;
     HapticFeedback.mediumImpact();
     final ac = Get.find<AuthController>();
     if (_isLogin) {
+      await ac.login(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text.trim(),
+      );
     } else {
-        email: _emailCtrl.text,
-        password: _passwordCtrl.text,
+      await ac.register(
+        email: _emailCtrl.text.trim(),
+        password: _passwordCtrl.text.trim(),
         storeName: _storeNameCtrl.text.trim(),
       );
     }
   }
 
   void _forgotPassword() {
-    if (_emailCtrl.text.trim().isEmpty) {
-      Get.snackbar('error'.tr, 'enter_email_first'.tr,
-          backgroundColor: AppTheme.errorColor,
-          colorText: Colors.white,
-          snackPosition: SnackPosition.BOTTOM);
+    FocusScope.of(context).unfocus();
+    final email = _emailCtrl.text.trim();
+    if (email.isEmpty || !email.contains('@')) {
+      Get.snackbar(
+        'error'.tr,
+        'enter_email_first'.tr,
+        backgroundColor: AppColors.error,
+        colorText: Colors.white,
+        snackPosition: SnackPosition.BOTTOM,
+      );
       return;
     }
-    Get.find<AuthController>().resetPassword(_emailCtrl.text);
+    Get.find<AuthController>().resetPassword(email);
   }
 
   @override
   Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
-    final size = MediaQuery.of(context).size;
+    final size = MediaQuery.sizeOf(context);
 
     return Scaffold(
+      resizeToAvoidBottomInset: true,
+      body: Stack(
         children: [
-          // Animated gradient background
-          AnimatedBuilder(
-            animation: _bgAnimCtrl,
-            builder: (context, child) {
-              return Container(
-                decoration: BoxDecoration(
-                  gradient: LinearGradient(
-                    begin: Alignment(
-                      math.cos(_bgAnimCtrl.value * 2 * math.pi),
-                      math.sin(_bgAnimCtrl.value * 2 * math.pi),
-                    ),
-                    end: Alignment(
-                      -math.cos(_bgAnimCtrl.value * 2 * math.pi),
-                      -math.sin(_bgAnimCtrl.value * 2 * math.pi),
-                    ),
-                    colors: isDark
-                        ? [
-                            const Color(0xFF0D1B2A),
-                            const Color(0xFF1B263B),
-                            const Color(0xFF0D1B2A),
-                          ]
-                        : [
-                            AppTheme.primaryColor,
-                            const Color(0xFF1565C0),
-                            const Color(0xFF0D47A1),
-                          ],
+          // Animated Background mesh
+          Positioned.fill(
+            child: IgnorePointer(
+              child: Stack(
+                children: [
+                  AnimatedBuilder(
+                    animation: _bgAnimCtrl,
+                    builder: (context, child) {
+                      return Container(
+                        decoration: BoxDecoration(
+                          gradient: LinearGradient(
+                            begin: Alignment(
+                              math.cos(_bgAnimCtrl.value * 2 * math.pi),
+                              math.sin(_bgAnimCtrl.value * 2 * math.pi),
+                            ),
+                            end: Alignment(
+                              -math.cos(_bgAnimCtrl.value * 2 * math.pi),
+                              -math.sin(_bgAnimCtrl.value * 2 * math.pi),
+                            ),
+                            colors: isDark
+                                ? [
+                                    const Color(0xFF0B0F19),
+                                    const Color(0xFF1E293B),
+                                    const Color(0xFF0F172A),
+                                  ]
+                                : [
+                                    AppColors.primary,
+                                    const Color(0xFF1D4ED8),
+                                    const Color(0xFF1E40AF),
+                                  ],
+                          ),
+                        ),
+                      );
+                    },
                   ),
-                ),
-              );
-            },
+                  ...List.generate(
+                      5, (i) => _FloatingShape(index: i, size: size)),
+                ],
+              ),
+            ),
           ),
 
-          // Floating shapes
-          ...List.generate(6, (i) => _FloatingShape(index: i, size: size)),
-
-          // Main content
+          // Main Interactive Content
           SafeArea(
             child: Center(
-              child: SingleChildScrollView(
-                physics: const BouncingScrollPhysics(),
-                padding: const EdgeInsets.symmetric(horizontal: 28),
-                child: AnimatedBuilder(
-                  animation: _cardAnimCtrl,
-                  builder: (context, child) {
-                    return Transform.translate(
-                      offset: Offset(0, _cardSlide.value),
-                      child: Opacity(
-                        opacity: _cardFade.value,
-                        child: child,
-                      ),
-                    );
-                  },
-                  child: Column(
-                    mainAxisAlignment: MainAxisAlignment.center,
-                    children: [
-                      const SizedBox(height: 40),
-                      _buildLogo(),
-                      const SizedBox(height: 40),
-                      _buildCard(context),
-                      const SizedBox(height: 40),
-                    ],
+              child: AppPageContainer(
+                maxWidth: 460,
+                padding: EdgeInsets.zero,
+                child: SingleChildScrollView(
+                  physics: const BouncingScrollPhysics(),
+                  padding: EdgeInsets.symmetric(
+                    horizontal: resp.pagePadding,
+                    vertical: resp.spacingMD,
+                  ),
+                  child: AnimatedBuilder(
+                    animation: _cardAnimCtrl,
+                    builder: (context, child) {
+                      return Transform.translate(
+                        offset: Offset(0, _cardSlide.value),
+                        child: Opacity(
+                          opacity: _cardFade.value,
+                          child: child,
+                        ),
+                      );
+                    },
+                    child: Column(
+                      mainAxisAlignment: MainAxisAlignment.center,
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        SizedBox(height: resp.spacing2XS),
+                        _buildLogo(context, resp),
+                        SizedBox(height: resp.spacingLG),
+                        _buildCard(context, resp),
+                        SizedBox(height: resp.spacingMD),
+                      ],
+                    ),
                   ),
                 ),
               ),
@@ -175,72 +205,69 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildLogo() {
+  Widget _buildLogo(BuildContext context, AppResponsive resp) {
+    final logoSize = resp.isShort ? 66.0 : (resp.isSmall ? 74.0 : 84.0);
+    final iconSize = resp.isShort ? 30.0 : (resp.isSmall ? 34.0 : 40.0);
+
     return Column(
       children: [
         Container(
-          width: 100,
-          height: 100,
+          width: logoSize,
+          height: logoSize,
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
             shape: BoxShape.circle,
+            border: Border.all(
+              color: Colors.white.withValues(alpha: 0.25),
+              width: 2,
+            ),
             boxShadow: [
               BoxShadow(
                 color: Colors.black.withValues(alpha: 0.2),
-                blurRadius: 30,
-                offset: const Offset(0, 10),
+                blurRadius: 24,
+                offset: const Offset(0, 8),
               ),
             ],
           ),
           child: Stack(
             alignment: Alignment.center,
             children: [
-              Container(
-                width: 85,
-                height: 85,
-                decoration: BoxDecoration(
-                  color: Colors.white.withValues(alpha: 0.1),
-                  shape: BoxShape.circle,
-                ),
-              ),
               Image.asset(
-                'assets/images/logo.png',
-                width: 56,
-                height: 56,
-                errorBuilder: (_, __, ___) => const Icon(
+                'assets/images/hasibnyLogo.png',
+                width: logoSize * 0.58,
+                height: logoSize * 0.58,
+                errorBuilder: (_, __, ___) => Icon(
                   Icons.account_balance_wallet_rounded,
                   color: Colors.white,
-                  size: 48,
+                  size: iconSize,
                 ),
               ),
             ],
           ),
         ),
-        const SizedBox(height: 20),
+        SizedBox(height: resp.isShort ? 6 : 10),
         Text(
           'app_title'.tr,
-          style: const TextStyle(
+          style: TextStyle(
             color: Colors.white,
-            fontSize: 32,
+            fontSize: resp.font2XL,
             fontWeight: FontWeight.w900,
-            letterSpacing: 1.5,
-            shadows: [
-            ],
+            letterSpacing: 0.8,
           ),
         ),
-        const SizedBox(height: 8),
+        const SizedBox(height: 6),
         Container(
-          padding: const EdgeInsets.symmetric(horizontal: 16, vertical: 6),
+          padding: EdgeInsets.symmetric(horizontal: resp.spacingMD, vertical: 4),
           decoration: BoxDecoration(
             color: Colors.white.withValues(alpha: 0.15),
-            borderRadius: BorderRadius.circular(20),
+            borderRadius: BorderRadius.circular(resp.cardRadius),
           ),
           child: Text(
             'auth_tagline'.tr,
             style: TextStyle(
-              color: Colors.white.withValues(alpha: 0.9),
-              fontSize: 13,
-              fontWeight: FontWeight.w500,
+              color: Colors.white.withValues(alpha: 0.95),
+              fontSize: resp.fontXS,
+              fontWeight: FontWeight.w600,
             ),
           ),
         ),
@@ -248,49 +275,56 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildCard(BuildContext context) {
+  Widget _buildCard(BuildContext context, AppResponsive resp) {
     final ac = Get.find<AuthController>();
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
     return Container(
       decoration: BoxDecoration(
         color: Theme.of(context).cardColor,
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(resp.cardRadius + 8),
         boxShadow: [
           BoxShadow(
-            color: Colors.black.withValues(alpha: 0.25),
-            blurRadius: 40,
-            offset: const Offset(0, 15),
+            color: Colors.black.withValues(alpha: isDark ? 0.35 : 0.18),
+            blurRadius: 32,
+            offset: const Offset(0, 10),
           ),
         ],
       ),
       child: ClipRRect(
-        borderRadius: BorderRadius.circular(28),
+        borderRadius: BorderRadius.circular(resp.cardRadius + 8),
         child: Column(
+          mainAxisSize: MainAxisSize.min,
           children: [
-            // Tab header
+            // Segmented Tab header
             Container(
               decoration: BoxDecoration(
-                gradient: LinearGradient(
-                  colors: [
-                    AppTheme.primaryColor.withValues(alpha: 0.1),
-                    AppTheme.primaryColor.withValues(alpha: 0.05),
-                  ],
+                color: isDark
+                    ? Colors.white.withValues(alpha: 0.04)
+                    : Colors.black.withValues(alpha: 0.02),
+                border: Border(
+                  bottom: BorderSide(
+                    color: isDark
+                        ? Colors.white.withValues(alpha: 0.08)
+                        : Colors.black.withValues(alpha: 0.06),
+                  ),
                 ),
               ),
               child: Row(
                 children: [
                   _buildTab('login'.tr, _isLogin, () {
                     if (!_isLogin) _toggleMode();
-                  }),
+                  }, resp),
                   _buildTab('register'.tr, !_isLogin, () {
                     if (_isLogin) _toggleMode();
-                  }),
+                  }, resp),
                 ],
               ),
             ),
 
-            // Form
+            // Form Content
             Padding(
-              padding: const EdgeInsets.all(28),
+              padding: EdgeInsets.all(resp.spacingMD + 2),
               child: Form(
                 key: _formKey,
                 child: Column(
@@ -299,145 +333,188 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                     Text(
                       _isLogin ? 'login_subtitle'.tr : 'register_subtitle'.tr,
                       style: TextStyle(
-                        fontSize: 14,
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontSM,
                         color: Theme.of(context).hintColor,
                       ),
                       textAlign: TextAlign.center,
                     ),
-                    const SizedBox(height: 28),
+                    SizedBox(height: resp.spacingMD),
 
                     // Store Name (register only)
                     if (!_isLogin) ...[
-                      _buildTextField(
+                      TextFormField(
                         controller: _storeNameCtrl,
-                        label: 'store_name'.tr,
-                        icon: Icons.storefront_rounded,
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                         validator: (v) {
+                          if (v == null || v.trim().isEmpty) {
+                            return 'store_name_required'.tr;
+                          }
                           return null;
                         },
+                        decoration: InputDecoration(
+                          labelText: 'store_name'.tr,
+                          prefixIcon: Icon(Icons.storefront_rounded, size: resp.iconSM),
+                        ),
                       ),
-                      const SizedBox(height: 18),
+                      SizedBox(height: resp.spacingSM),
                     ],
 
                     // Email
-                    _buildTextField(
+                    TextFormField(
                       controller: _emailCtrl,
-                      label: 'email'.tr,
-                      icon: Icons.email_rounded,
                       keyboardType: TextInputType.emailAddress,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                       validator: (v) {
-                        if (!v.contains('@')) return 'invalid_email'.tr;
+                        if (v == null || !v.contains('@')) {
+                          return 'invalid_email'.tr;
+                        }
                         return null;
                       },
+                      decoration: InputDecoration(
+                        labelText: 'email_required'.tr,
+                        prefixIcon: Icon(Icons.email_rounded, size: resp.iconSM),
+                      ),
                     ),
-                    const SizedBox(height: 18),
+                    SizedBox(height: resp.spacingSM),
 
                     // Password
-                    _buildTextField(
+                    TextFormField(
                       controller: _passwordCtrl,
-                      label: 'password'.tr,
-                      icon: Icons.lock_rounded,
-                      obscure: _obscure,
-                      suffixIcon: IconButton(
-                        icon: Icon(
-                          color: Theme.of(context).hintColor,
-                          size: 22,
-                        ),
-                        onPressed: () => setState(() => _obscure = !_obscure),
-                      ),
+                      obscureText: _obscure,
+                      style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                       validator: (v) {
-                        if (v.length < 6) return 'password_min'.tr;
+                        if (v == null || v.length < 6) {
+                          return 'password_min'.tr;
+                        }
                         return null;
                       },
+                      decoration: InputDecoration(
+                        labelText: 'password'.tr,
+                        prefixIcon: Icon(Icons.lock_rounded, size: resp.iconSM),
+                        suffixIcon: IconButton(
+                          icon: Icon(
+                            _obscure
+                                ? Icons.visibility_rounded
+                                : Icons.visibility_off_rounded,
+                            size: resp.iconSM,
+                          ),
+                          onPressed: () => setState(() => _obscure = !_obscure),
+                        ),
+                      ),
                     ),
 
                     // Confirm password (register only)
                     if (!_isLogin) ...[
-                      const SizedBox(height: 18),
-                      _buildTextField(
+                      SizedBox(height: resp.spacingSM),
+                      TextFormField(
                         controller: _confirmPassCtrl,
-                        label: 'confirm_password'.tr,
-                        icon: Icons.lock_outline_rounded,
-                        obscure: _obscureConfirm,
-                        suffixIcon: IconButton(
-                          icon: Icon(
-                            color: Theme.of(context).hintColor,
-                            size: 22,
-                          ),
-                        ),
+                        obscureText: _obscureConfirm,
+                        style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                         validator: (v) {
+                          if (v != _passwordCtrl.text) {
+                            return 'passwords_not_match'.tr;
+                          }
                           return null;
                         },
+                        decoration: InputDecoration(
+                          labelText: 'confirm_password'.tr,
+                          prefixIcon: Icon(Icons.lock_outline_rounded, size: resp.iconSM),
+                          suffixIcon: IconButton(
+                            icon: Icon(
+                              _obscureConfirm
+                                  ? Icons.visibility_rounded
+                                  : Icons.visibility_off_rounded,
+                              size: resp.iconSM,
+                            ),
+                            onPressed: () => setState(
+                                () => _obscureConfirm = !_obscureConfirm),
+                          ),
+                        ),
                       ),
                     ],
 
                     // Forgot password
                     if (_isLogin) ...[
-                      const SizedBox(height: 12),
+                      const SizedBox(height: 6),
                       Align(
                         alignment: AlignmentDirectional.centerEnd,
                         child: TextButton(
                           onPressed: _forgotPassword,
                           style: TextButton.styleFrom(
-                            padding: EdgeInsets.zero,
+                            padding: const EdgeInsets.symmetric(
+                                horizontal: 4, vertical: 4),
                             minimumSize: Size.zero,
                             tapTargetSize: MaterialTapTargetSize.shrinkWrap,
                           ),
                           child: Text(
                             'forgot_password'.tr,
                             style: TextStyle(
-                              color: AppTheme.primaryColor,
-                              fontSize: 13,
-                              fontWeight: FontWeight.w600,
+                              fontFamily: 'Cairo',
+                              color: AppColors.primary,
+                              fontSize: resp.fontXS,
+                              fontWeight: FontWeight.bold,
                             ),
                           ),
                         ),
                       ),
                     ],
 
-                    const SizedBox(height: 28),
+                    SizedBox(height: resp.spacingMD),
 
                     // Submit button
-                    Obx(() => AnimatedContainer(
-                          duration: const Duration(milliseconds: 200),
-                          height: 54,
-                          child: ElevatedButton(
-                            onPressed: ac.isLoading.value ? null : _submit,
-                            style: ElevatedButton.styleFrom(
-                              backgroundColor: AppTheme.primaryColor,
-                              foregroundColor: Colors.white,
-                              shape: RoundedRectangleBorder(
-                                borderRadius: BorderRadius.circular(16),
-                              ),
-                              elevation: ac.isLoading.value ? 0 : 4,
-                            ),
-                            child: ac.isLoading.value
-                                ? const SizedBox(
-                                    height: 24,
-                                    width: 24,
-                                    child: CircularProgressIndicator(
-                                      color: Colors.white,
-                                      strokeWidth: 2.5,
-                                    ),
-                                  )
-                                : Row(
-                                    mainAxisAlignment: MainAxisAlignment.center,
-                                    children: [
-                                      Icon(
-                                        size: 22,
-                                      ),
-                                      const SizedBox(width: 10),
-                                      Text(
-                                        _isLogin ? 'login'.tr : 'register'.tr,
-                                        style: const TextStyle(
-                                          fontSize: 17,
-                                          fontWeight: FontWeight.bold,
-                                        ),
-                                      ),
-                                    ],
-                                  ),
-                          ),
+                    Obx(() => AppButton(
+                          text: _isLogin ? 'login'.tr : 'register'.tr,
+                          icon: _isLogin
+                              ? Icons.login_rounded
+                              : Icons.person_add_rounded,
+                          isLoading: ac.isLoading.value,
+                          onPressed: ac.isLoading.value ? null : _submit,
                         )),
+                    SizedBox(height: resp.spacingMD),
+
+                    // Divider with 'or'
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Divider(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.1),
+                          ),
+                        ),
+                        Padding(
+                          padding: EdgeInsets.symmetric(horizontal: resp.spacingSM),
+                          child: Text(
+                            'or'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: resp.fontXS,
+                              color: Colors.grey[500],
+                              fontWeight: FontWeight.w600,
+                            ),
+                          ),
+                        ),
+                        Expanded(
+                          child: Divider(
+                            color: isDark
+                                ? Colors.white.withValues(alpha: 0.1)
+                                : Colors.black.withValues(alpha: 0.1),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingSM),
+
+                    // Continue as Guest button
+                    AppButton(
+                      text: 'continue_as_guest'.tr,
+                      icon: Icons.person_outline_rounded,
+                      variant: AppButtonVariant.outlined,
+                      onPressed: () async {
+                        await ac.continueAsGuest();
+                      },
+                    ),
                   ],
                 ),
               ),
@@ -448,69 +525,35 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
     );
   }
 
-  Widget _buildTab(String title, bool isActive, VoidCallback onTap) {
+  Widget _buildTab(String title, bool isActive, VoidCallback onTap, AppResponsive resp) {
     return Expanded(
-      child: InkWell(
-        onTap: onTap,
-        child: AnimatedContainer(
-          duration: const Duration(milliseconds: 200),
-          padding: const EdgeInsets.symmetric(vertical: 18),
-          decoration: BoxDecoration(
-            border: Border(
-              bottom: BorderSide(
-                color: isActive ? AppTheme.primaryColor : Colors.transparent,
-                width: 3,
+      child: Material(
+        color: Colors.transparent,
+        child: InkWell(
+          onTap: onTap,
+          child: AnimatedContainer(
+            duration: const Duration(milliseconds: 180),
+            padding: EdgeInsets.symmetric(vertical: resp.spacingSM + 2),
+            decoration: BoxDecoration(
+              border: Border(
+                bottom: BorderSide(
+                  color: isActive ? AppColors.primary : Colors.transparent,
+                  width: 3,
+                ),
+              ),
+            ),
+            child: Text(
+              title,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontMD,
+                color: isActive ? AppColors.primary : null,
+                fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
               ),
             ),
           ),
-          child: Text(
-            title,
-            textAlign: TextAlign.center,
-            style: TextStyle(
-              fontSize: 16,
-              fontWeight: isActive ? FontWeight.bold : FontWeight.w500,
-            ),
-          ),
         ),
-      ),
-    );
-  }
-
-  Widget _buildTextField({
-    required TextEditingController controller,
-    required String label,
-    required IconData icon,
-    TextInputType? keyboardType,
-    bool obscure = false,
-    Widget? suffixIcon,
-    String? Function(String?)? validator,
-  }) {
-    return TextFormField(
-      controller: controller,
-      keyboardType: keyboardType,
-      obscureText: obscure,
-      validator: validator,
-      style: const TextStyle(fontSize: 15),
-      decoration: InputDecoration(
-        labelText: label,
-        prefixIcon: Container(
-          margin: const EdgeInsets.only(left: 4),
-        ),
-        suffixIcon: suffixIcon,
-        border: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        enabledBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: Colors.grey.shade300),
-        ),
-        focusedBorder: OutlineInputBorder(
-          borderRadius: BorderRadius.circular(14),
-          borderSide: BorderSide(color: AppTheme.primaryColor, width: 2),
-        ),
-        filled: true,
-        fillColor: Theme.of(context).scaffoldBackgroundColor,
       ),
     );
   }
@@ -537,15 +580,14 @@ class _FloatingShapeState extends State<_FloatingShape>
     final rng = math.Random(widget.index);
     _startX = rng.nextDouble() * widget.size.width;
     _startY = rng.nextDouble() * widget.size.height;
-    _shapeSize = 40 + rng.nextDouble() * 80;
-    _durationMs = 8000 + rng.nextInt(8000);
+    _shapeSize = 40 + rng.nextDouble() * 70;
+    _durationMs = 9000 + rng.nextInt(7000);
 
     _ctrl = AnimationController(
       vsync: this,
       duration: Duration(milliseconds: _durationMs),
     );
 
-    // Defer animation start
     WidgetsBinding.instance.addPostFrameCallback((_) {
       if (mounted) _ctrl.repeat(reverse: true);
     });
@@ -562,13 +604,13 @@ class _FloatingShapeState extends State<_FloatingShape>
     return AnimatedBuilder(
       animation: _ctrl,
       builder: (context, child) {
-        final dx = math.sin(_ctrl.value * math.pi * 2) * 30;
-        final dy = math.cos(_ctrl.value * math.pi * 2) * 30;
+        final dx = math.sin(_ctrl.value * math.pi * 2) * 24;
+        final dy = math.cos(_ctrl.value * math.pi * 2) * 24;
         return Positioned(
           left: _startX + dx,
           top: _startY + dy,
           child: Opacity(
-            opacity: 0.08,
+            opacity: 0.07,
             child: Container(
               width: _shapeSize,
               height: _shapeSize,
