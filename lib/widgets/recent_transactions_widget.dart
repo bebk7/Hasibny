@@ -115,22 +115,21 @@ class RecentTransactionsWidget extends StatelessWidget {
                             overflow: TextOverflow.ellipsis,
                           ),
                           const SizedBox(height: 2),
-                          Row(
+                          Wrap(
+                            crossAxisAlignment: WrapCrossAlignment.center,
+                            spacing: 4,
                             children: [
                               if (transaction.description.isNotEmpty && customer != null) ...[
-                                Flexible(
-                                  child: Text(
-                                    transaction.description,
-                                    style: TextStyle(
-                                      fontFamily: AppTypography.fontFamily,
-                                      color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                      fontSize: resp.fontSize(11),
-                                    ),
-                                    maxLines: 1,
-                                    overflow: TextOverflow.ellipsis,
+                                Text(
+                                  transaction.description,
+                                  style: TextStyle(
+                                    fontFamily: AppTypography.fontFamily,
+                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                    fontSize: resp.fontSize(11),
                                   ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
                                 ),
-                                const SizedBox(width: 4),
                                 Text(
                                   '•',
                                   style: TextStyle(
@@ -138,7 +137,6 @@ class RecentTransactionsWidget extends StatelessWidget {
                                     fontSize: 10,
                                   ),
                                 ),
-                                const SizedBox(width: 4),
                               ],
                               Text(
                                 transaction.formattedDate,

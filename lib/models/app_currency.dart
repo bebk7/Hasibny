@@ -65,11 +65,24 @@ class AppCurrency {
 
   static AppCurrency fromCode(String? code) {
     if (code == null || code.trim().isEmpty) return yer;
-    final normalized = code.trim().toUpperCase();
-    return supportedCurrencies.firstWhere(
-      (c) => c.code == normalized,
-      orElse: () => yer,
-    );
+    final trimmed = code.trim();
+    final normalized = trimmed.toUpperCase();
+    for (final c in supportedCurrencies) {
+      if (c.code == normalized ||
+          c.symbolAr == trimmed ||
+          c.symbolEn.toUpperCase() == normalized ||
+          c.nameAr == trimmed ||
+          c.nameEn.toUpperCase() == normalized) {
+        return c;
+      }
+    }
+    if (normalized.contains('SAR') || trimmed.contains('ر.س') || trimmed.contains('سعودي')) {
+      return sar;
+    }
+    if (normalized.contains('USD') || trimmed.contains('\$') || trimmed.contains('دولار')) {
+      return usd;
+    }
+    return yer;
   }
 
   static String formatAmount(

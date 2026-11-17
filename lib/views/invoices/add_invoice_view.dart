@@ -4,6 +4,7 @@ import '../../controllers/customer_controller.dart';
 import '../../controllers/invoice_controller.dart';
 import '../../controllers/merchant_controller.dart';
 import '../../core/core.dart';
+import '../../models/app_currency.dart';
 import '../../models/customer.dart';
 import '../../models/invoice.dart';
 import '../../models/merchant.dart';
@@ -454,7 +455,11 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                               ),
                               const SizedBox(height: 2),
                               Text(
-                                '${'account_currency'.tr}: $currCode',
+                                () {
+                                  final c = AppCurrency.fromCode(currCode);
+                                  final isAr = Get.locale?.languageCode == 'ar';
+                                  return '${'account_currency'.tr}: ${c.flag} ${c.getName(isArabic: isAr)} (${c.getSymbol(isArabic: isAr)})';
+                                }(),
                                 style: TextStyle(
                                   fontFamily: 'Cairo',
                                   fontSize: resp.fontXS,

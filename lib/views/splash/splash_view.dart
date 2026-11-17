@@ -330,7 +330,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
                       child: FadeTransition(
                         opacity: _titleFade,
                         child: Text(
-                          'دفتر الحسابات',
+                          ' حاسبني ',
                           textAlign: TextAlign.center,
                           style: TextStyle(
                             fontFamily: 'Cairo',
@@ -452,7 +452,7 @@ class _SplashViewState extends State<SplashView> with TickerProviderStateMixin {
             Padding(
               padding: EdgeInsets.all(padding),
               child: Image.asset(
-                'assets/images/logo.png',
+                'assets/images/hasibnyLogo.png',
                 fit: BoxFit.contain,
                 errorBuilder: (_, __, ___) => Icon(
                   Icons.account_balance_wallet_rounded,

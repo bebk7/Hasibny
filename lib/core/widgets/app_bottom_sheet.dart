@@ -28,68 +28,79 @@ class AppBottomSheet extends StatelessWidget {
   Widget build(BuildContext context) {
     final resp = AppResponsive.of(context);
     final isDark = AppColors.isDark(context);
+    final viewInsets = MediaQuery.viewInsetsOf(context);
+    final viewPadding = MediaQuery.viewPaddingOf(context);
 
-    return Container(
-      constraints: BoxConstraints(
-        maxWidth: resp.maxContentWidth,
-        maxHeight: maxHeight ?? (resp.screenHeight * 0.90),
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceColor : Colors.white,
-        borderRadius: AppRadius.bottomSheetRadius(context),
-      ),
-      padding: EdgeInsets.only(
-        left: resp.isExtraCompact ? 14 : 20,
-        right: resp.isExtraCompact ? 14 : 20,
-        top: 14,
-        bottom: resp.keyboardInset + resp.safeBottom + 16,
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
-          physics: const BouncingScrollPhysics(),
-          child: Column(
-            mainAxisSize: MainAxisSize.min,
-            crossAxisAlignment: CrossAxisAlignment.stretch,
-            children: [
-              if (showDragHandle) ...[
-                Center(
-                  child: Container(
-                    width: AppComponentSizes.dragHandleSize.width,
-                    height: AppComponentSizes.dragHandleSize.height,
-                    margin: const EdgeInsets.only(bottom: 14),
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
-                  ),
-                ),
-              ],
-              if (title != null) ...[
-                Row(
-                  children: [
-                    Expanded(
-                      child: Text(
-                        title!,
-                        style: TextStyle(
-                          fontFamily: 'Cairo',
-                          fontSize: resp.fontSize(17, min: 15, max: 20),
-                          fontWeight: FontWeight.w800,
-                          color: isDark
-                              ? AppColors.textPrimaryDark
-                              : AppColors.textPrimaryLight,
+    return AnimatedPadding(
+      padding: EdgeInsets.only(bottom: viewInsets.bottom),
+      duration: const Duration(milliseconds: 150),
+      curve: Curves.easeOutCubic,
+      child: Align(
+        alignment: Alignment.bottomCenter,
+        child: Container(
+          width: double.infinity,
+          constraints: BoxConstraints(
+            maxWidth: resp.maxContentWidth,
+            maxHeight: maxHeight ?? (resp.screenHeight * 0.85),
+          ),
+          decoration: BoxDecoration(
+            color: isDark ? AppColors.darkSurfaceColor : Colors.white,
+            borderRadius: AppRadius.bottomSheetRadius(context),
+          ),
+          child: SafeArea(
+            top: false,
+            child: SingleChildScrollView(
+              physics: const ClampingScrollPhysics(),
+              padding: EdgeInsets.only(
+                left: resp.isExtraCompact ? 14 : 20,
+                right: resp.isExtraCompact ? 14 : 20,
+                top: 14,
+                bottom: viewPadding.bottom + 16,
+              ),
+              child: Column(
+                mainAxisSize: MainAxisSize.min,
+                crossAxisAlignment: CrossAxisAlignment.stretch,
+                children: [
+                  if (showDragHandle) ...[
+                    Center(
+                      child: Container(
+                        width: AppComponentSizes.dragHandleSize.width,
+                        height: AppComponentSizes.dragHandleSize.height,
+                        margin: const EdgeInsets.only(bottom: 14),
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
                     ),
-                    if (trailing != null) trailing!,
                   ],
-                ),
-                SizedBox(height: resp.spacingSM),
-                const Divider(height: 1),
-                SizedBox(height: resp.spacingMD),
-              ],
-              child,
-            ],
+                  if (title != null) ...[
+                    Row(
+                      children: [
+                        Expanded(
+                          child: Text(
+                            title!,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontSize: resp.fontSize(16.5, min: 14.5, max: 19),
+                              fontWeight: FontWeight.w800,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight,
+                            ),
+                          ),
+                        ),
+                        if (trailing != null) trailing!,
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    const Divider(height: 1),
+                    SizedBox(height: resp.spacingMD),
+                  ],
+                  child,
+                ],
+              ),
+            ),
           ),
         ),
       ),

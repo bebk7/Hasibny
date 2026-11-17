@@ -124,14 +124,14 @@ class AppResponsive {
   double get captionText => AppTypography.captionSize(context);
   double get tinyText => AppTypography.tiny(context);
 
-  double get font2XS => fontSize(10.0, min: 8.5, max: 11.5);
-  double get fontXS => fontSize(11.0, min: 9.5, max: 13.0);
-  double get fontSM => fontSize(12.0, min: 10.5, max: 14.5);
-  double get fontMD => fontSize(14.0, min: 12.0, max: 17.0);
-  double get fontLG => fontSize(16.0, min: 14.0, max: 19.0);
-  double get fontXL => fontSize(20.0, min: 17.0, max: 24.0);
-  double get font2XL => fontSize(24.0, min: 20.0, max: 28.0);
-  double get font3XL => fontSize(28.0, min: 24.0, max: 34.0);
+  double get font2XS => fontSize(9.5, min: 8.0, max: 11.0);
+  double get fontXS => fontSize(10.5, min: 9.0, max: 12.0);
+  double get fontSM => fontSize(11.5, min: 10.0, max: 13.5);
+  double get fontMD => fontSize(13.0, min: 11.5, max: 15.5);
+  double get fontLG => fontSize(15.0, min: 13.0, max: 17.5);
+  double get fontXL => fontSize(18.5, min: 15.5, max: 21.5);
+  double get font2XL => fontSize(22.0, min: 18.5, max: 25.5);
+  double get font3XL => fontSize(25.0, min: 21.0, max: 30.0);
 
   /// Helper to calculate bounded dynamic font size
   double fontSize(double base, {double? min, double? max}) =>

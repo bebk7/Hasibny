@@ -5,6 +5,7 @@ import '../../controllers/customer_controller.dart';
 import '../../controllers/invoice_controller.dart';
 import '../../controllers/merchant_controller.dart';
 import '../../core/core.dart';
+import '../../models/app_currency.dart';
 import '../../models/customer.dart';
 import '../../models/invoice.dart';
 import '../../models/merchant.dart';
@@ -185,34 +186,81 @@ class InvoiceDetailView extends StatelessWidget {
               ),
               SizedBox(height: resp.spacingMD),
 
-              // Amount summary cards (3 columns)
-              Row(
-                children: [
-                  _AmountCard(
-                    label: 'total_amount'.tr,
-                    amount: invoice.totalAmount,
-                    currencyCode: currCode,
-                    color: AppColors.primary,
-                  ),
-                  SizedBox(width: resp.spacingXS),
-                  _AmountCard(
-                    label: 'paid_amount'.tr,
-                    amount: invoice.paidAmount,
-                    currencyCode: currCode,
-                    color: AppColors.got,
-                  ),
-                  SizedBox(width: resp.spacingXS),
-                  _AmountCard(
-                    label: 'remaining_amount'.tr,
-                    amount: invoice.remainingAmount,
-                    currencyCode: currCode,
-                    color: AppColors.give,
-                  ),
-                ],
+              // Amount summary cards (Responsive layout without overflowing Rows)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 360) {
+                    return Column(
+                      children: [
+                        Row(
+                          children: [
+                            Expanded(
+                              child: _AmountCard(
+                                label: 'total_amount'.tr,
+                                amount: invoice.totalAmount,
+                                currencyCode: currCode,
+                                color: AppColors.primary,
+                              ),
+                            ),
+                            SizedBox(width: resp.spacingXS),
+                            Expanded(
+                              child: _AmountCard(
+                                label: 'paid_amount'.tr,
+                                amount: invoice.paidAmount,
+                                currencyCode: currCode,
+                                color: AppColors.got,
+                              ),
+                            ),
+                          ],
+                        ),
+                        SizedBox(height: resp.spacingXS),
+                        SizedBox(
+                          width: double.infinity,
+                          child: _AmountCard(
+                            label: 'remaining_amount'.tr,
+                            amount: invoice.remainingAmount,
+                            currencyCode: currCode,
+                            color: AppColors.give,
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: _AmountCard(
+                          label: 'total_amount'.tr,
+                          amount: invoice.totalAmount,
+                          currencyCode: currCode,
+                          color: AppColors.primary,
+                        ),
+                      ),
+                      SizedBox(width: resp.spacingXS),
+                      Expanded(
+                        child: _AmountCard(
+                          label: 'paid_amount'.tr,
+                          amount: invoice.paidAmount,
+                          currencyCode: currCode,
+                          color: AppColors.got,
+                        ),
+                      ),
+                      SizedBox(width: resp.spacingXS),
+                      Expanded(
+                        child: _AmountCard(
+                          label: 'remaining_amount'.tr,
+                          amount: invoice.remainingAmount,
+                          currencyCode: currCode,
+                          color: AppColors.give,
+                        ),
+                      ),
+                    ],
+                  );
+                },
               ),
               SizedBox(height: resp.spacingMD),
 
-              // Line items card
+              // Line items card (Fully responsive - never overflows)
               if (invoice.items.isNotEmpty) ...[
                 AppCard(
                   padding: EdgeInsets.all(resp.spacingMD),
@@ -275,7 +323,7 @@ class InvoiceDetailView extends StatelessWidget {
                         final i = entry.key;
                         final item = entry.value;
                         return Container(
-                          padding: EdgeInsets.symmetric(vertical: resp.spacingXS + 1),
+                          padding: EdgeInsets.symmetric(vertical: resp.spacingSM),
                           decoration: BoxDecoration(
                             border: i < invoice.items.length - 1
                                 ? Border(
@@ -287,73 +335,70 @@ class InvoiceDetailView extends StatelessWidget {
                                   )
                                 : null,
                           ),
-                          child: Row(
+                          child: Column(
+                            crossAxisAlignment: CrossAxisAlignment.start,
                             children: [
-                              Container(
-                                width: 24,
-                                height: 24,
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.08),
-                                  borderRadius: BorderRadius.circular(resp.radiusXS),
-                                ),
-                                alignment: Alignment.center,
-                                child: Text(
-                                  '${i + 1}',
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: resp.fontXS - 1,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
-                                  ),
-                                ),
-                              ),
-                              SizedBox(width: resp.spacingSM),
-                              Expanded(
-                                flex: 3,
-                                child: Text(
-                                  item.name,
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontWeight: FontWeight.w600,
-                                    fontSize: resp.fontSM,
-                                  ),
-                                  maxLines: 2,
-                                  overflow: TextOverflow.ellipsis,
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                flex: 2,
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: AlignmentDirectional.center,
-                                  child: Text(
-                                    '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currencyCode: currCode)}',
-                                    textAlign: TextAlign.center,
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
-                                      color: isDark ? Colors.grey[400] : Colors.grey[600],
-                                      fontSize: resp.fontXS,
+                              Row(
+                                crossAxisAlignment: CrossAxisAlignment.start,
+                                children: [
+                                  Container(
+                                    width: 22,
+                                    height: 22,
+                                    margin: const EdgeInsets.only(top: 2),
+                                    decoration: BoxDecoration(
+                                      color: AppColors.primary.withValues(alpha: 0.08),
+                                      borderRadius: BorderRadius.circular(resp.radiusXS),
+                                    ),
+                                    alignment: Alignment.center,
+                                    child: Text(
+                                      '${i + 1}',
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: resp.fontXS - 1,
+                                        fontWeight: FontWeight.bold,
+                                        color: AppColors.primary,
+                                      ),
                                     ),
                                   ),
-                                ),
-                              ),
-                              const SizedBox(width: 4),
-                              Expanded(
-                                flex: 2,
-                                child: FittedBox(
-                                  fit: BoxFit.scaleDown,
-                                  alignment: AlignmentDirectional.centerEnd,
-                                  child: Text(
+                                  SizedBox(width: resp.spacingXS + 2),
+                                  Expanded(
+                                    child: Text(
+                                      item.name,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontWeight: FontWeight.w700,
+                                        fontSize: resp.fontMD,
+                                        color: isDark
+                                            ? AppColors.textPrimaryDark
+                                            : AppColors.textPrimaryLight,
+                                      ),
+                                    ),
+                                  ),
+                                  SizedBox(width: resp.spacingSM),
+                                  Text(
                                     CurrencyFormatter.format(item.total,
                                         currencyCode: currCode),
-                                    textAlign: TextAlign.end,
                                     style: TextStyle(
                                       fontFamily: 'Cairo',
                                       fontWeight: FontWeight.w900,
-                                      fontSize: resp.fontSM,
+                                      fontSize: resp.fontMD,
                                       color: AppColors.primary,
                                     ),
+                                  ),
+                                ],
+                              ),
+                              SizedBox(height: resp.spacing2XS),
+                              Padding(
+                                padding: EdgeInsetsDirectional.only(
+                                  start: 22 + resp.spacingXS + 2,
+                                ),
+                                child: Text(
+                                  '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currencyCode: currCode)}',
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    fontSize: resp.fontXS,
+                                    fontWeight: FontWeight.w500,
                                   ),
                                 ),
                               ),
@@ -427,7 +472,11 @@ class InvoiceDetailView extends StatelessWidget {
                       ),
                     _DetailRow(
                       label: 'account_currency'.tr,
-                      value: currCode,
+                      value: () {
+                        final c = AppCurrency.fromCode(currCode);
+                        final isAr = Get.locale?.languageCode == 'ar';
+                        return '${c.flag} ${c.getName(isArabic: isAr)} (${c.getSymbol(isArabic: isAr)})';
+                      }(),
                     ),
                     _DetailRow(
                       label: 'invoice_date'.tr,
@@ -448,30 +497,60 @@ class InvoiceDetailView extends StatelessWidget {
                   customer: customer, merchant: merchant),
               SizedBox(height: resp.spacingLG),
 
-              // Action Buttons (PDF & Record Payment)
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      text: 'export_pdf'.tr,
-                      icon: Icons.picture_as_pdf_rounded,
-                      variant: AppButtonVariant.outlined,
-                      onPressed: () => _exportPDF(context,
-                          customer: customer, merchant: merchant),
-                    ),
-                  ),
-                  if (!paid) ...[
-                    SizedBox(width: resp.spacingSM),
-                    Expanded(
-                      child: AppButton(
-                        text: 'record_give'.tr,
-                        icon: Icons.payments_rounded,
-                        variant: AppButtonVariant.got,
-                        onPressed: () => _showPayDialog(context),
+              // Action Buttons (PDF & Record Payment - Responsive layout)
+              LayoutBuilder(
+                builder: (context, constraints) {
+                  if (constraints.maxWidth < 360 && !paid) {
+                    return Column(
+                      children: [
+                        SizedBox(
+                          width: double.infinity,
+                          child: AppButton(
+                            text: 'record_give'.tr,
+                            icon: Icons.payments_rounded,
+                            variant: AppButtonVariant.got,
+                            onPressed: () => _showPayDialog(context),
+                          ),
+                        ),
+                        SizedBox(height: resp.spacingSM),
+                        SizedBox(
+                          width: double.infinity,
+                          child: AppButton(
+                            text: 'export_pdf'.tr,
+                            icon: Icons.picture_as_pdf_rounded,
+                            variant: AppButtonVariant.outlined,
+                            onPressed: () => _exportPDF(context,
+                                customer: customer, merchant: merchant),
+                          ),
+                        ),
+                      ],
+                    );
+                  }
+                  return Row(
+                    children: [
+                      Expanded(
+                        child: AppButton(
+                          text: 'export_pdf'.tr,
+                          icon: Icons.picture_as_pdf_rounded,
+                          variant: AppButtonVariant.outlined,
+                          onPressed: () => _exportPDF(context,
+                              customer: customer, merchant: merchant),
+                        ),
                       ),
-                    ),
-                  ],
-                ],
+                      if (!paid) ...[
+                        SizedBox(width: resp.spacingSM),
+                        Expanded(
+                          child: AppButton(
+                            text: 'record_give'.tr,
+                            icon: Icons.payments_rounded,
+                            variant: AppButtonVariant.got,
+                            onPressed: () => _showPayDialog(context),
+                          ),
+                        ),
+                      ],
+                    ],
+                  );
+                },
               ),
               SizedBox(height: resp.pagePadding),
             ],
@@ -852,48 +931,49 @@ class _AmountCard extends StatelessWidget {
     final resp = AppResponsive.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
 
-    return Expanded(
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: resp.spacingXS,
-          vertical: resp.spacingSM,
+    return Container(
+      padding: EdgeInsets.symmetric(
+        horizontal: resp.spacingSM,
+        vertical: resp.spacingSM,
+      ),
+      decoration: BoxDecoration(
+        color: color.withValues(alpha: isDark ? 0.12 : 0.08),
+        borderRadius: BorderRadius.circular(resp.cardRadius * 0.75),
+        border: Border.all(
+          color: color.withValues(alpha: isDark ? 0.25 : 0.15),
         ),
-        decoration: BoxDecoration(
-          color: color.withValues(alpha: isDark ? 0.12 : 0.08),
-          borderRadius: BorderRadius.circular(resp.cardRadius * 0.75),
-          border: Border.all(
-            color: color.withValues(alpha: isDark ? 0.25 : 0.15),
+      ),
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.center,
+        children: [
+          Text(
+            label,
+            textAlign: TextAlign.center,
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              color: isDark ? Colors.grey[400] : Colors.grey[600],
+              fontSize: resp.fontXS,
+              fontWeight: FontWeight.w600,
+            ),
           ),
-        ),
-        child: Column(
-          children: [
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                label,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  color: isDark ? Colors.grey[400] : Colors.grey[600],
-                  fontSize: resp.fontXS,
-                  fontWeight: FontWeight.w600,
-                ),
+          const SizedBox(height: 4),
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              CurrencyFormatter.format(amount, currencyCode: currencyCode),
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                color: color,
+                fontWeight: FontWeight.w900,
+                fontSize: resp.fontMD,
               ),
             ),
-            const SizedBox(height: 4),
-            FittedBox(
-              fit: BoxFit.scaleDown,
-              child: Text(
-                CurrencyFormatter.format(amount, currencyCode: currencyCode),
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  color: color,
-                  fontWeight: FontWeight.w900,
-                  fontSize: resp.fontMD,
-                ),
-              ),
-            ),
-          ],
-        ),
+          ),
+        ],
       ),
     );
   }
@@ -911,7 +991,7 @@ class _DetailRow extends StatelessWidget {
     return Padding(
       padding: EdgeInsets.symmetric(vertical: resp.spacingXS),
       child: Row(
-        mainAxisAlignment: MainAxisAlignment.spaceBetween,
+        crossAxisAlignment: CrossAxisAlignment.start,
         children: [
           Text(
             label,
@@ -922,7 +1002,7 @@ class _DetailRow extends StatelessWidget {
             ),
           ),
           SizedBox(width: resp.spacingSM),
-          Flexible(
+          Expanded(
             child: Text(
               value,
               textAlign: TextAlign.end,
@@ -930,6 +1010,7 @@ class _DetailRow extends StatelessWidget {
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.w600,
                 fontSize: resp.fontSM,
+                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
               ),
             ),
           ),

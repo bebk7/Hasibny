@@ -387,7 +387,8 @@ class _InvoiceCard extends StatelessWidget {
                             fit: BoxFit.scaleDown,
                             alignment: AlignmentDirectional.centerEnd,
                             child: Text(
-                              CurrencyFormatter.format(invoice.totalAmount),
+                              CurrencyFormatter.format(invoice.totalAmount,
+                                  currencyCode: invoice.currencyCode),
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 fontWeight: FontWeight.w900,
@@ -403,7 +404,7 @@ class _InvoiceCard extends StatelessWidget {
                             child: Text(
                               paid
                                   ? 'fully_paid'.tr
-                                  : '${'remaining'.tr}: ${CurrencyFormatter.format(invoice.remainingAmount)}',
+                                  : '${'remaining'.tr}: ${CurrencyFormatter.format(invoice.remainingAmount, currencyCode: invoice.currencyCode)}',
                               style: TextStyle(
                                 fontFamily: 'Cairo',
                                 color: color,

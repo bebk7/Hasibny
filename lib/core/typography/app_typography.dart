@@ -9,16 +9,16 @@ class AppTypography {
 
   static const String fontFamily = 'Cairo';
 
-  // Base Font Sizes
-  static const double sizeDisplay = 28.0;
-  static const double sizeHeading1 = 22.0;
-  static const double sizeHeading2 = 18.0;
-  static const double sizeHeading3 = 16.0;
-  static const double sizeBodyLarge = 15.0;
-  static const double sizeBody = 14.0;
-  static const double sizeBodySmall = 13.0;
+  // Base Font Sizes (Refined and slightly reduced for optimal readability and zero overflow)
+  static const double sizeDisplay = 26.0;
+  static const double sizeHeading1 = 21.0;
+  static const double sizeHeading2 = 17.5;
+  static const double sizeHeading3 = 15.0;
+  static const double sizeBodyLarge = 14.0;
+  static const double sizeBody = 13.5;
+  static const double sizeBodySmall = 12.0;
   static const double sizeCaption = 11.0;
-  static const double sizeTiny = 10.0;
+  static const double sizeTiny = 9.5;
 
   // Responsive dynamic font size calculators
   static double responsive(
@@ -38,31 +38,31 @@ class AppTypography {
   }
 
   static double display(BuildContext context) =>
-      responsive(context, sizeDisplay, min: 22, max: 34);
+      responsive(context, sizeDisplay, min: 21, max: 32);
 
   static double heading1(BuildContext context) =>
-      responsive(context, sizeHeading1, min: 18, max: 26);
+      responsive(context, sizeHeading1, min: 18.0, max: 25);
 
   static double heading2(BuildContext context) =>
-      responsive(context, sizeHeading2, min: 15, max: 22);
+      responsive(context, sizeHeading2, min: 15.0, max: 21);
 
   static double heading3(BuildContext context) =>
-      responsive(context, sizeHeading3, min: 14, max: 19);
+      responsive(context, sizeHeading3, min: 13.0, max: 18);
 
   static double bodyLarge(BuildContext context) =>
-      responsive(context, sizeBodyLarge, min: 13, max: 18);
+      responsive(context, sizeBodyLarge, min: 12.5, max: 17);
 
   static double body(BuildContext context) =>
-      responsive(context, sizeBody, min: 12, max: 17);
+      responsive(context, sizeBody, min: 12.0, max: 16);
 
   static double bodySmall(BuildContext context) =>
-      responsive(context, sizeBodySmall, min: 11, max: 15);
+      responsive(context, sizeBodySmall, min: 11.0, max: 14.5);
 
   static double captionSize(BuildContext context) =>
-      responsive(context, sizeCaption, min: 9.5, max: 13);
+      responsive(context, sizeCaption, min: 9.5, max: 12.5);
 
   static double tiny(BuildContext context) =>
-      responsive(context, sizeTiny, min: 9, max: 12);
+      responsive(context, sizeTiny, min: 8.5, max: 11.5);
 
   // Ergonomic static TextStyle helpers forwarding to AppTextStyles
   static TextStyle pageTitle(BuildContext context, {Color? color}) =>

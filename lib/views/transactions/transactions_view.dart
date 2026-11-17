@@ -325,12 +325,14 @@ class _SummaryCard extends StatelessWidget {
         children: [
           Row(
             mainAxisAlignment: MainAxisAlignment.center,
+            mainAxisSize: MainAxisSize.min,
             children: [
               Icon(icon, color: color, size: resp.iconXS),
               SizedBox(width: resp.spacing2XS),
               Flexible(
                 child: Text(
                   label,
+                  maxLines: 1,
                   overflow: TextOverflow.ellipsis,
                   style: AppTypography.caption(context).copyWith(
                     fontWeight: FontWeight.w700,
@@ -406,6 +408,7 @@ class _TransactionCard extends StatelessWidget {
           boxShadow: AppShadows.subtle(isDark),
         ),
         child: Row(
+          crossAxisAlignment: CrossAxisAlignment.center,
           children: [
             Container(
               width: avatarSize,
@@ -429,47 +432,44 @@ class _TransactionCard extends StatelessWidget {
                 crossAxisAlignment: CrossAxisAlignment.start,
                 mainAxisSize: MainAxisSize.min,
                 children: [
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: resp.spacing2XS + 2,
                     children: [
-                      Expanded(
-                        child: Text(
-                          customer?.name ??
-                              (transaction.description.isNotEmpty
-                                  ? transaction.description
-                                  : 'unknown_customer'.tr),
-                          overflow: TextOverflow.ellipsis,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.w700,
-                            fontSize: resp.fontMD,
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                          ),
+                      Text(
+                        customer?.name ??
+                            (transaction.description.isNotEmpty
+                                ? transaction.description
+                                : 'unknown_customer'.tr),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: FontWeight.w700,
+                          fontSize: resp.fontMD,
+                          color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                         ),
                       ),
-                      SizedBox(width: resp.spacing2XS),
                       AppBadge(
                         label: '${curr.flag} ${curr.code}',
-                        fontSize: 10,
+                        fontSize: 9.5,
                         padding: EdgeInsets.symmetric(
-                          horizontal: resp.spacingXS,
+                          horizontal: resp.spacingXS - 1,
                           vertical: 1,
                         ),
                       ),
                     ],
                   ),
                   SizedBox(height: resp.spacing2XS),
-                  Row(
+                  Wrap(
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: resp.spacing2XS,
                     children: [
                       if (transaction.description.isNotEmpty && customer != null) ...[
-                        Flexible(
-                          child: Text(
-                            transaction.description,
-                            style: AppTypography.caption(context),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
+                        Text(
+                          transaction.description,
+                          style: AppTypography.caption(context),
+                          maxLines: 1,
+                          overflow: TextOverflow.ellipsis,
                         ),
-                        SizedBox(width: resp.spacing2XS),
                         Text(
                           '•',
                           style: TextStyle(
@@ -477,7 +477,6 @@ class _TransactionCard extends StatelessWidget {
                             fontSize: 10,
                           ),
                         ),
-                        SizedBox(width: resp.spacing2XS),
                       ],
                       Text(
                         transaction.formattedDate,
@@ -492,16 +491,14 @@ class _TransactionCard extends StatelessWidget {
                 ],
               ),
             ),
-            SizedBox(width: resp.spacingXS),
-            ConstrainedBox(
-              constraints: BoxConstraints(
-                maxWidth: resp.isTablet ? 160 : 130,
-              ),
-              child: FittedBox(
-                fit: BoxFit.scaleDown,
-                alignment: AlignmentDirectional.centerEnd,
-                child: Text(
+            SizedBox(width: resp.spacingSM),
+            Column(
+              crossAxisAlignment: CrossAxisAlignment.end,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
                   '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode)}',
+                  textAlign: TextAlign.end,
                   style: TextStyle(
                     fontFamily: 'Cairo',
                     color: color,
@@ -510,28 +507,23 @@ class _TransactionCard extends StatelessWidget {
                     letterSpacing: -0.3,
                   ),
                 ),
-              ),
-            ),
-            SizedBox(width: resp.spacingXS),
-            IconButton(
-              padding: EdgeInsets.zero,
-              constraints: const BoxConstraints(),
-              icon: Container(
-                padding: EdgeInsets.all(resp.spacingXS),
-                decoration: BoxDecoration(
-                  color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
-                  shape: BoxShape.circle,
+                const SizedBox(height: 3),
+                InkWell(
+                  onTap: () {
+                    HapticFeedback.lightImpact();
+                    onShare();
+                  },
+                  borderRadius: BorderRadius.circular(resp.radiusSM),
+                  child: Padding(
+                    padding: const EdgeInsets.all(2),
+                    child: Icon(
+                      Icons.share_rounded,
+                      size: resp.iconXS + 2,
+                      color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                    ),
+                  ),
                 ),
-                child: Icon(
-                  Icons.share_rounded,
-                  size: resp.iconXS + 2,
-                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
-                ),
-              ),
-              onPressed: () {
-                HapticFeedback.lightImpact();
-                onShare();
-              },
+              ],
             ),
           ],
         ),

@@ -26,7 +26,9 @@ class _OnboardingViewState extends State<OnboardingView> {
         type: FileType.any,
       );
 
-      if (result == null || result.files.isEmpty || result.files.single.path == null) {
+      if (result == null ||
+          result.files.isEmpty ||
+          result.files.single.path == null) {
         return;
       }
 
@@ -126,7 +128,9 @@ class _OnboardingViewState extends State<OnboardingView> {
                   prefixIcon: Icon(Icons.password_rounded, size: resp.iconSM),
                   suffixIcon: IconButton(
                     icon: Icon(
-                      obscure ? Icons.visibility_off_rounded : Icons.visibility_rounded,
+                      obscure
+                          ? Icons.visibility_off_rounded
+                          : Icons.visibility_rounded,
                       size: resp.iconSM,
                     ),
                     onPressed: () {
@@ -284,14 +288,15 @@ class _OnboardingViewState extends State<OnboardingView> {
                         ),
                         boxShadow: [
                           BoxShadow(
-                            color: const Color(0xFF00E5FF).withValues(alpha: 0.12),
+                            color:
+                                const Color(0xFF00E5FF).withValues(alpha: 0.12),
                             blurRadius: 28,
                             offset: const Offset(0, 6),
                           ),
                         ],
                       ),
                       child: Image.asset(
-                        'assets/images/logo.png',
+                        'assets/HasibnyLogo.png',
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Icon(
                           Icons.account_balance_wallet_rounded,

@@ -50,12 +50,15 @@ class ExportService {
   static String _formatDate(DateTime dt) =>
       DateFormat('yyyy/MM/dd  HH:mm').format(dt);
 
-  static String formatPdfAmount(double amount, {String? currencyCode, bool isAr = true}) {
+  static String formatPdfAmount(double amount,
+      {String? currencyCode, bool isAr = true}) {
     final absAmount = amount.abs();
     final defaultCode = Get.isRegistered<SettingsController>()
         ? Get.find<SettingsController>().currentCurrency.value
         : 'YER';
-    final code = (currencyCode != null && currencyCode.trim().isNotEmpty) ? currencyCode : defaultCode;
+    final code = (currencyCode != null && currencyCode.trim().isNotEmpty)
+        ? currencyCode
+        : defaultCode;
     final curr = AppCurrency.fromCode(code);
     final dec = curr.decimalDigits;
 
@@ -91,10 +94,12 @@ class ExportService {
     return '$sign$formattedNum $symbol';
   }
 
-  static String _fmtAmt(double amount, {String? currencyCode, bool isAr = true}) =>
+  static String _fmtAmt(double amount,
+          {String? currencyCode, bool isAr = true}) =>
       formatPdfAmount(amount, currencyCode: currencyCode, isAr: isAr);
 
-  static Future<void> _saveAndShareBytes(Uint8List bytes, String filename) async {
+  static Future<void> _saveAndShareBytes(
+      Uint8List bytes, String filename) async {
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/$filename');
     await file.writeAsBytes(bytes);
@@ -151,7 +156,8 @@ class ExportService {
                         style: pw.TextStyle(
                             font: font, fontSize: 9, color: _textMuted)),
                   if (storeTaxNumber.isNotEmpty)
-                    pw.Text('${Get.locale?.languageCode == 'ar' ? 'الرقم الضريبي:' : 'Tax No:'} $storeTaxNumber',
+                    pw.Text(
+                        '${Get.locale?.languageCode == 'ar' ? 'الرقم الضريبي:' : 'Tax No:'} $storeTaxNumber',
                         style: pw.TextStyle(
                             font: font, fontSize: 9, color: _textMuted)),
                   pw.SizedBox(height: 8),
@@ -222,7 +228,7 @@ class ExportService {
       child: pw.Row(
         mainAxisAlignment: pw.MainAxisAlignment.spaceBetween,
         children: [
-          pw.Text('دفتر الحسابات • Account Book',
+          pw.Text(' حاسبني •  Hasibny ',
               style: pw.TextStyle(font: font, fontSize: 8, color: _textMuted)),
           pw.Text(
               isAr
@@ -253,7 +259,8 @@ class ExportService {
           crossAxisAlignment: pw.CrossAxisAlignment.start,
           children: [
             pw.Text(label,
-                style: pw.TextStyle(font: font, fontSize: 9, color: _textMuted)),
+                style:
+                    pw.TextStyle(font: font, fontSize: 9, color: _textMuted)),
             pw.SizedBox(height: 4),
             pw.Text(value,
                 style: pw.TextStyle(
@@ -327,7 +334,8 @@ class ExportService {
     final pdf = pw.Document();
     final textDir = isAr ? pw.TextDirection.rtl : pw.TextDirection.ltr;
     final paid = invoice.isFullyPaid;
-    final statusColor = paid ? _accent : (invoice.paidAmount > 0 ? _warning : _danger);
+    final statusColor =
+        paid ? _accent : (invoice.paidAmount > 0 ? _warning : _danger);
     final statusText = paid
         ? (isAr ? 'مدفوعة بالكامل' : 'Fully Paid')
         : (invoice.paidAmount > 0
@@ -343,7 +351,8 @@ class ExportService {
         ? (isAr ? 'فاتورة مبيعات' : 'Sales Invoice')
         : (isAr ? 'فاتورة توريد بضاعة' : 'Supply Invoice');
 
-    final currCode = invoice.currencyCode.isNotEmpty ? invoice.currencyCode : 'YER';
+    final currCode =
+        invoice.currencyCode.isNotEmpty ? invoice.currencyCode : 'YER';
 
     pdf.addPage(
       pw.MultiPage(
@@ -353,7 +362,8 @@ class ExportService {
         textDirection: textDir,
         header: (ctx) => _buildHeader(
           title: invoiceTitle,
-          subtitle: '#${invoice.invoiceNumber}  •  ${_formatDate(invoice.date)}',
+          subtitle:
+              '#${invoice.invoiceNumber}  •  ${_formatDate(invoice.date)}',
           boldFont: boldFont,
           font: font,
           storeName: sc.storeName.value,
@@ -392,7 +402,8 @@ class ExportService {
           pw.SizedBox(height: 16),
 
           // Items Table
-          _sectionTitle(isAr ? 'بنود وأصناف الفاتورة' : 'Invoice Items', boldFont),
+          _sectionTitle(
+              isAr ? 'بنود وأصناف الفاتورة' : 'Invoice Items', boldFont),
           pw.SizedBox(height: 4),
 
           if (invoice.items.isEmpty)
@@ -406,7 +417,8 @@ class ExportService {
               ),
               child: pw.Text(
                 isAr ? 'لا توجد أصناف مسجلة' : 'No items recorded',
-                style: pw.TextStyle(font: font, fontSize: 10, color: _textMuted),
+                style:
+                    pw.TextStyle(font: font, fontSize: 10, color: _textMuted),
               ),
             )
           else
@@ -449,7 +461,8 @@ class ExportService {
             children: [
               _infoCard(
                 label: isAr ? 'المبلغ الإجمالي' : 'Total Amount',
-                value: _fmtAmt(invoice.totalAmount, currencyCode: currCode, isAr: isAr),
+                value: _fmtAmt(invoice.totalAmount,
+                    currencyCode: currCode, isAr: isAr),
                 font: font,
                 boldFont: boldFont,
                 valueColor: _primaryDark,
@@ -457,7 +470,8 @@ class ExportService {
               pw.SizedBox(width: 12),
               _infoCard(
                 label: isAr ? 'المبلغ المدفوع' : 'Paid Amount',
-                value: _fmtAmt(invoice.paidAmount, currencyCode: currCode, isAr: isAr),
+                value: _fmtAmt(invoice.paidAmount,
+                    currencyCode: currCode, isAr: isAr),
                 font: font,
                 boldFont: boldFont,
                 valueColor: _accent,
@@ -465,7 +479,8 @@ class ExportService {
               pw.SizedBox(width: 12),
               _infoCard(
                 label: isAr ? 'المتبقي للسداد' : 'Remaining Balance',
-                value: _fmtAmt(invoice.remainingAmount, currencyCode: currCode, isAr: isAr),
+                value: _fmtAmt(invoice.remainingAmount,
+                    currencyCode: currCode, isAr: isAr),
                 font: font,
                 boldFont: boldFont,
                 valueColor: invoice.remainingAmount > 0 ? _danger : _accent,
@@ -515,7 +530,10 @@ class ExportService {
               pw.Column(
                 crossAxisAlignment: pw.CrossAxisAlignment.center,
                 children: [
-                  pw.Text(isAr ? 'الختم والتوقيع المعتمد' : 'Authorized Stamp & Signature',
+                  pw.Text(
+                      isAr
+                          ? 'الختم والتوقيع المعتمد'
+                          : 'Authorized Stamp & Signature',
                       style: pw.TextStyle(font: boldFont, fontSize: 10)),
                   pw.SizedBox(height: 36),
                   pw.Container(width: 140, height: 1, color: _border),
@@ -550,17 +568,18 @@ class ExportService {
     Customer? customer,
     Merchant? merchant,
   }) {
-    final title = '${Get.locale?.languageCode == 'ar' ? 'معاينة الفاتورة' : 'Invoice Preview'} #${invoice.invoiceNumber}';
+    final title =
+        '${Get.locale?.languageCode == 'ar' ? 'معاينة الفاتورة' : 'Invoice Preview'} #${invoice.invoiceNumber}';
     Get.to(() => ReportPreviewView(
-      title: title,
-      fileName: 'invoice_${invoice.invoiceNumber}.pdf',
-      format: ReportFormat.pdf,
-      documentLoader: () => generateInvoicePdfBytes(
-        invoice: invoice,
-        customer: customer,
-        merchant: merchant,
-      ),
-    ));
+          title: title,
+          fileName: 'invoice_${invoice.invoiceNumber}.pdf',
+          format: ReportFormat.pdf,
+          documentLoader: () => generateInvoicePdfBytes(
+            invoice: invoice,
+            customer: customer,
+            merchant: merchant,
+          ),
+        ));
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -635,7 +654,8 @@ class ExportService {
             pw.SizedBox(width: 12),
             _infoCard(
               label: isAr ? 'المتبقي للمورد' : 'Remaining Due',
-              value: _fmtAmt(totalRemaining, currencyCode: defaultCurr, isAr: isAr),
+              value: _fmtAmt(totalRemaining,
+                  currencyCode: defaultCurr, isAr: isAr),
               font: font,
               boldFont: boldFont,
               valueColor: totalRemaining > 0 ? _danger : _accent,
@@ -647,7 +667,8 @@ class ExportService {
           pw.Row(children: [
             _infoCard(
               label: isAr ? 'إجمالي الفواتير' : 'Total Invoiced',
-              value: _fmtAmt(totalAmount, currencyCode: defaultCurr, isAr: isAr),
+              value:
+                  _fmtAmt(totalAmount, currencyCode: defaultCurr, isAr: isAr),
               font: font,
               boldFont: boldFont,
               valueColor: _primaryDark,
@@ -671,7 +692,8 @@ class ExportService {
           pw.SizedBox(height: 20),
 
           // Invoices Table
-          _sectionTitle(isAr ? 'سجل فواتير التوريد' : 'Supply Invoices Log', boldFont),
+          _sectionTitle(
+              isAr ? 'سجل فواتير التوريد' : 'Supply Invoices Log', boldFont),
           pw.SizedBox(height: 4),
 
           if (invoices.isEmpty)
@@ -684,8 +706,11 @@ class ExportService {
                 border: pw.Border.all(color: _border),
               ),
               child: pw.Text(
-                isAr ? 'لا توجد فواتير مسجلة لهذا المورد' : 'No invoices for this supplier',
-                style: pw.TextStyle(font: font, fontSize: 10, color: _textMuted),
+                isAr
+                    ? 'لا توجد فواتير مسجلة لهذا المورد'
+                    : 'No invoices for this supplier',
+                style:
+                    pw.TextStyle(font: font, fontSize: 10, color: _textMuted),
               ),
             )
           else
@@ -707,30 +732,52 @@ class ExportService {
                       bottom: pw.BorderSide(color: _border, width: 0.5))),
               cellAlignment: pw.Alignment.center,
               headers: isAr
-                  ? ['#', 'رقم الفاتورة', 'التاريخ', 'الأصناف', 'الإجمالي', 'المدفوع', 'المتبقي', 'الحالة']
-                  : ['#', 'Inv No', 'Date', 'Items', 'Total', 'Paid', 'Remaining', 'Status'],
+                  ? [
+                      '#',
+                      'رقم الفاتورة',
+                      'التاريخ',
+                      'الأصناف',
+                      'الإجمالي',
+                      'المدفوع',
+                      'المتبقي',
+                      'الحالة'
+                    ]
+                  : [
+                      '#',
+                      'Inv No',
+                      'Date',
+                      'Items',
+                      'Total',
+                      'Paid',
+                      'Remaining',
+                      'Status'
+                    ],
               data: List.generate(invoices.length, (i) {
                 final inv = invoices[i];
                 final paid = inv.isFullyPaid;
-                final invCurr = inv.currencyCode.isNotEmpty ? inv.currencyCode : defaultCurr;
+                final invCurr = inv.currencyCode.isNotEmpty
+                    ? inv.currencyCode
+                    : defaultCurr;
                 return [
                   '${i + 1}',
                   '#${inv.invoiceNumber}',
                   DateFormat('yyyy/MM/dd').format(inv.date),
                   '${inv.items.length}',
-                  formatPdfAmount(inv.totalAmount, currencyCode: invCurr, isAr: isAr),
-                  formatPdfAmount(inv.paidAmount, currencyCode: invCurr, isAr: isAr),
-                  formatPdfAmount(inv.remainingAmount, currencyCode: invCurr, isAr: isAr),
-                  paid
-                      ? (isAr ? 'مدفوعة' : 'Paid')
-                      : (isAr ? 'متبقي' : 'Due'),
+                  formatPdfAmount(inv.totalAmount,
+                      currencyCode: invCurr, isAr: isAr),
+                  formatPdfAmount(inv.paidAmount,
+                      currencyCode: invCurr, isAr: isAr),
+                  formatPdfAmount(inv.remainingAmount,
+                      currencyCode: invCurr, isAr: isAr),
+                  paid ? (isAr ? 'مدفوعة' : 'Paid') : (isAr ? 'متبقي' : 'Due'),
                 ];
               }),
             ),
 
           _totalBar(
             label: isAr ? 'إجمالي المتبقي للمورد' : 'Total Remaining Balance',
-            value: formatPdfAmount(totalRemaining, currencyCode: defaultCurr, isAr: isAr),
+            value: formatPdfAmount(totalRemaining,
+                currencyCode: defaultCurr, isAr: isAr),
             font: font,
             boldFont: boldFont,
             color: totalRemaining > 0 ? _danger : _accent,
@@ -745,7 +792,8 @@ class ExportService {
     required Merchant merchant,
     required List<Invoice> invoices,
   }) async {
-    final bytes = await generateMerchantPdfBytes(merchant: merchant, invoices: invoices);
+    final bytes =
+        await generateMerchantPdfBytes(merchant: merchant, invoices: invoices);
     final dir = await getTemporaryDirectory();
     final file = File('${dir.path}/supplier_statement_${merchant.name}.pdf');
     await file.writeAsBytes(bytes);
@@ -756,13 +804,15 @@ class ExportService {
     required Merchant merchant,
     required List<Invoice> invoices,
   }) {
-    final title = '${Get.locale?.languageCode == 'ar' ? 'كشف حساب مورد' : 'Supplier Statement'}: ${merchant.name}';
+    final title =
+        '${Get.locale?.languageCode == 'ar' ? 'كشف حساب مورد' : 'Supplier Statement'}: ${merchant.name}';
     Get.to(() => ReportPreviewView(
-      title: title,
-      fileName: 'supplier_statement_${merchant.name}.pdf',
-      format: ReportFormat.pdf,
-      documentLoader: () => generateMerchantPdfBytes(merchant: merchant, invoices: invoices),
-    ));
+          title: title,
+          fileName: 'supplier_statement_${merchant.name}.pdf',
+          format: ReportFormat.pdf,
+          documentLoader: () =>
+              generateMerchantPdfBytes(merchant: merchant, invoices: invoices),
+        ));
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -805,7 +855,8 @@ class ExportService {
         textDirection: textDir,
         header: (ctx) => _buildHeader(
           title: isAr ? 'كشف حساب عميل' : 'Customer Statement',
-          subtitle: '${curr.getName(isArabic: isAr)} (${curr.code})  •  ${_formatDate(DateTime.now())}',
+          subtitle:
+              '${curr.getName(isArabic: isAr)} (${curr.code})  •  ${_formatDate(DateTime.now())}',
           boldFont: boldFont,
           font: font,
           storeName: sc.storeName.value,
@@ -835,7 +886,8 @@ class ExportService {
             pw.SizedBox(width: 12),
             _infoCard(
               label: isAr ? 'الرصيد الحالي' : 'Balance',
-              value: _fmtAmt(balance, currencyCode: customer.currencyCode, isAr: isAr),
+              value: _fmtAmt(balance,
+                  currencyCode: customer.currencyCode, isAr: isAr),
               font: font,
               boldFont: boldFont,
               valueColor: balance >= 0 ? _accent : _danger,
@@ -847,7 +899,8 @@ class ExportService {
           pw.Row(children: [
             _infoCard(
               label: isAr ? 'إجمالي الدفع (عليه)' : 'Total Give',
-              value: _fmtAmt(totalGive, currencyCode: customer.currencyCode, isAr: isAr),
+              value: _fmtAmt(totalGive,
+                  currencyCode: customer.currencyCode, isAr: isAr),
               font: font,
               boldFont: boldFont,
               valueColor: _danger,
@@ -855,7 +908,8 @@ class ExportService {
             pw.SizedBox(width: 12),
             _infoCard(
               label: isAr ? 'إجمالي الاستلام (له)' : 'Total Got',
-              value: _fmtAmt(totalGot, currencyCode: customer.currencyCode, isAr: isAr),
+              value: _fmtAmt(totalGot,
+                  currencyCode: customer.currencyCode, isAr: isAr),
               font: font,
               boldFont: boldFont,
               valueColor: _accent,
@@ -902,7 +956,8 @@ class ExportService {
                 _formatDate(t.createdAt),
                 t.description.isEmpty ? '-' : t.description,
                 isGive ? (isAr ? 'دفع' : 'Give') : (isAr ? 'استلام' : 'Got'),
-                _fmtAmt(t.amount, currencyCode: customer.currencyCode, isAr: isAr),
+                _fmtAmt(t.amount,
+                    currencyCode: customer.currencyCode, isAr: isAr),
               ];
             }),
           ),
@@ -910,7 +965,8 @@ class ExportService {
           // Total bar
           _totalBar(
             label: isAr ? 'صافي الرصيد' : 'Net Balance',
-            value: _fmtAmt(balance, currencyCode: customer.currencyCode, isAr: isAr),
+            value: _fmtAmt(balance,
+                currencyCode: customer.currencyCode, isAr: isAr),
             font: font,
             boldFont: boldFont,
             color: balance >= 0 ? _accent : _danger,
@@ -942,17 +998,18 @@ class ExportService {
     required List<TransactionModel> transactions,
     required double balance,
   }) {
-    final title = '${Get.locale?.languageCode == 'ar' ? 'كشف حساب عميل' : 'Customer Statement'}: ${customer.name}';
+    final title =
+        '${Get.locale?.languageCode == 'ar' ? 'كشف حساب عميل' : 'Customer Statement'}: ${customer.name}';
     Get.to(() => ReportPreviewView(
-      title: title,
-      fileName: 'statement_${customer.name}.pdf',
-      format: ReportFormat.pdf,
-      documentLoader: () => generateCustomerPdfBytes(
-        customer: customer,
-        transactions: transactions,
-        balance: balance,
-      ),
-    ));
+          title: title,
+          fileName: 'statement_${customer.name}.pdf',
+          format: ReportFormat.pdf,
+          documentLoader: () => generateCustomerPdfBytes(
+            customer: customer,
+            transactions: transactions,
+            balance: balance,
+          ),
+        ));
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -981,7 +1038,8 @@ class ExportService {
         textDirection: textDir,
         header: (ctx) => _buildHeader(
           title: isAr ? 'إيصال معاملة' : 'Transaction Receipt',
-          subtitle: '#${transaction.id}  •  ${_formatDate(transaction.createdAt)}',
+          subtitle:
+              '#${transaction.id}  •  ${_formatDate(transaction.createdAt)}',
           boldFont: boldFont,
           font: font,
           storeName: sc.storeName.value,
@@ -1030,8 +1088,8 @@ class ExportService {
             ),
             child: pw.Column(
               children: [
-                _detailRow(
-                    isAr ? 'العميل' : 'Customer', customer.name, font, boldFont),
+                _detailRow(isAr ? 'العميل' : 'Customer', customer.name, font,
+                    boldFont),
                 _divider(),
                 _detailRow(isAr ? 'الهاتف' : 'Phone', customer.phoneNumber,
                     font, boldFont),
@@ -1086,23 +1144,25 @@ class ExportService {
     required TransactionModel transaction,
     required Customer customer,
   }) {
-    final title = '${Get.locale?.languageCode == 'ar' ? 'إيصال معاملة' : 'Transaction Receipt'} #${transaction.id}';
+    final title =
+        '${Get.locale?.languageCode == 'ar' ? 'إيصال معاملة' : 'Transaction Receipt'} #${transaction.id}';
     Get.to(() => ReportPreviewView(
-      title: title,
-      fileName: 'receipt_${transaction.id}.pdf',
-      format: ReportFormat.pdf,
-      documentLoader: () => generateTransactionPdfBytes(
-        transaction: transaction,
-        customer: customer,
-      ),
-    ));
+          title: title,
+          fileName: 'receipt_${transaction.id}.pdf',
+          format: ReportFormat.pdf,
+          documentLoader: () => generateTransactionPdfBytes(
+            transaction: transaction,
+            customer: customer,
+          ),
+        ));
   }
 
   /// Alias for previewTransactionReceipt
   static void previewTransaction({
     required TransactionModel transaction,
     required Customer customer,
-  }) => previewTransactionReceipt(transaction: transaction, customer: customer);
+  }) =>
+      previewTransactionReceipt(transaction: transaction, customer: customer);
 
   // ═══════════════════════════════════════════════════════════════════
   // ─── Full Report (Multi-Page) ─────────────────────────────────────
@@ -1154,8 +1214,7 @@ class ExportService {
         footer: (ctx) => _buildFooter(ctx, font, isAr),
         build: (ctx) => [
           // Currency Breakdown Section
-          _sectionTitle(
-              isAr ? 'ملخص العملات' : 'Currency Breakdown', boldFont),
+          _sectionTitle(isAr ? 'ملخص العملات' : 'Currency Breakdown', boldFont),
           pw.SizedBox(height: 4),
           pw.TableHelper.fromTextArray(
             border: null,
@@ -1175,7 +1234,12 @@ class ExportService {
                     bottom: pw.BorderSide(color: _border, width: 0.5))),
             cellAlignment: pw.Alignment.center,
             headers: isAr
-                ? ['العملة', 'إجمالي الدفع (لك)', 'إجمالي الاستلام (عليك)', 'صافي الرصيد']
+                ? [
+                    'العملة',
+                    'إجمالي الدفع (لك)',
+                    'إجمالي الاستلام (عليك)',
+                    'صافي الرصيد'
+                  ]
                 : ['Currency', 'Total Give', 'Total Got', 'Net Balance'],
             data: AppCurrency.supportedCurrencies.map((c) {
               final give = giveByCurr[c.code] ?? 0;
@@ -1296,15 +1360,17 @@ class ExportService {
     final sc = Get.find<SettingsController>();
     final isAr = sc.isArabic;
     Get.to(() => ReportPreviewView(
-      title: isAr ? 'معاينة التقرير المالي الشامل' : 'Full Financial Report Preview',
-      fileName: 'full_report_${DateTime.now().millisecondsSinceEpoch}.pdf',
-      format: ReportFormat.pdf,
-      documentLoader: () => generateAllReportPdfBytes(
-        customers: customers,
-        balances: balances,
-        transactions: transactions,
-      ),
-    ));
+          title: isAr
+              ? 'معاينة التقرير المالي الشامل'
+              : 'Full Financial Report Preview',
+          fileName: 'full_report_${DateTime.now().millisecondsSinceEpoch}.pdf',
+          format: ReportFormat.pdf,
+          documentLoader: () => generateAllReportPdfBytes(
+            customers: customers,
+            balances: balances,
+            transactions: transactions,
+          ),
+        ));
   }
 
   // ═══════════════════════════════════════════════════════════════════
@@ -1384,15 +1450,16 @@ class ExportService {
     final sc = Get.find<SettingsController>();
     final isAr = sc.isArabic;
     Get.to(() => ReportPreviewView(
-      title: isAr ? 'معاينة ملف إكسل' : 'Full Excel Report Preview',
-      fileName: 'account_book_export_${DateTime.now().millisecondsSinceEpoch}.xlsx',
-      format: ReportFormat.excel,
-      documentLoader: () => generateAllReportExcelBytes(
-        customers: customers,
-        balances: balances,
-        transactions: transactions,
-      ),
-    ));
+          title: isAr ? 'معاينة ملف إكسل' : 'Full Excel Report Preview',
+          fileName:
+              'account_book_export_${DateTime.now().millisecondsSinceEpoch}.xlsx',
+          format: ReportFormat.excel,
+          documentLoader: () => generateAllReportExcelBytes(
+            customers: customers,
+            balances: balances,
+            transactions: transactions,
+          ),
+        ));
   }
 
   static pw.Widget _detailRow(

@@ -17,7 +17,7 @@ class AppTranslations extends Translations {
     'nav_settings': 'الإعدادات',
 
     // Core Actions & Common
-    'app_title': 'دفتر الحسابات',
+    'app_title': 'حاسبني ',
     'loading': 'جاري التحميل...',
     'error': 'خطأ',
     'success': 'نجاح',
@@ -392,7 +392,8 @@ class AppTranslations extends Translations {
     'no_data_in_sheet': 'لا توجد بيانات في هذه الورقة',
     'rows_count': 'عدد الصفوف',
     'unsupported_format_title': 'تنسيق غير مدعوم للمعاينة المباشرة',
-    'unsupported_format_desc': 'يمكنك تصدير الملف أو فتحه باستخدام تطبيق خارجي متوافق.',
+    'unsupported_format_desc':
+        'يمكنك تصدير الملف أو فتحه باستخدام تطبيق خارجي متوافق.',
 
     // Backup & Restore
     'backup_restore_title': 'النسخ الاحتياطي واستعادة البيانات',
@@ -401,40 +402,48 @@ class AppTranslations extends Translations {
     'backup_password': 'كلمة مرور النسخة الاحتياطية',
     'confirm_backup_password': 'تأكيد كلمة المرور',
     'backup_password_hint': 'أدخل كلمة مرور قوية (6 أحرف على الأقل)',
-    'backup_password_warning': 'تنبيه هام: لن تتمكن من استعادة البيانات إذا نسيت كلمة المرور هذه.',
+    'backup_password_warning':
+        'تنبيه هام: لن تتمكن من استعادة البيانات إذا نسيت كلمة المرور هذه.',
     'backup_password_mismatch': 'كلمتا المرور غير متطابقتين',
     'backup_password_too_short': 'كلمة المرور يجب أن تكون 6 أحرف على الأقل',
     'backup_export_success': 'تم تصدير النسخة الاحتياطية المشفرة بنجاح',
     'backup_export_failed': 'فشل تصدير النسخة الاحتياطية',
     'backup_import_confirm_title': 'تأكيد استعادة النسخة الاحتياطية',
-    'backup_import_confirm_desc': 'سيؤدي استيراد النسخة الاحتياطية إلى استبدال البيانات الحالية بالكامل. هل أنت متأكد من المتابعة؟',
+    'backup_import_confirm_desc':
+        'سيؤدي استيراد النسخة الاحتياطية إلى استبدال البيانات الحالية بالكامل. هل أنت متأكد من المتابعة؟',
     'backup_restoring': 'جاري فك التشفير واستعادة البيانات...',
     'backup_restore_success': 'تمت استعادة البيانات بنجاح وتم تحديث التطبيق',
     'backup_invalid_password': 'كلمة المرور غير صحيحة أو الملف تالف',
     'backup_invalid_format': 'ملف النسخة الاحتياطية غير صالح أو تالف',
     'backup_file_picker_cancel': 'تم إلغاء تحديد الملف',
-    'enter_backup_password_prompt': 'أدخل كلمة المرور لفك تشفير واستعادة النسخة الاحتياطية',
+    'enter_backup_password_prompt':
+        'أدخل كلمة المرور لفك تشفير واستعادة النسخة الاحتياطية',
     'backup_exporting': 'جاري تشفير وتصدير النسخة الاحتياطية...',
 
     // Security & Biometrics
     'biometric_reason': 'يرجى تأكيد هويتك للوصول إلى دفتر الحسابات',
     'biometric_auth_reason': 'يرجى تأكيد هويتك لتفعيل قفل البصمة',
     'biometric_verify_to_disable': 'يرجى تأكيد هويتك لتعطيل القفل',
-    'biometric_not_enrolled': 'لم يتم تسجيل بصمات أصابع أو مقاييس حيوية على هذا الجهاز',
+    'biometric_not_enrolled':
+        'لم يتم تسجيل بصمات أصابع أو مقاييس حيوية على هذا الجهاز',
     'biometric_not_supported': 'جهازك لا يدعم المصادقة بالمقاييس الحيوية',
     'biometric_auth_failed': 'فشلت عملية المصادقة، لم يتم تفعيل القفل',
     'biometric_activated': 'تم تفعيل قفل البصمة بنجاح',
     'biometric_explanation_title': 'تأمين التطبيق بالبصمة',
-    'biometric_explanation_desc': 'يتيح لك قفل البصمة حماية بياناتك المالية عند فتح التطبيق. يتطلب التفعيل مصادقة ناجحة أولاً.',
+    'biometric_explanation_desc':
+        'يتيح لك قفل البصمة حماية بياناتك المالية عند فتح التطبيق. يتطلب التفعيل مصادقة ناجحة أولاً.',
 
     // Onboarding & Store Creation
     'create_new_store': 'إنشاء متجر جديد',
     'create_store': 'إنشاء متجر',
-    'onboarding_welcome_title': 'مرحباً بك في دفتر الحسابات',
-    'onboarding_welcome_desc': 'إدارة متكاملة لحساباتك وديونك ومتاجرك بكل سهولة وأمان',
+    'onboarding_welcome_title': 'مرحباً بك في حاسبني',
+    'onboarding_welcome_desc':
+        'إدارة متكاملة لحساباتك وديونك ومتاجرك بكل سهولة وأمان',
     'choose_to_start': 'اختر الطريقة التي تفضلها للبدء:',
-    'create_store_desc': 'ابدأ بإعداد متجرك، وإضافة العملاء والمعاملات وإصدار الفواتير',
-    'import_backup_desc': 'استعد بيانات متجرك وعملائك وفواتيرك من ملف نسخة احتياطية (.abbackup)',
+    'create_store_desc':
+        'ابدأ بإعداد متجرك، وإضافة العملاء والمعاملات وإصدار الفواتير',
+    'import_backup_desc':
+        'استعد بيانات متجرك وعملائك وفواتيرك من ملف نسخة احتياطية (.abbackup)',
     'store_logo_label': 'الشعار',
     'change_logo': 'تغيير الشعار',
     'enter_store_name': 'اسم المتجر',
@@ -448,7 +457,8 @@ class AppTranslations extends Translations {
     'create_button': 'إنشاء',
     'country_code': 'رمز الدولة',
     'select_backup_file': 'يرجى اختيار ملف النسخة الاحتياطية (.abbackup)',
-    'backup_file_invalid_ext': 'صيغة الملف غير مدعومة. يرجى اختيار ملف نسخة احتياطية ينتهي بـ .abbackup',
+    'backup_file_invalid_ext':
+        'صيغة الملف غير مدعومة. يرجى اختيار ملف نسخة احتياطية ينتهي بـ .abbackup',
 
     // Additional Common & UI
     'field_required': 'هذا الحقل مطلوب',
@@ -520,11 +530,14 @@ class AppTranslations extends Translations {
     'backup_password_empty': 'يرجى إدخال كلمة مرور النسخة الاحتياطية',
     'backup_invalid_file_format': 'تنسيق ملف النسخة الاحتياطية غير صالح',
     'backup_corrupted_format': 'بيانات النسخة الاحتياطية تالفة أو غير مكتملة',
-    'backup_decrypt_failed': 'فشل فك التشفير. كلمة المرور غير صحيحة أو الملف تالف',
+    'backup_decrypt_failed':
+        'فشل فك التشفير. كلمة المرور غير صحيحة أو الملف تالف',
     'backup_invalid_payload': 'محتوى النسخة الاحتياطية غير صالح',
-    'backup_missing_collections': 'ملف النسخة الاحتياطية يفتقر إلى بيانات السجلات الأساسية',
+    'backup_missing_collections':
+        'ملف النسخة الاحتياطية يفتقر إلى بيانات السجلات الأساسية',
     'backup_password_prompt': 'كلمة مرور النسخة الاحتياطية',
-    'backup_password_prompt_desc': 'أدخل كلمة المرور لفك تشفير بيانات النسخة الاحتياطية واستعادتها',
+    'backup_password_prompt_desc':
+        'أدخل كلمة المرور لفك تشفير بيانات النسخة الاحتياطية واستعادتها',
     'restoring_backup_wait': 'جاري استعادة النسخة الاحتياطية، يرجى الانتظار...',
     'backup_import_success': 'تمت استعادة البيانات بنجاح',
     'export_encrypted_backup_desc': 'تصدير ملف .abbackup مشفر بكلمة مرور',
@@ -921,7 +934,8 @@ class AppTranslations extends Translations {
     'no_data_in_sheet': 'No data in this sheet',
     'rows_count': 'Rows',
     'unsupported_format_title': 'Format Not Supported for In-App Preview',
-    'unsupported_format_desc': 'You can export the file or open it with a compatible external app.',
+    'unsupported_format_desc':
+        'You can export the file or open it with a compatible external app.',
 
     // Backup & Restore
     'backup_restore_title': 'Backup & Restore Data',
@@ -930,19 +944,23 @@ class AppTranslations extends Translations {
     'backup_password': 'Backup Password',
     'confirm_backup_password': 'Confirm Password',
     'backup_password_hint': 'Enter a strong password (min 6 characters)',
-    'backup_password_warning': 'Important: You cannot restore this backup if you forget this password.',
+    'backup_password_warning':
+        'Important: You cannot restore this backup if you forget this password.',
     'backup_password_mismatch': 'Passwords do not match',
     'backup_password_too_short': 'Password must be at least 6 characters',
     'backup_export_success': 'Encrypted backup exported successfully',
     'backup_export_failed': 'Failed to export backup',
     'backup_import_confirm_title': 'Confirm Backup Restoration',
-    'backup_import_confirm_desc': 'Restoring this backup will replace current data. Are you sure you want to proceed?',
+    'backup_import_confirm_desc':
+        'Restoring this backup will replace current data. Are you sure you want to proceed?',
     'backup_restoring': 'Decrypting and restoring data...',
-    'backup_restore_success': 'Data restored successfully and application refreshed',
+    'backup_restore_success':
+        'Data restored successfully and application refreshed',
     'backup_invalid_password': 'Incorrect password or corrupted backup file',
     'backup_invalid_format': 'Invalid or corrupted backup file',
     'backup_file_picker_cancel': 'File selection cancelled',
-    'enter_backup_password_prompt': 'Enter the password to decrypt and restore backup',
+    'enter_backup_password_prompt':
+        'Enter the password to decrypt and restore backup',
     'backup_exporting': 'Encrypting and exporting backup...',
 
     // Security & Biometrics
@@ -950,20 +968,25 @@ class AppTranslations extends Translations {
     'biometric_auth_reason': 'Please authenticate to enable biometric lock',
     'biometric_verify_to_disable': 'Please authenticate to disable lock',
     'biometric_not_enrolled': 'No biometrics enrolled on this device',
-    'biometric_not_supported': 'Biometric authentication is not supported on this device',
+    'biometric_not_supported':
+        'Biometric authentication is not supported on this device',
     'biometric_auth_failed': 'Authentication failed. Lock not enabled',
     'biometric_activated': 'Biometric lock enabled successfully',
     'biometric_explanation_title': 'Protect with Biometrics',
-    'biometric_explanation_desc': 'Biometric lock secures your financial data on app open. Enabling requires successful authentication first.',
+    'biometric_explanation_desc':
+        'Biometric lock secures your financial data on app open. Enabling requires successful authentication first.',
 
     // Onboarding & Store Creation
     'create_new_store': 'Create New Store',
     'create_store': 'Create Store',
     'onboarding_welcome_title': 'Welcome to Account Book',
-    'onboarding_welcome_desc': 'Complete management for your store, accounts, and invoices safely',
+    'onboarding_welcome_desc':
+        'Complete management for your store, accounts, and invoices safely',
     'choose_to_start': 'Choose how you would like to start:',
-    'create_store_desc': 'Setup your store profile, customers, currencies, and start invoicing',
-    'import_backup_desc': 'Restore your existing store data from an encrypted backup (.abbackup)',
+    'create_store_desc':
+        'Setup your store profile, customers, currencies, and start invoicing',
+    'import_backup_desc':
+        'Restore your existing store data from an encrypted backup (.abbackup)',
     'store_logo_label': 'Logo',
     'change_logo': 'Change Logo',
     'enter_store_name': 'Store Name',
@@ -977,6 +1000,7 @@ class AppTranslations extends Translations {
     'create_button': 'Create',
     'country_code': 'Country Code',
     'select_backup_file': 'Please select a backup file (.abbackup)',
-    'backup_file_invalid_ext': 'Unsupported file format. Please select an .abbackup file.',
+    'backup_file_invalid_ext':
+        'Unsupported file format. Please select an .abbackup file.',
   };
 }

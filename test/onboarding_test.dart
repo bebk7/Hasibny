@@ -25,7 +25,9 @@ void main() {
       expect(controller.isOnboarded.value, isFalse);
     });
 
-    test('Existing installation with store_name automatically marks onboarding completed', () async {
+    test(
+        'Existing installation with store_name automatically marks onboarding completed',
+        () async {
       SharedPreferences.setMockInitialValues({
         'store_name': 'سوبرماركت الأمل',
       });
@@ -36,7 +38,8 @@ void main() {
       expect(controller.isOnboarded.value, isTrue);
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(OnboardingController.keyOnboardingCompleted), isTrue);
+      expect(
+          prefs.getBool(OnboardingController.keyOnboardingCompleted), isTrue);
     });
 
     test('Already onboarded installation preserves completed status', () async {
@@ -84,7 +87,8 @@ void main() {
       expect(controller.isOnboarded.value, isFalse);
     });
 
-    test('createStore succeeds with valid inputs and sets preferences', () async {
+    test('createStore succeeds with valid inputs and sets preferences',
+        () async {
       SharedPreferences.setMockInitialValues({});
       final settings = Get.put(SettingsController());
       final controller = Get.put(OnboardingController());
@@ -107,15 +111,19 @@ void main() {
       expect(settings.currentCurrency.value, 'YER');
 
       final prefs = await SharedPreferences.getInstance();
-      expect(prefs.getBool(OnboardingController.keyOnboardingCompleted), isTrue);
-      expect(prefs.getString(OnboardingController.keyStoreNotes), 'ملاحظات المتجر التجريبية');
+      expect(
+          prefs.getBool(OnboardingController.keyOnboardingCompleted), isTrue);
+      expect(prefs.getString(OnboardingController.keyStoreNotes),
+          'ملاحظات المتجر التجريبية');
       expect(prefs.getString('store_name'), 'مؤسسة السلام التجارية');
       expect(prefs.getString('store_phone'), '+967771234567');
     });
   });
 
   group('Onboarding Widgets UI Tests', () {
-    testWidgets('OnboardingView renders title, description, and both option cards', (tester) async {
+    testWidgets(
+        'OnboardingView renders title, description, and both option cards',
+        (tester) async {
       SharedPreferences.setMockInitialValues({});
       Get.put(OnboardingController());
 
@@ -129,15 +137,18 @@ void main() {
       await tester.pumpAndSettle();
 
       // Check header title and description
-      expect(find.text('مرحباً بك في دفتر الحسابات'), findsOneWidget);
-      expect(find.text('إدارة متكاملة لحساباتك وديونك ومتاجرك بكل سهولة وأمان'), findsOneWidget);
+      expect(find.text('مرحباً بك في حاسبني'), findsOneWidget);
+      expect(find.text('إدارة متكاملة لحساباتك وديونك ومتاجرك بكل سهولة وأمان'),
+          findsOneWidget);
 
       // Check options
       expect(find.text('إنشاء متجر جديد'), findsOneWidget);
       expect(find.text('استيراد نسخة احتياطية'), findsOneWidget);
     });
 
-    testWidgets('CreateStoreView renders logo placeholder, inputs, and create button', (tester) async {
+    testWidgets(
+        'CreateStoreView renders logo placeholder, inputs, and create button',
+        (tester) async {
       tester.view.physicalSize = const Size(500, 1000);
       tester.view.devicePixelRatio = 1.0;
       addTearDown(tester.view.resetPhysicalSize);

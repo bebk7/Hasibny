@@ -582,26 +582,38 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
           final dateStr =
               '${selectedDateTime.year}/${selectedDateTime.month.toString().padLeft(2, '0')}/${selectedDateTime.day.toString().padLeft(2, '0')}';
 
-          return Container(
-            constraints: BoxConstraints(
-              maxWidth: resp.maxContentWidth,
-              maxHeight: resp.screenHeight * 0.90,
-            ),
-            decoration: BoxDecoration(
-              color: isDark ? AppColors.darkSurfaceColor : Colors.white,
-              borderRadius: AppRadius.bottomSheetRadius(context),
-            ),
-            padding: EdgeInsets.only(
-              left: resp.isExtraCompact ? 14 : 20,
-              right: resp.isExtraCompact ? 14 : 20,
-              top: 14,
-              bottom: resp.keyboardInset + resp.safeBottom + 16,
-            ),
-            child: SingleChildScrollView(
-              physics: const BouncingScrollPhysics(),
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                children: [
+          final viewInsets = MediaQuery.viewInsetsOf(context);
+          final viewPadding = MediaQuery.viewPaddingOf(context);
+
+          return AnimatedPadding(
+            padding: EdgeInsets.only(bottom: viewInsets.bottom),
+            duration: const Duration(milliseconds: 150),
+            curve: Curves.easeOutCubic,
+            child: Align(
+              alignment: Alignment.bottomCenter,
+              child: Container(
+                width: double.infinity,
+                constraints: BoxConstraints(
+                  maxWidth: resp.maxContentWidth,
+                  maxHeight: resp.screenHeight * 0.85,
+                ),
+                decoration: BoxDecoration(
+                  color: isDark ? AppColors.darkSurfaceColor : Colors.white,
+                  borderRadius: AppRadius.bottomSheetRadius(context),
+                ),
+                child: SafeArea(
+                  top: false,
+                  child: SingleChildScrollView(
+                    physics: const ClampingScrollPhysics(),
+                    padding: EdgeInsets.only(
+                      left: resp.isExtraCompact ? 14 : 20,
+                      right: resp.isExtraCompact ? 14 : 20,
+                      top: 14,
+                      bottom: viewPadding.bottom + 16,
+                    ),
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
                   Container(
                     width: 40,
                     height: 4,
@@ -779,10 +791,13 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                 ],
               ),
             ),
-          );
-        },
+          ),
+        ),
       ),
     );
+  },
+),
+);
   }
 
   Future<void> _shareInvoice(TransactionModel transaction, Customer customer) async {

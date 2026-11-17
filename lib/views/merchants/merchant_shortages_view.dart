@@ -85,64 +85,52 @@ class MerchantShortagesView extends StatelessWidget {
     final qtyCtrl = TextEditingController();
     final noteCtrl = TextEditingController();
     final resp = AppResponsive.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
 
     AppBottomSheet.show(
       context: context,
-      child: SingleChildScrollView(
-        child: Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.stretch,
-          children: [
-            Text(
-              'add_shortage'.tr,
-              textAlign: TextAlign.center,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                fontSize: resp.fontLG,
-                fontWeight: FontWeight.w800,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-              ),
+      title: 'add_shortage'.tr,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          TextField(
+            controller: productCtrl,
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+            decoration: InputDecoration(
+              labelText: 'product_name'.tr,
+              hintText: 'enter_product_name'.tr,
+              prefixIcon: Icon(Icons.inventory_2_rounded, size: resp.iconSM),
             ),
-            SizedBox(height: resp.spacingMD),
-            TextField(
-              controller: productCtrl,
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
-              decoration: InputDecoration(
-                labelText: 'product_name'.tr,
-                hintText: 'enter_product_name'.tr,
-                prefixIcon: Icon(Icons.inventory_2_rounded, size: resp.iconSM),
-              ),
+          ),
+          SizedBox(height: resp.spacingSM),
+          TextField(
+            controller: qtyCtrl,
+            keyboardType: TextInputType.number,
+            inputFormatters: const [
+              DigitsOnlyInputFormatter(),
+            ],
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+            decoration: InputDecoration(
+              labelText: 'quantity'.tr,
+              hintText: 'quantity_optional'.tr,
+              prefixIcon: Icon(Icons.numbers_rounded, size: resp.iconSM),
             ),
-            SizedBox(height: resp.spacingSM),
-            TextField(
-              controller: qtyCtrl,
-              keyboardType: TextInputType.number,
-              inputFormatters: const [
-                DigitsOnlyInputFormatter(),
-              ],
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
-              decoration: InputDecoration(
-                labelText: 'quantity'.tr,
-                hintText: 'quantity_optional'.tr,
-                prefixIcon: Icon(Icons.numbers_rounded, size: resp.iconSM),
-              ),
+          ),
+          SizedBox(height: resp.spacingSM),
+          TextField(
+            controller: noteCtrl,
+            style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
+            decoration: InputDecoration(
+              labelText: 'notes'.tr,
+              hintText: 'note_optional'.tr,
+              prefixIcon: Icon(Icons.notes_rounded, size: resp.iconSM),
             ),
-            SizedBox(height: resp.spacingSM),
-            TextField(
-              controller: noteCtrl,
-              style: TextStyle(fontFamily: 'Cairo', fontWeight: FontWeight.w600, fontSize: resp.fontMD),
-              decoration: InputDecoration(
-                labelText: 'notes'.tr,
-                hintText: 'note_optional'.tr,
-                prefixIcon: Icon(Icons.notes_rounded, size: resp.iconSM),
-              ),
-            ),
-            SizedBox(height: resp.spacingLG),
-            AppButton(
-              text: 'add'.tr,
-              icon: Icons.add_rounded,
-              onPressed: () {
+          ),
+          SizedBox(height: resp.spacingLG),
+          AppButton(
+            text: 'add'.tr,
+            icon: Icons.add_rounded,
+            onPressed: () {
                 final name = productCtrl.text.trim();
                 if (name.isEmpty) return;
 
@@ -167,7 +155,6 @@ class MerchantShortagesView extends StatelessWidget {
             ),
           ],
         ),
-      ),
     );
   }
 }
