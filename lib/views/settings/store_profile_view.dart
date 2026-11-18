@@ -220,13 +220,17 @@ class _StoreProfileViewState extends State<StoreProfileView> {
                               color: AppColors.primary, size: resp.iconSM),
                         ),
                         SizedBox(width: resp.spacingSM),
-                        Text(
-                          'store_basic_info'.tr,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.bold,
-                            fontSize: resp.fontMD,
-                            color: AppColors.primary,
+                        Expanded(
+                          child: Text(
+                            'store_basic_info'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.bold,
+                              fontSize: resp.fontMD,
+                              color: AppColors.primary,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -292,13 +296,17 @@ class _StoreProfileViewState extends State<StoreProfileView> {
                               color: const Color(0xFF0D9488), size: resp.iconSM),
                         ),
                         SizedBox(width: resp.spacingSM),
-                        Text(
-                          'store_details'.tr,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.bold,
-                            fontSize: resp.fontMD,
-                            color: const Color(0xFF0D9488),
+                        Expanded(
+                          child: Text(
+                            'store_details'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.bold,
+                              fontSize: resp.fontMD,
+                              color: const Color(0xFF0D9488),
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                       ],
@@ -408,22 +416,32 @@ class _ProfileHeader extends StatelessWidget {
                               width: logoSize,
                               height: logoSize,
                             )
-                          : Column(
-                              mainAxisAlignment: MainAxisAlignment.center,
-                              children: [
-                                Icon(Icons.add_a_photo_rounded,
-                                    size: resp.iconLG, color: AppColors.primary),
-                                const SizedBox(height: 4),
-                                Text(
-                                  'add_logo'.tr,
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: resp.fontXS,
-                                    color: AppColors.primary,
-                                    fontWeight: FontWeight.w600,
-                                  ),
+                          : Center(
+                              child: Padding(
+                                padding: const EdgeInsets.symmetric(horizontal: 8),
+                                child: Column(
+                                  mainAxisAlignment: MainAxisAlignment.center,
+                                  crossAxisAlignment: CrossAxisAlignment.center,
+                                  children: [
+                                    Icon(Icons.add_a_photo_rounded,
+                                        size: resp.iconLG, color: AppColors.primary),
+                                    const SizedBox(height: 4),
+                                    Text(
+                                      'add_logo'.tr,
+                                      textAlign: TextAlign.center,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: resp.fontXS,
+                                        color: AppColors.primary,
+                                        fontWeight: FontWeight.w600,
+                                        height: 1.2,
+                                      ),
+                                      maxLines: 2,
+                                      overflow: TextOverflow.ellipsis,
+                                    ),
+                                  ],
                                 ),
-                              ],
+                              ),
                             ),
                     ),
                   ),
