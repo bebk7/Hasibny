@@ -1,4 +1,5 @@
 import 'dart:io';
+import 'package:bidi/bidi.dart' as bidi;
 import 'package:flutter_test/flutter_test.dart';
 import 'package:pdf/pdf.dart';
 import 'package:pdf/widgets.dart' as pw;
@@ -48,5 +49,30 @@ void main() {
     final bytes = await doc.save();
     expect(bytes.length, greaterThan(2000));
     print('Rendered ${testStrings.length} test lines cleanly! PDF size: ${bytes.length} bytes');
+
+    // Test various currency representations with bidi
+    final wordsToTest = [
+      'ر.ي',
+      'ر.س',
+      'YER',
+      'SAR',
+      '\$',
+      'ريال',
+      'ريال يمني',
+      'ريال سعودي',
+      'دولار',
+    ];
+
+    print('\n--- Testing words with bidi ---');
+    for (final word in wordsToTest) {
+      final paragraphs = bidi.BidiString.fromLogical(word).paragraphs;
+      final out = <String>[];
+      for (final p in paragraphs) {
+        for (final code in p.bidiText) {
+          out.add('U+${code.toRadixString(16).padLeft(4, '0')}');
+        }
+      }
+      print('$word -> ${out.join(' ')}');
+    }
   });
 }
