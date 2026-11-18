@@ -616,7 +616,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                 width: double.infinity,
                 constraints: BoxConstraints(
                   maxWidth: resp.maxContentWidth,
-                  maxHeight: resp.screenHeight * 0.85,
+                  maxHeight: (resp.screenHeight - viewInsets.bottom).clamp(200.0, resp.screenHeight) * 0.88,
                 ),
                 decoration: BoxDecoration(
                   color: isDark ? AppColors.darkSurfaceColor : Colors.white,
