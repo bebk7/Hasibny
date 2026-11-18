@@ -17,7 +17,7 @@ class AppTranslations extends Translations {
     'nav_settings': 'الإعدادات',
 
     // Core Actions & Common
-    'app_title': 'حاسبني ',
+    'app_title': 'حاسبني',
     'loading': 'جاري التحميل...',
     'error': 'خطأ',
     'success': 'نجاح',

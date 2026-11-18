@@ -28,33 +28,18 @@ class DashboardView extends StatelessWidget {
     return Scaffold(
       appBar: AppBar(
         title: Obx(() {
-          final storeName = sc?.storeName.value ?? '';
-          return Column(
-            crossAxisAlignment: CrossAxisAlignment.center,
-            mainAxisSize: MainAxisSize.min,
-            children: [
-              Text(
-                storeName.isNotEmpty ? storeName : 'app_title'.tr,
-                style: TextStyle(
-                  fontFamily: AppTypography.fontFamily,
-                  fontWeight: FontWeight.w800,
-                  fontSize: resp.fontSize(18, min: 16, max: 22),
-                  letterSpacing: -0.3,
-                ),
-                maxLines: 1,
-                overflow: TextOverflow.ellipsis,
-              ),
-              if (storeName.isNotEmpty)
-                Text(
-                  'app_title'.tr,
-                  style: TextStyle(
-                    fontFamily: AppTypography.fontFamily,
-                    fontSize: resp.fontSize(11, min: 10, max: 13),
-                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                    fontWeight: FontWeight.w600,
-                  ),
-                ),
-            ],
+          final storeName = (sc?.storeName.value ?? '').trim();
+          final titleText = storeName.isNotEmpty ? storeName : 'app_title'.tr;
+          return Text(
+            titleText,
+            style: TextStyle(
+              fontFamily: AppTypography.fontFamily,
+              fontWeight: FontWeight.w800,
+              fontSize: resp.fontSize(18, min: 16, max: 22),
+              letterSpacing: -0.3,
+            ),
+            maxLines: 1,
+            overflow: TextOverflow.ellipsis,
           );
         }),
         actions: [
