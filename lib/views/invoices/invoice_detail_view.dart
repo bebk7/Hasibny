@@ -267,35 +267,23 @@ class InvoiceDetailView extends StatelessWidget {
                   child: Column(
                     crossAxisAlignment: CrossAxisAlignment.start,
                     children: [
-                      Row(
-                        mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                        children: [
-                          Row(
-                            children: [
-                              Container(
-                                padding: EdgeInsets.all(resp.spacingXS),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(resp.radiusXS),
-                                ),
-                                child: Icon(
-                                  Icons.receipt_long_rounded,
-                                  color: AppColors.primary,
-                                  size: resp.iconSM,
-                                ),
-                              ),
-                              SizedBox(width: resp.spacingSM),
-                              Text(
-                                'invoice_items'.tr,
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontWeight: FontWeight.bold,
-                                  fontSize: resp.fontMD,
-                                ),
-                              ),
-                            ],
-                          ),
-                          Container(
+                      LayoutBuilder(
+                        builder: (context, constraints) {
+                          final isNarrow = constraints.maxWidth < 340;
+                          final iconWidget = Container(
+                            padding: EdgeInsets.all(resp.spacingXS),
+                            decoration: BoxDecoration(
+                              color: AppColors.primary.withValues(alpha: 0.1),
+                              borderRadius: BorderRadius.circular(resp.radiusXS),
+                            ),
+                            child: Icon(
+                              Icons.receipt_long_rounded,
+                              color: AppColors.primary,
+                              size: resp.iconSM,
+                            ),
+                          );
+
+                          final badgeWidget = Container(
                             padding: EdgeInsets.symmetric(
                               horizontal: resp.spacingSM,
                               vertical: 3,
@@ -313,8 +301,55 @@ class InvoiceDetailView extends StatelessWidget {
                                 color: AppColors.primary,
                               ),
                             ),
-                          ),
-                        ],
+                          );
+
+                          if (isNarrow) {
+                            return Column(
+                              crossAxisAlignment: CrossAxisAlignment.start,
+                              children: [
+                                Row(
+                                  children: [
+                                    iconWidget,
+                                    SizedBox(width: resp.spacingSM),
+                                    Expanded(
+                                      child: Text(
+                                        'invoice_items'.tr,
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontWeight: FontWeight.bold,
+                                          fontSize: resp.fontMD,
+                                        ),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                                SizedBox(height: resp.spacingXS),
+                                badgeWidget,
+                              ],
+                            );
+                          }
+
+                          return Row(
+                            children: [
+                              iconWidget,
+                              SizedBox(width: resp.spacingSM),
+                              Expanded(
+                                child: Text(
+                                  'invoice_items'.tr,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: resp.fontMD,
+                                  ),
+                                  maxLines: 1,
+                                  overflow: TextOverflow.ellipsis,
+                                ),
+                              ),
+                              SizedBox(width: resp.spacingXS),
+                              badgeWidget,
+                            ],
+                          );
+                        },
                       ),
                       SizedBox(height: resp.spacingSM),
                       const Divider(height: 1),
@@ -608,34 +643,22 @@ class InvoiceDetailView extends StatelessWidget {
       child: Column(
         crossAxisAlignment: CrossAxisAlignment.start,
         children: [
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
-            children: [
-              Row(
-                children: [
-                  Container(
-                    padding: EdgeInsets.all(resp.spacingXS),
-                    decoration: BoxDecoration(
-                      color: badgeColor.withValues(alpha: 0.12),
-                      borderRadius: BorderRadius.circular(resp.radiusXS),
-                    ),
-                    child: Icon(statusIcon, color: badgeColor, size: resp.iconSM),
-                  ),
-                  SizedBox(width: resp.spacingSM),
-                  Text(
-                    'whatsapp_delivery'.tr,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontWeight: FontWeight.bold,
-                      fontSize: resp.fontMD,
-                    ),
-                  ),
-                ],
-              ),
-              Container(
+          LayoutBuilder(
+            builder: (context, constraints) {
+              final isNarrow = constraints.maxWidth < 360;
+              final iconWidget = Container(
+                padding: EdgeInsets.all(resp.spacingXS),
+                decoration: BoxDecoration(
+                  color: badgeColor.withValues(alpha: 0.12),
+                  borderRadius: BorderRadius.circular(resp.radiusXS),
+                ),
+                child: Icon(statusIcon, color: badgeColor, size: resp.iconSM),
+              );
+
+              final badgeWidget = Container(
                 padding: EdgeInsets.symmetric(
                   horizontal: resp.spacingSM,
-                  vertical: 4,
+                  vertical: 3,
                 ),
                 decoration: BoxDecoration(
                   color: (autoDeliveryOn ? waColor : Colors.grey)
@@ -655,8 +678,55 @@ class InvoiceDetailView extends StatelessWidget {
                         : (isDark ? Colors.grey[400] : Colors.grey[700]),
                   ),
                 ),
-              ),
-            ],
+              );
+
+              if (isNarrow) {
+                return Column(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Row(
+                      children: [
+                        iconWidget,
+                        SizedBox(width: resp.spacingSM),
+                        Expanded(
+                          child: Text(
+                            'whatsapp_delivery'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.bold,
+                              fontSize: resp.fontMD,
+                            ),
+                          ),
+                        ),
+                      ],
+                    ),
+                    SizedBox(height: resp.spacingXS),
+                    badgeWidget,
+                  ],
+                );
+              }
+
+              return Row(
+                children: [
+                  iconWidget,
+                  SizedBox(width: resp.spacingSM),
+                  Expanded(
+                    child: Text(
+                      'whatsapp_delivery'.tr,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontWeight: FontWeight.bold,
+                        fontSize: resp.fontMD,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: resp.spacingXS),
+                  badgeWidget,
+                ],
+              );
+            },
           ),
           SizedBox(height: resp.spacingSM),
           const Divider(height: 1),
@@ -829,13 +899,17 @@ class InvoiceDetailView extends StatelessWidget {
               child: Row(
                 mainAxisAlignment: MainAxisAlignment.spaceBetween,
                 children: [
-                  Text(
-                    'remaining_amount'.tr,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: resp.fontSM,
-                      color: Colors.grey[700],
-                      fontWeight: FontWeight.w600,
+                  Expanded(
+                    child: Text(
+                      'remaining_amount'.tr,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontSM,
+                        color: Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
                     ),
                   ),
                   SizedBox(width: resp.spacingSM),

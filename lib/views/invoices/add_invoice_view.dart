@@ -518,11 +518,79 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                 ),
                 SizedBox(height: resp.spacingLG),
 
-                // Items section header
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.spaceBetween,
-                  children: [
-                    Row(
+                // Items section header (Responsive)
+                LayoutBuilder(
+                  builder: (context, constraints) {
+                    final isNarrow = constraints.maxWidth < 360;
+                    final addBtn = TextButton.icon(
+                      onPressed: _addItem,
+                      icon: Icon(Icons.add_circle_outline_rounded, size: resp.iconSM - 2),
+                      label: Text('add_item'.tr),
+                      style: TextButton.styleFrom(
+                        foregroundColor: AppColors.primary,
+                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
+                      ),
+                    );
+
+                    if (isNarrow) {
+                      return Column(
+                        crossAxisAlignment: CrossAxisAlignment.start,
+                        children: [
+                          Row(
+                            children: [
+                              Container(
+                                padding: EdgeInsets.all(resp.spacingXS),
+                                decoration: BoxDecoration(
+                                  color: AppColors.primary.withValues(alpha: 0.1),
+                                  borderRadius: BorderRadius.circular(resp.radiusXS),
+                                ),
+                                child: Icon(Icons.format_list_bulleted_rounded,
+                                    color: AppColors.primary, size: resp.iconSM - 2),
+                              ),
+                              SizedBox(width: resp.spacingSM),
+                              Expanded(
+                                child: Text(
+                                  'invoice_items'.tr,
+                                  style: TextStyle(
+                                    fontFamily: 'Cairo',
+                                    fontWeight: FontWeight.bold,
+                                    fontSize: resp.fontLG,
+                                  ),
+                                ),
+                              ),
+                              if (_items.isNotEmpty) ...[
+                                SizedBox(width: resp.spacingSM),
+                                Container(
+                                  padding: EdgeInsets.symmetric(
+                                    horizontal: resp.spacingSM,
+                                    vertical: 2,
+                                  ),
+                                  decoration: BoxDecoration(
+                                    color: AppColors.primary.withValues(alpha: 0.1),
+                                    borderRadius: BorderRadius.circular(resp.radiusSM),
+                                  ),
+                                  child: Text(
+                                    '${_items.length}',
+                                    style: TextStyle(
+                                      fontFamily: 'Cairo',
+                                      fontSize: resp.fontXS,
+                                      fontWeight: FontWeight.bold,
+                                      color: AppColors.primary,
+                                    ),
+                                  ),
+                                ),
+                              ],
+                            ],
+                          ),
+                          Align(
+                            alignment: AlignmentDirectional.centerEnd,
+                            child: addBtn,
+                          ),
+                        ],
+                      );
+                    }
+
+                    return Row(
                       children: [
                         Container(
                           padding: EdgeInsets.all(resp.spacingXS),
@@ -534,12 +602,16 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                               color: AppColors.primary, size: resp.iconSM - 2),
                         ),
                         SizedBox(width: resp.spacingSM),
-                        Text(
-                          'invoice_items'.tr,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontWeight: FontWeight.bold,
-                            fontSize: resp.fontLG,
+                        Expanded(
+                          child: Text(
+                            'invoice_items'.tr,
+                            style: TextStyle(
+                              fontFamily: 'Cairo',
+                              fontWeight: FontWeight.bold,
+                              fontSize: resp.fontLG,
+                            ),
+                            maxLines: 1,
+                            overflow: TextOverflow.ellipsis,
                           ),
                         ),
                         if (_items.isNotEmpty) ...[
@@ -564,18 +636,11 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                             ),
                           ),
                         ],
+                        SizedBox(width: resp.spacingXS),
+                        addBtn,
                       ],
-                    ),
-                    TextButton.icon(
-                      onPressed: _addItem,
-                      icon: Icon(Icons.add_circle_outline_rounded, size: resp.iconSM - 2),
-                      label: Text('add_item'.tr),
-                      style: TextButton.styleFrom(
-                        foregroundColor: AppColors.primary,
-                        textStyle: const TextStyle(fontWeight: FontWeight.bold),
-                      ),
-                    ),
-                  ],
+                    );
+                  },
                 ),
                 SizedBox(height: resp.spacingXS),
 

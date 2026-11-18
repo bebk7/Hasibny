@@ -66,12 +66,14 @@ class RecentTransactionsWidget extends StatelessWidget {
             color: Colors.transparent,
             child: InkWell(
               onTap: customer != null
-                  ? () => Get.to(() => CustomerDetailsView(customerId: customer.id))
+                  ? () =>
+                      Get.to(() => CustomerDetailsView(customerId: customer.id))
                   : null,
               borderRadius: BorderRadius.circular(AppRadius.md),
               child: Padding(
                 padding: EdgeInsets.symmetric(
-                  horizontal: resp.isExtraCompact ? 10 : (resp.isSmall ? 12 : 14),
+                  horizontal:
+                      resp.isExtraCompact ? 10 : (resp.isSmall ? 12 : 14),
                   vertical: resp.isSmall ? 10 : 12,
                 ),
                 child: Row(
@@ -89,7 +91,9 @@ class RecentTransactionsWidget extends StatelessWidget {
                       ),
                       child: Center(
                         child: Icon(
-                          isGive ? Icons.arrow_upward_rounded : Icons.arrow_downward_rounded,
+                          isGive
+                              ? Icons.arrow_upward_rounded
+                              : Icons.arrow_downward_rounded,
                           color: color,
                           size: resp.isSmall ? 20 : 22,
                         ),
@@ -109,7 +113,9 @@ class RecentTransactionsWidget extends StatelessWidget {
                               fontFamily: AppTypography.fontFamily,
                               fontWeight: FontWeight.w700,
                               fontSize: resp.fontSize(resp.isSmall ? 13 : 14),
-                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              color: isDark
+                                  ? AppColors.textPrimaryDark
+                                  : AppColors.textPrimaryLight,
                             ),
                             maxLines: 1,
                             overflow: TextOverflow.ellipsis,
@@ -119,7 +125,8 @@ class RecentTransactionsWidget extends StatelessWidget {
                             crossAxisAlignment: WrapCrossAlignment.center,
                             spacing: 4,
                             children: [
-                              if (transaction.description.isNotEmpty && customer != null) ...[
+                              if (transaction.description.isNotEmpty &&
+                                  customer != null) ...[
                                 Text(
                                   transaction.description,
                                   style: TextStyle(
@@ -133,7 +140,9 @@ class RecentTransactionsWidget extends StatelessWidget {
                                 Text(
                                   '•',
                                   style: TextStyle(
-                                    color: isDark ? Colors.white38 : Colors.black26,
+                                    color: isDark
+                                        ? Colors.white38
+                                        : Colors.black26,
                                     fontSize: 10,
                                   ),
                                 ),
@@ -142,7 +151,9 @@ class RecentTransactionsWidget extends StatelessWidget {
                                 transaction.formattedDate,
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
-                                  color: isDark ? AppColors.textSecondaryDark : AppColors.textMutedLight,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textMutedLight,
                                   fontSize: resp.fontSize(11),
                                 ),
                               ),
@@ -154,7 +165,9 @@ class RecentTransactionsWidget extends StatelessWidget {
                     const SizedBox(width: 8),
                     ConstrainedBox(
                       constraints: BoxConstraints(
-                        maxWidth: resp.isExtraCompact ? 95 : (resp.isSmall ? 110 : 130),
+                        maxWidth: resp.isExtraCompact
+                            ? 95
+                            : (resp.isSmall ? 110 : 130),
                       ),
                       child: Column(
                         crossAxisAlignment: CrossAxisAlignment.end,
