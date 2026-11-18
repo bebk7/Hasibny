@@ -300,8 +300,11 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
               ),
               child: Column(
                 children: [
-                  Row(
-                    mainAxisSize: MainAxisSize.min,
+                  Wrap(
+                    alignment: WrapAlignment.center,
+                    crossAxisAlignment: WrapCrossAlignment.center,
+                    spacing: 6,
+                    runSpacing: 4,
                     children: [
                       Text(
                         isPositive ? 'they_owe_you'.tr : 'you_owe_them'.tr,
@@ -312,7 +315,6 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                           color: color,
                         ),
                       ),
-                      const SizedBox(width: 6),
                       AppBadge(
                         label: '${curr.flag} ${curr.code}',
                         color: color,
@@ -463,25 +465,44 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
   }
 
   Widget _buildFilterBar(BuildContext context, AppResponsive resp) {
-    return Padding(
+    return SingleChildScrollView(
+      scrollDirection: Axis.horizontal,
+      physics: const BouncingScrollPhysics(),
       padding: EdgeInsets.symmetric(horizontal: resp.isSmall ? 12 : 16),
       child: Row(
+        mainAxisSize: MainAxisSize.min,
         children: [
           _buildFilterChip('all', 'all_filter'.tr, resp),
           SizedBox(width: resp.spacingSM),
-          _buildFilterChip('give', 'give_filter'.tr, resp),
+          _buildFilterChip(
+            'give',
+            'give_filter'.tr,
+            resp,
+            color: AppColors.give,
+          ),
           SizedBox(width: resp.spacingSM),
-          _buildFilterChip('got', 'got_filter'.tr, resp),
+          _buildFilterChip(
+            'got',
+            'got_filter'.tr,
+            resp,
+            color: AppColors.got,
+          ),
         ],
       ),
     );
   }
 
-  Widget _buildFilterChip(String filter, String label, AppResponsive resp) {
+  Widget _buildFilterChip(
+    String filter,
+    String label,
+    AppResponsive resp, {
+    Color? color,
+  }) {
     final isSelected = _transactionFilter == filter;
     return AppFilterChip(
       label: label,
       isSelected: isSelected,
+      color: color,
       onTap: () => setState(() => _transactionFilter = filter),
     );
   }

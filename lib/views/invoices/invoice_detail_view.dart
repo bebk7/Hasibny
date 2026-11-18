@@ -290,7 +290,8 @@ class InvoiceDetailView extends StatelessWidget {
                             ),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(resp.radiusSM),
+                              borderRadius:
+                                  BorderRadius.circular(resp.radiusSM),
                             ),
                             child: Text(
                               '${invoice.items.length} ${'items_count'.tr}',
@@ -358,7 +359,8 @@ class InvoiceDetailView extends StatelessWidget {
                         final i = entry.key;
                         final item = entry.value;
                         return Container(
-                          padding: EdgeInsets.symmetric(vertical: resp.spacingSM),
+                          padding:
+                              EdgeInsets.symmetric(vertical: resp.spacingSM),
                           decoration: BoxDecoration(
                             border: i < invoice.items.length - 1
                                 ? Border(
@@ -381,8 +383,10 @@ class InvoiceDetailView extends StatelessWidget {
                                     height: 22,
                                     margin: const EdgeInsets.only(top: 2),
                                     decoration: BoxDecoration(
-                                      color: AppColors.primary.withValues(alpha: 0.08),
-                                      borderRadius: BorderRadius.circular(resp.radiusXS),
+                                      color: AppColors.primary
+                                          .withValues(alpha: 0.08),
+                                      borderRadius:
+                                          BorderRadius.circular(resp.radiusXS),
                                     ),
                                     alignment: Alignment.center,
                                     child: Text(
@@ -431,7 +435,9 @@ class InvoiceDetailView extends StatelessWidget {
                                   '${item.quantity} × ${CurrencyFormatter.format(item.unitPrice, currencyCode: currCode)}',
                                   style: TextStyle(
                                     fontFamily: 'Cairo',
-                                    color: isDark ? Colors.grey[400] : Colors.grey[600],
+                                    color: isDark
+                                        ? Colors.grey[400]
+                                        : Colors.grey[600],
                                     fontSize: resp.fontXS,
                                     fontWeight: FontWeight.w500,
                                   ),
@@ -515,7 +521,8 @@ class InvoiceDetailView extends StatelessWidget {
                     ),
                     _DetailRow(
                       label: 'invoice_date'.tr,
-                      value: DateFormat('yyyy/MM/dd HH:mm').format(invoice.date),
+                      value:
+                          DateFormat('yyyy/MM/dd HH:mm').format(invoice.date),
                     ),
                     if (invoice.notes != null && invoice.notes!.isNotEmpty)
                       _DetailRow(
@@ -1084,7 +1091,9 @@ class _DetailRow extends StatelessWidget {
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.w600,
                 fontSize: resp.fontSM,
-                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                color: isDark
+                    ? AppColors.textPrimaryDark
+                    : AppColors.textPrimaryLight,
               ),
             ),
           ),
