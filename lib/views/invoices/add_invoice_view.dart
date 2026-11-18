@@ -397,9 +397,8 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: AppAppBarTitle(
           isEditing ? 'edit_invoice'.tr : 'add_invoice_title'.tr,
-          style: AppTypography.pageTitle(context),
         ),
       ),
       body: AppPageContainer(

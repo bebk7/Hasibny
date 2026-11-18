@@ -68,6 +68,9 @@ class AppTypography {
   static TextStyle pageTitle(BuildContext context, {Color? color}) =>
       AppTextStyles.pageTitle(context, color: color);
 
+  static TextStyle pageTitleCompact(BuildContext context, {Color? color}) =>
+      AppTextStyles.pageTitleCompact(context, color: color);
+
   static TextStyle sectionTitle(BuildContext context, {Color? color}) =>
       AppTextStyles.sectionTitle(context, color: color);
 

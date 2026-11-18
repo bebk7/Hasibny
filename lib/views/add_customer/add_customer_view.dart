@@ -128,13 +128,8 @@ class _AddCustomerViewState extends State<AddCustomerView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: AppAppBarTitle(
           isEditing ? 'edit_customer'.tr : 'add_customer'.tr,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontWeight: FontWeight.w800,
-            fontSize: resp.fontSize(18),
-          ),
         ),
       ),
       body: GestureDetector(

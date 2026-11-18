@@ -10,9 +10,20 @@ class AppTextStyles {
     final isDark = AppColors.isDark(context);
     return TextStyle(
       fontFamily: AppTypography.fontFamily,
-      fontSize: AppTypography.heading1(context),
-      fontWeight: FontWeight.w800,
-      letterSpacing: -0.3,
+      fontSize: AppTypography.responsive(context, 16.5, min: 14.5, max: 18.0),
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
+      color: color ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
+    );
+  }
+
+  static TextStyle pageTitleCompact(BuildContext context, {Color? color}) {
+    final isDark = AppColors.isDark(context);
+    return TextStyle(
+      fontFamily: AppTypography.fontFamily,
+      fontSize: AppTypography.responsive(context, 15.0, min: 13.0, max: 16.5),
+      fontWeight: FontWeight.w700,
+      letterSpacing: -0.2,
       color: color ?? (isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight),
     );
   }

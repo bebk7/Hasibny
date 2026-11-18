@@ -21,10 +21,7 @@ class TransactionsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'all_transactions'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('all_transactions'.tr),
         actions: [
           IconButton(
             tooltip: 'preview_report'.tr,

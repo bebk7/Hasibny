@@ -30,17 +30,7 @@ class DashboardView extends StatelessWidget {
         title: Obx(() {
           final storeName = (sc?.storeName.value ?? '').trim();
           final titleText = storeName.isNotEmpty ? storeName : 'app_title'.tr;
-          return Text(
-            titleText,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontWeight: FontWeight.w800,
-              fontSize: resp.fontSize(18, min: 16, max: 22),
-              letterSpacing: -0.3,
-            ),
-            maxLines: 1,
-            overflow: TextOverflow.ellipsis,
-          );
+          return AppAppBarTitle(titleText);
         }),
         actions: [
           IconButton(

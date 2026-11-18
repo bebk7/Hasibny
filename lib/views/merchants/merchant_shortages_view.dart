@@ -25,10 +25,7 @@ class MerchantShortagesView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'shortages'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('shortages'.tr),
       ),
       body: AppPageContainer(
         padding: EdgeInsets.zero,

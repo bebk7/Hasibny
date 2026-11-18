@@ -135,10 +135,7 @@ class _AddTransactionViewState extends State<AddTransactionView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          isGive ? 'give_debit'.tr : 'got_credit'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle(isGive ? 'give_debit'.tr : 'got_credit'.tr),
       ),
       body: GestureDetector(
         onTap: () => FocusScope.of(context).unfocus(),

@@ -41,7 +41,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
       final customer = customerController.getCustomerById(widget.customerId);
       if (customer == null) {
         return Scaffold(
-          appBar: AppBar(title: Text('customer_details'.tr)),
+          appBar: AppBar(title: AppAppBarTitle('customer_details'.tr)),
           body: AppEmptyState(
             icon: Icons.person_off_rounded,
             title: 'customer_not_found'.tr,
@@ -52,14 +52,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
       return Scaffold(
         resizeToAvoidBottomInset: true,
         appBar: AppBar(
-          title: Text(
-            customer.name,
-            style: TextStyle(
-              fontFamily: AppTypography.fontFamily,
-              fontWeight: FontWeight.w800,
-              fontSize: resp.fontSize(18, min: 16, max: 21),
-            ),
-          ),
+          title: AppAppBarTitle(customer.name),
           actions: [
             IconButton(
               icon: const Icon(Icons.edit_outlined),

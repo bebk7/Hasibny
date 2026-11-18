@@ -31,10 +31,7 @@ class _MerchantsViewState extends State<MerchantsView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'merchants'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('merchants'.tr),
         actions: [
           IconButton(
             tooltip: 'product_search'.tr,

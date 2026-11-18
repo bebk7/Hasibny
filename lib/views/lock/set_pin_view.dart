@@ -110,10 +110,7 @@ class _SetPinViewState extends State<SetPinView>
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'set_pin'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('set_pin'.tr),
       ),
       body: SafeArea(
         child: LayoutBuilder(

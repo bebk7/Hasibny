@@ -25,10 +25,7 @@ class MerchantInvoicesView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          merchant?.name ?? 'invoices'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle(merchant?.name ?? 'invoices'.tr),
         actions: [
           if (merchant != null) ...[
             IconButton(

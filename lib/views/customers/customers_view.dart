@@ -33,15 +33,7 @@ class _CustomersViewState extends State<CustomersView> {
     return Scaffold(
       resizeToAvoidBottomInset: true,
       appBar: AppBar(
-        title: Text(
-          'nav_customers'.tr,
-          style: TextStyle(
-            fontFamily: AppTypography.fontFamily,
-            fontWeight: FontWeight.w800,
-            fontSize: resp.fontSize(20, min: 17, max: 23),
-            letterSpacing: -0.3,
-          ),
-        ),
+        title: AppAppBarTitle('nav_customers'.tr),
         actions: [
           IconButton(
             tooltip: 'add_customer'.tr,

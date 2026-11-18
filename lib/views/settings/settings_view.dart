@@ -27,10 +27,7 @@ class SettingsView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'settings'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('settings'.tr),
       ),
       body: AppPageContainer(
         maxWidth: 680,

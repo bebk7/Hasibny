@@ -227,14 +227,9 @@ class _CreateStoreViewState extends State<CreateStoreView> {
       appBar: AppBar(
         backgroundColor: const Color(0xFF0F1315),
         elevation: 0,
-        title: Text(
+        title: AppAppBarTitle(
           'create_store'.tr,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: resp.fontLG,
-            fontWeight: FontWeight.w800,
-            color: Colors.white,
-          ),
+          color: Colors.white,
         ),
         centerTitle: true,
         leading: IconButton(

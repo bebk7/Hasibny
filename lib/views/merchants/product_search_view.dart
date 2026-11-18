@@ -44,10 +44,7 @@ class _ProductSearchViewState extends State<ProductSearchView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'product_search'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('product_search'.tr),
       ),
       body: AppPageContainer(
         padding: EdgeInsets.zero,

@@ -131,12 +131,7 @@ class _ReportPreviewViewState extends State<ReportPreviewView>
     return Scaffold(
       backgroundColor: isDark ? AppColors.darkBackground : const Color(0xFFF4F6F9),
       appBar: AppBar(
-        title: Text(
-          widget.title,
-          style: AppTypography.pageTitle(context),
-          maxLines: 1,
-          overflow: TextOverflow.ellipsis,
-        ),
+        title: AppAppBarTitle(widget.title),
         actions: [
           if (!_isLoading && _loadedBytes != null && widget.format != ReportFormat.pdf)
             IconButton(

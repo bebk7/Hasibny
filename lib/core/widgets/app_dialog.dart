@@ -52,8 +52,8 @@ class AppDialog extends StatelessWidget {
                 DefaultTextStyle(
                   style: TextStyle(
                     fontFamily: AppTypography.fontFamily,
-                    fontSize: resp.fontSize(18, min: 16, max: 21),
-                    fontWeight: FontWeight.w800,
+                    fontSize: resp.fontSize(16.5, min: 14.5, max: 18.5),
+                    fontWeight: FontWeight.w700,
                     color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
                   ),
                   child: title!,

@@ -78,9 +78,8 @@ class _AddMerchantViewState extends State<AddMerchantView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
+        title: AppAppBarTitle(
           isEditing ? 'edit_merchant'.tr : 'add_merchant_title'.tr,
-          style: AppTypography.pageTitle(context),
         ),
       ),
       body: GestureDetector(

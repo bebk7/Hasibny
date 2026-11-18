@@ -43,10 +43,7 @@ class InvoiceDetailView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          '#${invoice.invoiceNumber}',
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('#${invoice.invoiceNumber}'),
         actions: [
           IconButton(
             tooltip: 'preview_report'.tr,

@@ -171,10 +171,7 @@ class _StoreProfileViewState extends State<StoreProfileView> {
 
     return Scaffold(
       appBar: AppBar(
-        title: Text(
-          'store_profile'.tr,
-          style: AppTypography.pageTitle(context),
-        ),
+        title: AppAppBarTitle('store_profile'.tr),
         actions: [
           IconButton(
             icon: Icon(Icons.check_rounded, size: resp.iconSM),
