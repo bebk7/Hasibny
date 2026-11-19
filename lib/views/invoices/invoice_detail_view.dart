@@ -279,7 +279,8 @@ class _InvoiceDetailViewState extends State<InvoiceDetailView> {
                             padding: EdgeInsets.all(resp.spacingXS),
                             decoration: BoxDecoration(
                               color: AppColors.primary.withValues(alpha: 0.1),
-                              borderRadius: BorderRadius.circular(resp.radiusXS),
+                              borderRadius:
+                                  BorderRadius.circular(resp.radiusXS),
                             ),
                             child: Icon(
                               Icons.receipt_long_rounded,

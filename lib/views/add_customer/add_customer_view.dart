@@ -79,6 +79,22 @@ class _AddCustomerViewState extends State<AddCustomerView> {
       final whatsappNum = _whatsappController.text.trim();
 
       if (widget.customer != null) {
+        if (customerController.customerExists(
+          name: _nameController.text.trim(),
+          currencyCode: _selectedCurrencyCode,
+          excludeId: widget.customer!.id,
+        )) {
+          setState(() => _isSubmitting = false);
+          Get.snackbar(
+            'error'.tr,
+            'customer_already_exists_currency'.tr,
+            backgroundColor: AppColors.errorColor,
+            colorText: Colors.white,
+            snackPosition: SnackPosition.BOTTOM,
+          );
+          return;
+        }
+
         final updated = widget.customer!;
         updated.name = _nameController.text.trim();
         updated.phoneNumber = _phoneController.text.trim();
@@ -86,10 +102,9 @@ class _AddCustomerViewState extends State<AddCustomerView> {
         updated.autoSendInvoiceWhatsApp = _autoSendWhatsApp;
         updated.whatsappNumber = whatsappNum.isNotEmpty ? whatsappNum : null;
 
-        final success = await customerController.updateCustomer(updated);
-        if (success) {
-          Get.back();
-        }
+        Get.back();
+        customerController.updateCustomer(updated);
+        return;
       } else {
         final customer = Customer(
           name: _nameController.text.trim(),
@@ -351,8 +366,10 @@ class _AddCustomerViewState extends State<AddCustomerView> {
           SizedBox(height: resp.spacingSM + 4),
 
           // WhatsApp Phone Input
-          Row(
-            mainAxisAlignment: MainAxisAlignment.spaceBetween,
+          Wrap(
+            alignment: WrapAlignment.spaceBetween,
+            crossAxisAlignment: WrapCrossAlignment.center,
+            runSpacing: 4,
             children: [
               _buildFieldLabel('whatsapp_phone'.tr, isDark, resp),
               TextButton(
@@ -396,40 +413,43 @@ class _AddCustomerViewState extends State<AddCustomerView> {
           SizedBox(height: resp.spacingSM + 4),
 
           // Auto-send Toggle Switch
-          SwitchListTile(
-            contentPadding: EdgeInsets.zero,
-            value: _autoSendWhatsApp,
-            activeTrackColor: waColor.withValues(alpha: 0.5),
-            activeThumbColor: waColor,
-            title: Text(
-              'auto_send_whatsapp_invoice'.tr,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontWeight: FontWeight.w700,
-                fontSize: resp.fontSize(13),
-                color: isDark
-                    ? AppColors.textPrimaryDark
-                    : AppColors.textPrimaryLight,
+          Material(
+            type: MaterialType.transparency,
+            child: SwitchListTile(
+              contentPadding: EdgeInsets.zero,
+              value: _autoSendWhatsApp,
+              activeTrackColor: waColor.withValues(alpha: 0.5),
+              activeThumbColor: waColor,
+              title: Text(
+                'auto_send_whatsapp_invoice'.tr,
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontWeight: FontWeight.w700,
+                  fontSize: resp.fontSize(13),
+                  color: isDark
+                      ? AppColors.textPrimaryDark
+                      : AppColors.textPrimaryLight,
+                ),
               ),
-            ),
-            subtitle: Text(
-              'auto_send_whatsapp_desc'.tr,
-              style: TextStyle(
-                fontFamily: AppTypography.fontFamily,
-                fontSize: resp.fontSize(11),
-                color: isDark
-                    ? AppColors.textSecondaryDark
-                    : AppColors.textSecondaryLight,
+              subtitle: Text(
+                'auto_send_whatsapp_desc'.tr,
+                style: TextStyle(
+                  fontFamily: AppTypography.fontFamily,
+                  fontSize: resp.fontSize(11),
+                  color: isDark
+                      ? AppColors.textSecondaryDark
+                      : AppColors.textSecondaryLight,
+                ),
               ),
+              onChanged: (val) {
+                setState(() {
+                  _autoSendWhatsApp = val;
+                  if (val && _whatsappController.text.trim().isEmpty) {
+                    _whatsappController.text = _phoneController.text.trim();
+                  }
+                });
+              },
             ),
-            onChanged: (val) {
-              setState(() {
-                _autoSendWhatsApp = val;
-                if (val && _whatsappController.text.trim().isEmpty) {
-                  _whatsappController.text = _phoneController.text.trim();
-                }
-              });
-            },
           ),
         ],
       ),
