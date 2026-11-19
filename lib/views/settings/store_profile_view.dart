@@ -76,22 +76,38 @@ class _StoreProfileViewState extends State<StoreProfileView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'select_image_source'.tr,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: resp.fontLG,
-              fontWeight: FontWeight.bold,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'select_image_source'.tr,
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontLG,
+                fontWeight: FontWeight.bold,
+              ),
             ),
           ),
           SizedBox(height: resp.spacingLG),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _sourceOption(
-                  Icons.camera_alt_rounded, 'camera'.tr, ImageSource.camera, resp),
-              _sourceOption(Icons.photo_library_rounded, 'gallery'.tr,
-                  ImageSource.gallery, resp),
+              Expanded(
+                child: _sourceOption(
+                  Icons.camera_alt_rounded,
+                  'camera'.tr,
+                  ImageSource.camera,
+                  resp,
+                ),
+              ),
+              SizedBox(width: resp.spacingMD),
+              Expanded(
+                child: _sourceOption(
+                  Icons.photo_library_rounded,
+                  'gallery'.tr,
+                  ImageSource.gallery,
+                  resp,
+                ),
+              ),
             ],
           ),
           SizedBox(height: resp.spacingSM),
@@ -102,35 +118,44 @@ class _StoreProfileViewState extends State<StoreProfileView> {
 
   Widget _sourceOption(
       IconData icon, String label, ImageSource source, AppResponsive resp) {
-    return InkWell(
-      onTap: () => Navigator.pop(context, source),
-      borderRadius: BorderRadius.circular(resp.cardRadius),
-      child: Container(
-        padding: EdgeInsets.symmetric(
-          horizontal: resp.spacingLG,
-          vertical: resp.spacingMD,
-        ),
-        decoration: BoxDecoration(
-          color: AppColors.primary.withValues(alpha: 0.08),
-          borderRadius: BorderRadius.circular(resp.cardRadius),
-          border: Border.all(
-            color: AppColors.primary.withValues(alpha: 0.15),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: () => Navigator.pop(context, source),
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        child: Container(
+          padding: EdgeInsets.symmetric(
+            horizontal: resp.spacingSM,
+            vertical: resp.spacingMD,
           ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: resp.iconLG, color: AppColors.primary),
-            SizedBox(height: resp.spacingSM),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                color: AppColors.primary,
-                fontWeight: FontWeight.w700,
-                fontSize: resp.fontSM,
-              ),
+          decoration: BoxDecoration(
+            color: AppColors.primary.withValues(alpha: 0.08),
+            borderRadius: BorderRadius.circular(resp.cardRadius),
+            border: Border.all(
+              color: AppColors.primary.withValues(alpha: 0.15),
             ),
-          ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: resp.iconLG, color: AppColors.primary),
+              SizedBox(height: resp.spacingSM),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: AppColors.primary,
+                    fontWeight: FontWeight.w700,
+                    fontSize: resp.fontMD,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );

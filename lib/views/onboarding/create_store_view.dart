@@ -62,30 +62,38 @@ class _CreateStoreViewState extends State<CreateStoreView> {
       child: Column(
         mainAxisSize: MainAxisSize.min,
         children: [
-          Text(
-            'اختيار شعار المتجر',
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: resp.fontLG,
-              fontWeight: FontWeight.bold,
-              color: Colors.white,
+          FittedBox(
+            fit: BoxFit.scaleDown,
+            child: Text(
+              'اختيار شعار المتجر',
+              textAlign: TextAlign.center,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontLG,
+                fontWeight: FontWeight.bold,
+                color: Colors.white,
+              ),
             ),
           ),
           SizedBox(height: resp.spacingLG),
           Row(
-            mainAxisAlignment: MainAxisAlignment.spaceEvenly,
             children: [
-              _imageSourceOption(
-                icon: Icons.photo_library_rounded,
-                label: 'المعرض',
-                onTap: () => Navigator.pop(context, ImageSource.gallery),
-                resp: resp,
+              Expanded(
+                child: _imageSourceOption(
+                  icon: Icons.photo_library_rounded,
+                  label: 'gallery'.tr,
+                  onTap: () => Navigator.pop(context, ImageSource.gallery),
+                  resp: resp,
+                ),
               ),
-              _imageSourceOption(
-                icon: Icons.camera_alt_rounded,
-                label: 'الكاميرا',
-                onTap: () => Navigator.pop(context, ImageSource.camera),
-                resp: resp,
+              SizedBox(width: resp.spacingMD),
+              Expanded(
+                child: _imageSourceOption(
+                  icon: Icons.camera_alt_rounded,
+                  label: 'camera'.tr,
+                  onTap: () => Navigator.pop(context, ImageSource.camera),
+                  resp: resp,
+                ),
               ),
             ],
           ),
@@ -137,32 +145,41 @@ class _CreateStoreViewState extends State<CreateStoreView> {
     required VoidCallback onTap,
     required AppResponsive resp,
   }) {
-    return InkWell(
-      onTap: onTap,
-      borderRadius: BorderRadius.circular(resp.cardRadius),
-      child: Container(
-        padding: EdgeInsets.symmetric(horizontal: resp.spacingLG, vertical: resp.spacingMD),
-        decoration: BoxDecoration(
-          color: const Color(0xFF00E5FF).withValues(alpha: 0.1),
-          borderRadius: BorderRadius.circular(resp.cardRadius),
-          border: Border.all(
-            color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
-          ),
-        ),
-        child: Column(
-          children: [
-            Icon(icon, size: resp.iconLG, color: const Color(0xFF00E5FF)),
-            SizedBox(height: resp.spacingSM),
-            Text(
-              label,
-              style: TextStyle(
-                fontFamily: 'Cairo',
-                color: Colors.white,
-                fontWeight: FontWeight.w700,
-                fontSize: resp.fontSM,
-              ),
+    return Material(
+      color: Colors.transparent,
+      child: InkWell(
+        onTap: onTap,
+        borderRadius: BorderRadius.circular(resp.cardRadius),
+        child: Container(
+          padding: EdgeInsets.symmetric(horizontal: resp.spacingSM, vertical: resp.spacingMD),
+          decoration: BoxDecoration(
+            color: const Color(0xFF00E5FF).withValues(alpha: 0.1),
+            borderRadius: BorderRadius.circular(resp.cardRadius),
+            border: Border.all(
+              color: const Color(0xFF00E5FF).withValues(alpha: 0.25),
             ),
-          ],
+          ),
+          child: Column(
+            mainAxisSize: MainAxisSize.min,
+            children: [
+              Icon(icon, size: resp.iconLG, color: const Color(0xFF00E5FF)),
+              SizedBox(height: resp.spacingSM),
+              FittedBox(
+                fit: BoxFit.scaleDown,
+                child: Text(
+                  label,
+                  maxLines: 1,
+                  textAlign: TextAlign.center,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    color: Colors.white,
+                    fontWeight: FontWeight.w700,
+                    fontSize: resp.fontMD,
+                  ),
+                ),
+              ),
+            ],
+          ),
         ),
       ),
     );
@@ -466,13 +483,17 @@ class _CreateStoreViewState extends State<CreateStoreView> {
                                 children: [
                                   Text(c.flag, style: const TextStyle(fontSize: 18)),
                                   SizedBox(width: resp.spacingSM),
-                                  Text(
-                                    '${c.nameAr} (${c.code})',
-                                    style: TextStyle(
-                                      fontFamily: 'Cairo',
-                                      color: Colors.white,
-                                      fontWeight: FontWeight.bold,
-                                      fontSize: resp.fontMD,
+                                  Expanded(
+                                    child: Text(
+                                      '${c.nameAr} (${c.code})',
+                                      maxLines: 1,
+                                      overflow: TextOverflow.ellipsis,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        color: Colors.white,
+                                        fontWeight: FontWeight.bold,
+                                        fontSize: resp.fontMD,
+                                      ),
                                     ),
                                   ),
                                 ],
@@ -602,14 +623,17 @@ class _CreateStoreViewState extends State<CreateStoreView> {
 
   Widget _buildFieldLabel(String label, {required bool isRequired, required AppResponsive resp}) {
     return Row(
+      mainAxisSize: MainAxisSize.min,
       children: [
-        Text(
-          label,
-          style: TextStyle(
-            fontFamily: 'Cairo',
-            fontSize: resp.fontSM,
-            fontWeight: FontWeight.w700,
-            color: Colors.white.withValues(alpha: 0.9),
+        Flexible(
+          child: Text(
+            label,
+            style: TextStyle(
+              fontFamily: 'Cairo',
+              fontSize: resp.fontSM,
+              fontWeight: FontWeight.w700,
+              color: Colors.white.withValues(alpha: 0.9),
+            ),
           ),
         ),
         if (isRequired) ...[
