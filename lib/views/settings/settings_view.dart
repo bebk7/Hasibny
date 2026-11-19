@@ -729,7 +729,7 @@ class SettingsView extends StatelessWidget {
                         ),
                         const SizedBox(height: 2),
                         Text(
-                          'تصدير ملف .abbackup مشفر بكلمة مرور',
+                          'تصدير وحفظ ملف .abbackup مشفر في مجلد تختاره',
                           style: TextStyle(
                             fontFamily: 'Cairo',
                             fontSize: resp.fontXS,
@@ -822,160 +822,201 @@ class SettingsView extends StatelessWidget {
       context: context,
       maxWidth: 420,
       child: StatefulBuilder(
-        builder: (context, setState) => Column(
-          mainAxisSize: MainAxisSize.min,
-          crossAxisAlignment: CrossAxisAlignment.start,
-          children: [
-            Row(
-              children: [
-                Container(
-                  padding: EdgeInsets.all(resp.spacingXS),
-                  decoration: BoxDecoration(
-                    color: AppColors.primary.withValues(alpha: 0.1),
-                    borderRadius: BorderRadius.circular(resp.radiusSM),
-                  ),
-                  child: Icon(Icons.lock_outline_rounded,
-                      color: AppColors.primary, size: resp.iconSM),
-                ),
-                SizedBox(width: resp.spacingSM),
-                Expanded(
-                  child: Text(
-                    'export_backup'.tr,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: resp.fontLG,
-                      fontWeight: FontWeight.bold,
-                    ),
-                  ),
-                ),
-              ],
-            ),
-            SizedBox(height: resp.spacingSM),
-            Container(
-              padding: EdgeInsets.all(resp.spacingSM),
-              decoration: BoxDecoration(
-                color: AppColors.warning.withValues(alpha: 0.1),
-                borderRadius: BorderRadius.circular(resp.radiusSM),
-                border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
-              ),
-              child: Row(
-                crossAxisAlignment: CrossAxisAlignment.start,
+        builder: (context, setState) {
+          Future<void> executeExport({required bool isShare}) async {
+            final pass = passCtrl.text.trim();
+            final confirm = confirmCtrl.text.trim();
+            if (pass.length < 6) {
+              Get.snackbar(
+                'error'.tr,
+                'backup_password_too_short'.tr,
+                backgroundColor: AppColors.error,
+                colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+            if (pass != confirm) {
+              Get.snackbar(
+                'error'.tr,
+                'backup_password_mismatch'.tr,
+                backgroundColor: AppColors.error,
+                colorText: Colors.white,
+                snackPosition: SnackPosition.BOTTOM,
+              );
+              return;
+            }
+
+            setState(() => isExporting = true);
+            try {
+              if (isShare) {
+                await BackupService.exportAndShareBackup(password: pass);
+                Get.back();
+                Get.snackbar(
+                  'success'.tr,
+                  'backup_export_success'.tr,
+                  snackPosition: SnackPosition.BOTTOM,
+                  backgroundColor: AppColors.success,
+                  colorText: Colors.white,
+                );
+              } else {
+                final savedPath = await BackupService.exportAndSaveBackup(password: pass);
+                if (savedPath != null) {
+                  Get.back();
+                  Get.snackbar(
+                    'success'.tr,
+                    'backup_saved_success'.tr,
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: AppColors.success,
+                    colorText: Colors.white,
+                    duration: const Duration(seconds: 4),
+                  );
+                } else {
+                  setState(() => isExporting = false);
+                  Get.snackbar(
+                    'info'.tr,
+                    'backup_save_canceled'.tr,
+                    snackPosition: SnackPosition.BOTTOM,
+                    backgroundColor: Colors.grey[800],
+                    colorText: Colors.white,
+                  );
+                }
+              }
+            } catch (e) {
+              setState(() => isExporting = false);
+              Get.snackbar(
+                'error'.tr,
+                e.toString(),
+                snackPosition: SnackPosition.BOTTOM,
+                backgroundColor: AppColors.error,
+                colorText: Colors.white,
+              );
+            }
+          }
+
+          return Column(
+            mainAxisSize: MainAxisSize.min,
+            crossAxisAlignment: CrossAxisAlignment.stretch,
+            children: [
+              Row(
                 children: [
-                  Icon(Icons.info_outline_rounded,
-                      color: AppColors.warning, size: resp.iconSM),
+                  Container(
+                    padding: EdgeInsets.all(resp.spacingXS),
+                    decoration: BoxDecoration(
+                      color: AppColors.primary.withValues(alpha: 0.1),
+                      borderRadius: BorderRadius.circular(resp.radiusSM),
+                    ),
+                    child: Icon(Icons.lock_outline_rounded,
+                        color: AppColors.primary, size: resp.iconSM),
+                  ),
                   SizedBox(width: resp.spacingSM),
                   Expanded(
                     child: Text(
-                      'backup_password_warning'.tr,
+                      'export_backup'.tr,
                       style: TextStyle(
                         fontFamily: 'Cairo',
-                        fontSize: resp.fontXS,
-                        height: 1.4,
+                        fontSize: resp.fontLG,
+                        fontWeight: FontWeight.bold,
                       ),
                     ),
                   ),
                 ],
               ),
-            ),
-            SizedBox(height: resp.spacingMD),
-            TextField(
-              controller: passCtrl,
-              obscureText: obscurePass,
-              style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
-              decoration: InputDecoration(
-                labelText: 'backup_password'.tr,
-                hintText: 'backup_password_hint'.tr,
-                prefixIcon: Icon(Icons.password_rounded, size: resp.iconSM),
-                suffixIcon: IconButton(
-                  icon: Icon(obscurePass ? Icons.visibility_off : Icons.visibility, size: resp.iconSM),
-                  onPressed: () => setState(() => obscurePass = !obscurePass),
+              SizedBox(height: resp.spacingSM),
+              Container(
+                padding: EdgeInsets.all(resp.spacingSM),
+                decoration: BoxDecoration(
+                  color: AppColors.warning.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(resp.radiusSM),
+                  border: Border.all(color: AppColors.warning.withValues(alpha: 0.3)),
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(Icons.info_outline_rounded,
+                        color: AppColors.warning, size: resp.iconSM),
+                    SizedBox(width: resp.spacingSM),
+                    Expanded(
+                      child: Text(
+                        'backup_password_warning'.tr,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontXS,
+                          height: 1.4,
+                        ),
+                      ),
+                    ),
+                  ],
                 ),
               ),
-            ),
-            SizedBox(height: resp.spacingSM),
-            TextField(
-              controller: confirmCtrl,
-              obscureText: obscureConfirm,
-              style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
-              decoration: InputDecoration(
-                labelText: 'confirm_backup_password'.tr,
-                prefixIcon: Icon(Icons.lock_reset_rounded, size: resp.iconSM),
-                suffixIcon: IconButton(
-                  icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, size: resp.iconSM),
-                  onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
+              SizedBox(height: resp.spacingMD),
+              TextField(
+                controller: passCtrl,
+                obscureText: obscurePass,
+                style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                decoration: InputDecoration(
+                  labelText: 'backup_password'.tr,
+                  hintText: 'backup_password_hint'.tr,
+                  prefixIcon: Icon(Icons.password_rounded, size: resp.iconSM),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscurePass ? Icons.visibility_off : Icons.visibility, size: resp.iconSM),
+                    onPressed: () => setState(() => obscurePass = !obscurePass),
+                  ),
                 ),
               ),
-            ),
-            SizedBox(height: resp.spacingLG),
-            if (isExporting)
-              const Center(child: AppLoading())
-            else
-              Row(
-                children: [
-                  Expanded(
-                    child: AppButton(
-                      text: 'cancel'.tr,
-                      variant: AppButtonVariant.secondary,
-                      onPressed: () => Get.back(),
-                    ),
+              SizedBox(height: resp.spacingSM),
+              TextField(
+                controller: confirmCtrl,
+                obscureText: obscureConfirm,
+                style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
+                decoration: InputDecoration(
+                  labelText: 'confirm_backup_password'.tr,
+                  prefixIcon: Icon(Icons.lock_reset_rounded, size: resp.iconSM),
+                  suffixIcon: IconButton(
+                    icon: Icon(obscureConfirm ? Icons.visibility_off : Icons.visibility, size: resp.iconSM),
+                    onPressed: () => setState(() => obscureConfirm = !obscureConfirm),
                   ),
-                  SizedBox(width: resp.spacingSM),
-                  Expanded(
-                    child: AppButton(
-                      text: 'export_backup'.tr,
-                      icon: Icons.cloud_upload_rounded,
-                      onPressed: () async {
-                        final pass = passCtrl.text.trim();
-                        final confirm = confirmCtrl.text.trim();
-                        if (pass.length < 6) {
-                          Get.snackbar(
-                            'error'.tr,
-                            'backup_password_too_short'.tr,
-                            backgroundColor: AppColors.error,
-                            colorText: Colors.white,
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                          return;
-                        }
-                        if (pass != confirm) {
-                          Get.snackbar(
-                            'error'.tr,
-                            'backup_password_mismatch'.tr,
-                            backgroundColor: AppColors.error,
-                            colorText: Colors.white,
-                            snackPosition: SnackPosition.BOTTOM,
-                          );
-                          return;
-                        }
-
-                        setState(() => isExporting = true);
-                        try {
-                          await BackupService.exportAndShareBackup(password: pass);
-                          Get.back();
-                          Get.snackbar(
-                            'success'.tr,
-                            'backup_export_success'.tr,
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: AppColors.success,
-                            colorText: Colors.white,
-                          );
-                        } catch (e) {
-                          setState(() => isExporting = false);
-                          Get.snackbar(
-                            'error'.tr,
-                            e.toString(),
-                            snackPosition: SnackPosition.BOTTOM,
-                            backgroundColor: AppColors.error,
-                            colorText: Colors.white,
-                          );
-                        }
-                      },
-                    ),
-                  ),
-                ],
+                ),
               ),
-          ],
-        ),
+              SizedBox(height: resp.spacingLG),
+              if (isExporting)
+                const Center(child: AppLoading())
+              else
+                Column(
+                  mainAxisSize: MainAxisSize.min,
+                  crossAxisAlignment: CrossAxisAlignment.stretch,
+                  children: [
+                    AppButton(
+                      text: 'save_to_files'.tr,
+                      icon: Icons.save_alt_rounded,
+                      onPressed: () => executeExport(isShare: false),
+                    ),
+                    SizedBox(height: resp.spacingSM),
+                    Row(
+                      children: [
+                        Expanded(
+                          child: AppButton(
+                            text: 'cancel'.tr,
+                            variant: AppButtonVariant.secondary,
+                            onPressed: () => Get.back(),
+                          ),
+                        ),
+                        SizedBox(width: resp.spacingSM),
+                        Expanded(
+                          child: AppButton(
+                            text: 'share_backup'.tr,
+                            icon: Icons.share_rounded,
+                            variant: AppButtonVariant.secondary,
+                            onPressed: () => executeExport(isShare: true),
+                          ),
+                        ),
+                      ],
+                    ),
+                  ],
+                ),
+            ],
+          );
+        },
       ),
     );
   }

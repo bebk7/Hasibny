@@ -29,6 +29,7 @@ class DatabaseService {
     _initialized = true;
   }
 
+  static bool get isInitialized => _initialized;
   static Isar get instance => _isar;
 
   static Future<void> close() async {

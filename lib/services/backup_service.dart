@@ -3,7 +3,9 @@ import 'dart:io';
 import 'dart:math';
 import 'dart:typed_data';
 import 'package:cryptography/cryptography.dart';
+import 'package:file_picker/file_picker.dart';
 import 'package:get/get.dart';
+import 'package:intl/intl.dart';
 import 'package:path_provider/path_provider.dart';
 import 'package:share_plus/share_plus.dart';
 
@@ -68,6 +70,10 @@ class BackupService {
     final cleanPassword = password.trim();
     if (cleanPassword.length < minPasswordLength) {
       throw BackupException('backup_password_too_short'.tr);
+    }
+
+    if (!DatabaseService.isInitialized) {
+      await DatabaseService.initialize();
     }
 
     // 1. Gather all collections
@@ -200,6 +206,56 @@ class BackupService {
     await file.writeAsBytes(containerBytes, flush: true);
 
     return file;
+  }
+
+  /// Exports backup and prompts the user to select the destination file/folder to save it.
+  /// Returns the saved file path, or `null` if the user aborted the picker.
+  static Future<String?> exportAndSaveBackup({
+    required String password,
+    String? customFileName,
+  }) async {
+    final file = await exportBackup(password: password);
+    final bytes = await file.readAsBytes();
+
+    final dateStr = DateFormat('yyyyMMdd_HHmmss').format(DateTime.now());
+    final defaultFileName = customFileName ?? 'account_book_backup_$dateStr.abbackup';
+
+    String? savedPath;
+    try {
+      savedPath = await FilePicker.platform.saveFile(
+        dialogTitle: 'choose_backup_save_location'.tr,
+        fileName: defaultFileName,
+        type: FileType.custom,
+        allowedExtensions: ['abbackup'],
+        bytes: bytes,
+      );
+    } catch (_) {
+      try {
+        final selectedDirectory = await FilePicker.platform.getDirectoryPath(
+          dialogTitle: 'choose_backup_save_location'.tr,
+        );
+        if (selectedDirectory != null) {
+          savedPath = '$selectedDirectory/$defaultFileName';
+        }
+      } catch (_) {
+        rethrow;
+      }
+    }
+
+    if (savedPath == null) {
+      return null;
+    }
+
+    try {
+      final destFile = File(savedPath);
+      if (!await destFile.exists() || (await destFile.length()) == 0) {
+        await destFile.writeAsBytes(bytes, flush: true);
+      }
+    } catch (_) {
+      // Content URI or platform-managed path
+    }
+
+    return savedPath;
   }
 
   /// Exports backup and invokes the system share sheet
