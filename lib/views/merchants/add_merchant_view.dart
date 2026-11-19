@@ -74,6 +74,7 @@ class _AddMerchantViewState extends State<AddMerchantView> {
   Widget build(BuildContext context) {
     final resp = AppResponsive.of(context);
     final isDark = Theme.of(context).brightness == Brightness.dark;
+    final isAr = Get.locale?.languageCode == 'ar';
     final avatarSize = resp.isSmall ? 72.0 : 84.0;
 
     return Scaffold(
@@ -154,6 +155,19 @@ class _AddMerchantViewState extends State<AddMerchantView> {
                   TextFormField(
                     controller: _phoneCtrl,
                     keyboardType: TextInputType.phone,
+                    textDirection: TextDirection.ltr,
+                    textAlign: isAr ? TextAlign.right : TextAlign.left,
+                    inputFormatters: [
+                      TextInputFormatter.withFunction((oldValue, newValue) {
+                        final converted = PhoneNumberHelper.convertArabicDigitsToLatin(newValue.text);
+                        if (converted == newValue.text) return newValue;
+                        return newValue.copyWith(
+                          text: converted,
+                          selection: newValue.selection,
+                          composing: TextRange.empty,
+                        );
+                      }),
+                    ],
                     style: TextStyle(
                       fontFamily: 'Cairo',
                       fontWeight: FontWeight.w700,
@@ -164,6 +178,7 @@ class _AddMerchantViewState extends State<AddMerchantView> {
                     ),
                     decoration: InputDecoration(
                       hintText: 'enter_phone'.tr,
+                      hintTextDirection: TextDirection.ltr,
                       prefixIcon: Icon(Icons.phone_rounded, size: resp.iconSM),
                     ),
                   ),

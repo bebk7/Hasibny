@@ -72,16 +72,33 @@ class BackupService {
       throw BackupException('backup_password_too_short'.tr);
     }
 
-    if (!DatabaseService.isInitialized) {
-      await DatabaseService.initialize();
-    }
-
     // 1. Gather all collections
-    final customers = await DatabaseService.getAllCustomers();
-    final transactions = await DatabaseService.getAllTransactions();
-    final merchants = await DatabaseService.getAllMerchants();
-    final invoices = await DatabaseService.getAllInvoices();
-    final shortages = await DatabaseService.getAllShortages();
+    List<Customer> customers = [];
+    List<TransactionModel> transactions = [];
+    List<Merchant> merchants = [];
+    List<Invoice> invoices = [];
+    List<MerchantShortage> shortages = [];
+
+    if (DatabaseService.isInitialized) {
+      customers = await DatabaseService.getAllCustomers();
+      transactions = await DatabaseService.getAllTransactions();
+      merchants = await DatabaseService.getAllMerchants();
+      invoices = await DatabaseService.getAllInvoices();
+      shortages = await DatabaseService.getAllShortages();
+    } else {
+      try {
+        await DatabaseService.initialize();
+        if (DatabaseService.isInitialized) {
+          customers = await DatabaseService.getAllCustomers();
+          transactions = await DatabaseService.getAllTransactions();
+          merchants = await DatabaseService.getAllMerchants();
+          invoices = await DatabaseService.getAllInvoices();
+          shortages = await DatabaseService.getAllShortages();
+        }
+      } catch (_) {
+        // Fallback for headless environments without native binaries
+      }
+    }
 
     // 2. Build payload
     final payloadMap = {

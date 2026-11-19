@@ -1,5 +1,6 @@
 import 'dart:io';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:image_picker/image_picker.dart';
 import 'package:path_provider/path_provider.dart';
@@ -250,12 +251,26 @@ class _StoreProfileViewState extends State<StoreProfileView> {
                     TextFormField(
                       controller: _phoneCtrl,
                       keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      textAlign: isAr ? TextAlign.right : TextAlign.left,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final converted = PhoneNumberHelper.convertArabicDigitsToLatin(newValue.text);
+                          if (converted == newValue.text) return newValue;
+                          return newValue.copyWith(
+                            text: converted,
+                            selection: newValue.selection,
+                            composing: TextRange.empty,
+                          );
+                        }),
+                      ],
                       style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                       decoration: InputDecoration(
                         labelText: 'phone'.tr,
                         hintText: isAr
-                            ? 'مثال: 967-777-123456'
+                            ? '+967 777 123 456'
                             : 'e.g. +967-777-123456',
+                        hintTextDirection: TextDirection.ltr,
                         prefixIcon: Icon(Icons.phone_rounded, size: resp.iconSM),
                       ),
                     ),
@@ -263,10 +278,13 @@ class _StoreProfileViewState extends State<StoreProfileView> {
                     TextFormField(
                       controller: _emailCtrl,
                       keyboardType: TextInputType.emailAddress,
+                      textDirection: TextDirection.ltr,
+                      textAlign: isAr ? TextAlign.right : TextAlign.left,
                       style: TextStyle(fontFamily: 'Cairo', fontSize: resp.fontMD),
                       decoration: InputDecoration(
                         labelText: 'email'.tr,
                         hintText: 'store@example.com',
+                        hintTextDirection: TextDirection.ltr,
                         prefixIcon: Icon(Icons.email_rounded, size: resp.iconSM),
                       ),
                     ),

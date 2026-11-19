@@ -60,7 +60,7 @@ class SettingsView extends StatelessWidget {
                         ? 'store_profile_sub'.tr
                         : settingsController.storePhone.value.isEmpty
                             ? 'store_profile_sub'.tr
-                            : settingsController.storePhone.value,
+                            : '\u200E${settingsController.storePhone.value}',
                     trailing: Icon(resp.forwardIcon,
                         size: resp.iconSM, color: Colors.grey),
                     onTap: () => Get.to(() => const StoreProfileView()),

@@ -139,6 +139,7 @@ class _AddCustomerViewState extends State<AddCustomerView> {
     final isDark = AppColors.isDark(context);
     final resp = AppResponsive.of(context);
     final isEditing = widget.customer != null;
+    final isAr = Get.locale?.languageCode == 'ar';
     final avatarSize = resp.isSmall ? 76.0 : 88.0;
 
     return Scaffold(
@@ -265,6 +266,19 @@ class _AddCustomerViewState extends State<AddCustomerView> {
                     TextFormField(
                       controller: _phoneController,
                       keyboardType: TextInputType.phone,
+                      textDirection: TextDirection.ltr,
+                      textAlign: isAr ? TextAlign.right : TextAlign.left,
+                      inputFormatters: [
+                        TextInputFormatter.withFunction((oldValue, newValue) {
+                          final converted = PhoneNumberHelper.convertArabicDigitsToLatin(newValue.text);
+                          if (converted == newValue.text) return newValue;
+                          return newValue.copyWith(
+                            text: converted,
+                            selection: newValue.selection,
+                            composing: TextRange.empty,
+                          );
+                        }),
+                      ],
                       style: TextStyle(
                         fontFamily: AppTypography.fontFamily,
                         fontWeight: FontWeight.w700,
@@ -274,6 +288,7 @@ class _AddCustomerViewState extends State<AddCustomerView> {
                       ),
                       decoration: InputDecoration(
                         hintText: 'enter_phone'.tr,
+                        hintTextDirection: TextDirection.ltr,
                         prefixIcon: const Icon(Icons.phone_outlined),
                       ),
                       validator: (value) {
@@ -316,6 +331,7 @@ class _AddCustomerViewState extends State<AddCustomerView> {
   Widget _buildWhatsAppSettingsCard(
       BuildContext context, bool isDark, AppResponsive resp) {
     const waColor = Color(0xFF25D366);
+    final isAr = Get.locale?.languageCode == 'ar';
 
     return Container(
       padding: resp.cardPadding,
@@ -397,6 +413,19 @@ class _AddCustomerViewState extends State<AddCustomerView> {
           TextFormField(
             controller: _whatsappController,
             keyboardType: TextInputType.phone,
+            textDirection: TextDirection.ltr,
+            textAlign: isAr ? TextAlign.right : TextAlign.left,
+            inputFormatters: [
+              TextInputFormatter.withFunction((oldValue, newValue) {
+                final converted = PhoneNumberHelper.convertArabicDigitsToLatin(newValue.text);
+                if (converted == newValue.text) return newValue;
+                return newValue.copyWith(
+                  text: converted,
+                  selection: newValue.selection,
+                  composing: TextRange.empty,
+                );
+              }),
+            ],
             style: TextStyle(
               fontFamily: AppTypography.fontFamily,
               fontWeight: FontWeight.w700,
@@ -406,6 +435,7 @@ class _AddCustomerViewState extends State<AddCustomerView> {
             ),
             decoration: InputDecoration(
               hintText: 'whatsapp_phone_hint'.tr,
+              hintTextDirection: TextDirection.ltr,
               prefixIcon:
                   const Icon(Icons.phone_iphone_rounded, color: waColor),
             ),

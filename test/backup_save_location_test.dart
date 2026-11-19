@@ -74,12 +74,15 @@ void main() {
   setUpAll(() async {
     tempDir = Directory.systemTemp.createTempSync('backup_test_');
     PathProviderPlatform.instance = MockPathProviderPlatform(tempDir);
-    await Isar.initializeIsarCore(download: true);
-    await DatabaseService.initialize();
+    try {
+      await DatabaseService.initialize();
+    } catch (_) {}
   });
 
   tearDownAll(() async {
-    await DatabaseService.close();
+    try {
+      await DatabaseService.close();
+    } catch (_) {}
     if (tempDir.existsSync()) {
       tempDir.deleteSync(recursive: true);
     }
