@@ -342,6 +342,22 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
         widget.invoice?.currencyCode ??
         'YER';
 
+    if (paid > total + 0.0001 && total > 0) {
+      setState(() => _saving = false);
+      Get.snackbar(
+        'warning'.tr,
+        'paid_exceeds_total_error'.trParams({
+          'total': CurrencyFormatter.format(total, currencyCode: currCode),
+        }),
+        backgroundColor: AppColors.warning,
+        colorText: Colors.white,
+        icon: const Icon(Icons.warning_amber_rounded, color: Colors.white),
+        snackPosition: SnackPosition.TOP,
+        duration: const Duration(seconds: 4),
+      );
+      return;
+    }
+
     if (isEditing) {
       final inv = widget.invoice!;
       inv.invoiceNumber = _numberCtrl.text.trim();
@@ -757,6 +773,16 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                   label: 'paid_amount_label'.tr,
                   hint: '0',
                   icon: Icons.payments_rounded,
+                  currencyCode: currCode,
+                  validator: (val) {
+                    if (val != null && val.trim().isNotEmpty) {
+                      final p = double.tryParse(val.trim());
+                      if (p != null && _computedTotal > 0 && p > _computedTotal + 0.0001) {
+                        return 'paid_amount_cannot_exceed_total'.tr;
+                      }
+                    }
+                    return null;
+                  },
                 ),
 
                 SizedBox(height: resp.spacingMD),

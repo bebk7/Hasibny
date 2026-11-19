@@ -97,7 +97,7 @@ class Invoice {
   bool get isCustomerInvoice => customerId != null;
   bool get isMerchantInvoice => merchantId != null;
 
-  double get remainingAmount => totalAmount - paidAmount;
+  double get remainingAmount => (totalAmount - paidAmount).clamp(0.0, double.infinity);
 
   bool get isFullyPaid => paidAmount >= totalAmount;
 

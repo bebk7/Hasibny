@@ -49,6 +49,9 @@ class InvoiceController extends GetxController {
 
   Future<void> addInvoice(Invoice invoice, {Customer? customer, Merchant? merchant}) async {
     try {
+      if (invoice.totalAmount > 0 && invoice.paidAmount > invoice.totalAmount) {
+        invoice.paidAmount = invoice.totalAmount;
+      }
       // 1. Determine customer if not directly provided
       Customer? resolvedCustomer = customer;
       if (resolvedCustomer == null && invoice.customerId != null) {
@@ -113,6 +116,9 @@ class InvoiceController extends GetxController {
 
   Future<void> updateInvoice(Invoice invoice) async {
     try {
+      if (invoice.totalAmount > 0 && invoice.paidAmount > invoice.totalAmount) {
+        invoice.paidAmount = invoice.totalAmount;
+      }
       await DatabaseService.updateInvoice(invoice);
       SyncService.uploadInvoice(invoice);
       if (invoice.merchantId != null) {
