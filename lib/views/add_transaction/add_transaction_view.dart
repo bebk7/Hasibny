@@ -7,6 +7,7 @@ import '../../core/core.dart';
 import '../../models/app_currency.dart';
 import '../../models/customer.dart';
 import '../../models/transaction.dart';
+import '../add_customer/add_customer_view.dart';
 
 class AddTransactionView extends StatefulWidget {
   final TransactionType initialType;
@@ -237,78 +238,166 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                   ),
                   SizedBox(height: resp.spacingLG),
 
-                  // Customer Selection
+                  // Customer Selection with Search
                   _buildLabel('customer'.tr, isDark, resp),
-                  Obx(() {
-                    final customers = _customerController.customers;
+                  FormField<Customer>(
+                    initialValue: _selectedCustomer,
+                    validator: (_) =>
+                        _selectedCustomer == null ? 'select_customer'.tr : null,
+                    builder: (FormFieldState<Customer> state) {
+                        final hasError = state.hasError;
+                        final curr = _selectedCustomer != null
+                            ? AppCurrency.fromCode(_selectedCustomer!.currencyCode)
+                            : null;
 
-                    Customer? currentMatch;
-                    if (_selectedCustomer != null) {
-                      currentMatch = customers.firstWhereOrNull(
-                          (c) => c.id == _selectedCustomer!.id);
-                    } else if (widget.preselectedCustomerId != null) {
-                      currentMatch = customers.firstWhereOrNull(
-                          (c) => c.id == widget.preselectedCustomerId);
-                    }
-
-                    return DropdownButtonFormField<Customer>(
-                      initialValue: currentMatch,
-                      isExpanded: true,
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                        fontWeight: FontWeight.w700,
-                        fontSize: resp.fontMD,
-                      ),
-                      decoration: InputDecoration(
-                        prefixIcon: Icon(Icons.person_rounded, color: primaryColor, size: resp.iconSM),
-                      ),
-                      items: customers.map((c) {
-                        final curr = AppCurrency.fromCode(c.currencyCode);
-                        return DropdownMenuItem(
-                          value: c,
-                          child: Row(
-                            children: [
-                              Expanded(
-                                child: Text(
-                                  c.name,
-                                  overflow: TextOverflow.ellipsis,
-                                  style: const TextStyle(fontWeight: FontWeight.bold),
-                                ),
-                              ),
-                              Container(
-                                padding: EdgeInsets.symmetric(
-                                  horizontal: resp.spacingXS,
-                                  vertical: 2,
-                                ),
-                                decoration: BoxDecoration(
-                                  color: AppColors.primary.withValues(alpha: 0.1),
-                                  borderRadius: BorderRadius.circular(resp.radiusXS),
-                                ),
-                                child: Text(
-                                  '${curr.flag} ${curr.code}',
-                                  style: TextStyle(
-                                    fontFamily: 'Cairo',
-                                    fontSize: resp.fontXS,
-                                    fontWeight: FontWeight.bold,
-                                    color: AppColors.primary,
+                        return Column(
+                          crossAxisAlignment: CrossAxisAlignment.start,
+                          children: [
+                            InkWell(
+                              onTap: () async {
+                                final chosen = await _openCustomerSearchSheet(
+                                  context: context,
+                                  resp: resp,
+                                  primaryColor: primaryColor,
+                                );
+                                if (chosen != null && mounted) {
+                                  setState(() {
+                                    _selectedCustomer = chosen;
+                                    _updateAmountWords();
+                                  });
+                                  state.didChange(chosen);
+                                }
+                              },
+                              borderRadius: BorderRadius.circular(resp.cardRadius),
+                              child: InputDecorator(
+                                decoration: InputDecoration(
+                                  prefixIcon: Icon(
+                                    Icons.person_rounded,
+                                    color: primaryColor,
+                                    size: resp.iconSM,
                                   ),
+                                  suffixIcon: Row(
+                                    mainAxisSize: MainAxisSize.min,
+                                    children: [
+                                      if (_selectedCustomer != null &&
+                                          widget.preselectedCustomerId == null)
+                                        IconButton(
+                                          icon: Icon(
+                                            Icons.clear_rounded,
+                                            size: resp.iconSM,
+                                            color: isDark
+                                                ? AppColors.textMutedDark
+                                                : AppColors.textMutedLight,
+                                          ),
+                                          tooltip: 'clear'.tr,
+                                          onPressed: () {
+                                            setState(() {
+                                              _selectedCustomer = null;
+                                              _updateAmountWords();
+                                            });
+                                            state.didChange(null);
+                                          },
+                                        ),
+                                      Container(
+                                        padding: const EdgeInsets.all(6),
+                                        margin: const EdgeInsets.symmetric(horizontal: 4),
+                                        decoration: BoxDecoration(
+                                          color: primaryColor.withValues(
+                                              alpha: isDark ? 0.2 : 0.1),
+                                          shape: BoxShape.circle,
+                                        ),
+                                        child: Icon(
+                                          Icons.search_rounded,
+                                          size: 16,
+                                          color: primaryColor,
+                                        ),
+                                      ),
+                                      const SizedBox(width: 4),
+                                    ],
+                                  ),
+                                  errorText: hasError ? state.errorText : null,
                                 ),
+                                child: _selectedCustomer == null
+                                    ? Text(
+                                        'search_customers'.tr,
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          color: isDark
+                                              ? AppColors.textMutedDark
+                                              : AppColors.textMutedLight,
+                                          fontSize: resp.fontMD,
+                                          fontWeight: FontWeight.w600,
+                                        ),
+                                      )
+                                    : Row(
+                                        children: [
+                                          Expanded(
+                                            child: Column(
+                                              crossAxisAlignment:
+                                                  CrossAxisAlignment.start,
+                                              mainAxisSize: MainAxisSize.min,
+                                              children: [
+                                                Text(
+                                                  _selectedCustomer!.name,
+                                                  overflow:
+                                                      TextOverflow.ellipsis,
+                                                  style: TextStyle(
+                                                    fontFamily: 'Cairo',
+                                                    fontWeight: FontWeight.bold,
+                                                    fontSize: resp.fontMD,
+                                                    color: isDark
+                                                        ? AppColors.textPrimaryDark
+                                                        : AppColors.textPrimaryLight,
+                                                  ),
+                                                ),
+                                                if (_selectedCustomer!
+                                                    .phoneNumber.isNotEmpty) ...[
+                                                  const SizedBox(height: 1),
+                                                  Text(
+                                                    _selectedCustomer!.phoneNumber,
+                                                    style: TextStyle(
+                                                      fontFamily: 'Cairo',
+                                                      fontSize: resp.fontXS,
+                                                      color: isDark
+                                                          ? AppColors.textSecondaryDark
+                                                          : AppColors.textMutedLight,
+                                                    ),
+                                                  ),
+                                                ],
+                                              ],
+                                            ),
+                                          ),
+                                          if (curr != null)
+                                            Container(
+                                              padding: EdgeInsets.symmetric(
+                                                horizontal: resp.spacingXS,
+                                                vertical: 2,
+                                              ),
+                                              decoration: BoxDecoration(
+                                                color: primaryColor.withValues(
+                                                    alpha: 0.12),
+                                                borderRadius:
+                                                    BorderRadius.circular(
+                                                        resp.radiusXS),
+                                              ),
+                                              child: Text(
+                                                '${curr.flag} ${curr.code}',
+                                                style: TextStyle(
+                                                  fontFamily: 'Cairo',
+                                                  fontSize: resp.fontXS,
+                                                  fontWeight: FontWeight.bold,
+                                                  color: primaryColor,
+                                                ),
+                                              ),
+                                            ),
+                                        ],
+                                      ),
                               ),
-                            ],
-                          ),
+                            ),
+                          ],
                         );
-                      }).toList(),
-                      onChanged: (value) {
-                        setState(() {
-                          _selectedCustomer = value;
-                          _updateAmountWords();
-                        });
                       },
-                      validator: (value) =>
-                          value == null ? 'select_customer'.tr : null,
-                    );
-                  }),
+                    ),
                   SizedBox(height: resp.spacingMD),
 
                   // Amount Field
@@ -541,6 +630,364 @@ class _AddTransactionViewState extends State<AddTransactionView> {
         ),
       ),
     );
+  }
+
+  Future<Customer?> _openCustomerSearchSheet({
+    required BuildContext context,
+    required AppResponsive resp,
+    required Color primaryColor,
+  }) {
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final searchCtrl = TextEditingController();
+
+    return showModalBottomSheet<Customer>(
+      context: context,
+      isScrollControlled: true,
+      useSafeArea: true,
+      backgroundColor: Colors.transparent,
+      builder: (sheetContext) {
+        return StatefulBuilder(
+          builder: (context, setSheetState) {
+            final viewInsets = MediaQuery.viewInsetsOf(context);
+            final availableHeight =
+                (resp.screenHeight - viewInsets.bottom - resp.safeTop)
+                    .clamp(320.0, resp.screenHeight);
+
+            final query = searchCtrl.text.trim();
+            final allCustomers = _customerController.customers;
+            final filtered = query.isEmpty
+                ? allCustomers.toList()
+                : allCustomers.where((c) {
+                    final nameMatch = _matchesSearch(c.name, query);
+                    final phoneMatch = _matchesSearch(c.phoneNumber, query);
+                    return nameMatch || phoneMatch;
+                  }).toList();
+
+            return Padding(
+              padding: EdgeInsets.only(bottom: viewInsets.bottom),
+              child: Material(
+                color: isDark ? AppColors.darkSurfaceColor : Colors.white,
+                borderRadius: AppRadius.bottomSheetRadius(context),
+                clipBehavior: Clip.antiAlias,
+                child: ConstrainedBox(
+                  constraints: BoxConstraints(
+                    maxWidth: resp.maxContentWidth,
+                    maxHeight: availableHeight * 0.90,
+                  ),
+                  child: SafeArea(
+                  top: false,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
+                    children: [
+                      // Drag Handle
+                      Center(
+                        child: Container(
+                          width: AppComponentSizes.dragHandleSize.width,
+                          height: AppComponentSizes.dragHandleSize.height,
+                          margin: const EdgeInsets.only(top: 14, bottom: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? Colors.white24 : Colors.black12,
+                            borderRadius: BorderRadius.circular(2),
+                          ),
+                        ),
+                      ),
+
+                      // Header
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: resp.spacingMD),
+                        child: Row(
+                          children: [
+                            Container(
+                              padding: EdgeInsets.all(resp.spacingXS),
+                              decoration: BoxDecoration(
+                                color: primaryColor.withValues(
+                                    alpha: isDark ? 0.2 : 0.12),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.person_search_rounded,
+                                color: primaryColor,
+                                size: resp.iconSM,
+                              ),
+                            ),
+                            SizedBox(width: resp.spacingSM),
+                            Expanded(
+                              child: Text(
+                                'choose_customer'.tr,
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: resp.fontLG,
+                                  fontWeight: FontWeight.w800,
+                                  color: isDark
+                                      ? AppColors.textPrimaryDark
+                                      : AppColors.textPrimaryLight,
+                                ),
+                              ),
+                            ),
+                            Container(
+                              padding: const EdgeInsets.symmetric(
+                                  horizontal: 8, vertical: 2),
+                              decoration: BoxDecoration(
+                                color: isDark
+                                    ? Colors.white10
+                                    : Colors.black.withValues(alpha: 0.05),
+                                borderRadius: BorderRadius.circular(10),
+                              ),
+                              child: Text(
+                                '${filtered.length} ${'customers'.tr}',
+                                style: TextStyle(
+                                  fontFamily: 'Cairo',
+                                  fontSize: resp.fontXS,
+                                  fontWeight: FontWeight.w700,
+                                  color: isDark
+                                      ? AppColors.textSecondaryDark
+                                      : AppColors.textMutedLight,
+                                ),
+                              ),
+                            ),
+                          ],
+                        ),
+                      ),
+                      SizedBox(height: resp.spacingSM),
+
+                      // Search bar
+                      Padding(
+                        padding:
+                            EdgeInsets.symmetric(horizontal: resp.spacingMD),
+                        child: TextField(
+                          controller: searchCtrl,
+                          autofocus: true,
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: resp.fontMD,
+                            fontWeight: FontWeight.w600,
+                          ),
+                          decoration: InputDecoration(
+                            hintText: 'search_customers'.tr,
+                            prefixIcon: Icon(
+                              Icons.search_rounded,
+                              color: primaryColor,
+                              size: resp.iconSM,
+                            ),
+                            suffixIcon: searchCtrl.text.isNotEmpty
+                                ? IconButton(
+                                    icon: const Icon(Icons.clear_rounded,
+                                        size: 18),
+                                    onPressed: () {
+                                      searchCtrl.clear();
+                                      setSheetState(() {});
+                                    },
+                                  )
+                                : null,
+                            contentPadding: const EdgeInsets.symmetric(
+                                horizontal: 14, vertical: 10),
+                          ),
+                          onChanged: (_) => setSheetState(() {}),
+                        ),
+                      ),
+                      SizedBox(height: resp.spacingSM),
+                      const Divider(height: 1),
+
+                      // Customers list or Empty state
+                      Flexible(
+                        child: filtered.isEmpty
+                            ? Padding(
+                                padding: const EdgeInsets.symmetric(
+                                    vertical: 32, horizontal: 20),
+                                child: Column(
+                                  mainAxisSize: MainAxisSize.min,
+                                  children: [
+                                    Icon(
+                                      Icons.person_off_rounded,
+                                      size: 44,
+                                      color: isDark
+                                          ? Colors.white30
+                                          : Colors.black26,
+                                    ),
+                                    const SizedBox(height: 12),
+                                    Text(
+                                      'no_customers_found'.tr,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontSize: resp.fontMD,
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark
+                                            ? AppColors.textSecondaryDark
+                                            : AppColors.textMutedLight,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 14),
+                                    OutlinedButton.icon(
+                                      onPressed: () {
+                                        Navigator.pop(context);
+                                        Get.to(() => const AddCustomerView());
+                                      },
+                                      icon: const Icon(Icons.add_rounded,
+                                          size: 18),
+                                      label: Text('add_customer'.tr),
+                                      style: OutlinedButton.styleFrom(
+                                        foregroundColor: primaryColor,
+                                        side: BorderSide(
+                                            color: primaryColor.withValues(
+                                                alpha: 0.5)),
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              )
+                            : ListView.separated(
+                                shrinkWrap: true,
+                                physics: const BouncingScrollPhysics(),
+                                padding: EdgeInsets.symmetric(
+                                    vertical: resp.spacingXS),
+                                itemCount: filtered.length,
+                                separatorBuilder: (_, __) => Divider(
+                                  height: 1,
+                                  indent: resp.spacingMD,
+                                  endIndent: resp.spacingMD,
+                                  color: isDark
+                                      ? AppColors.borderDark
+                                      : AppColors.borderLight,
+                                ),
+                                itemBuilder: (context, index) {
+                                  final customer = filtered[index];
+                                  final isSelected =
+                                      _selectedCustomer?.id == customer.id;
+                                  final curr = AppCurrency.fromCode(
+                                      customer.currencyCode);
+
+                                  return ListTile(
+                                    contentPadding: EdgeInsets.symmetric(
+                                      horizontal: resp.spacingMD,
+                                      vertical: 2,
+                                    ),
+                                    leading: CircleAvatar(
+                                      radius: 20,
+                                      backgroundColor: isSelected
+                                          ? primaryColor
+                                          : (isDark
+                                              ? Colors.white12
+                                              : Colors.black.withValues(
+                                                  alpha: 0.05)),
+                                      child: Text(
+                                        customer.name.isNotEmpty
+                                            ? customer.name[0]
+                                            : '?',
+                                        style: TextStyle(
+                                          fontFamily: 'Cairo',
+                                          fontWeight: FontWeight.w900,
+                                          fontSize: 16,
+                                          color: isSelected
+                                              ? Colors.white
+                                              : (isDark
+                                                  ? Colors.white70
+                                                  : Colors.black87),
+                                        ),
+                                      ),
+                                    ),
+                                    title: Text(
+                                      customer.name,
+                                      style: TextStyle(
+                                        fontFamily: 'Cairo',
+                                        fontWeight: isSelected
+                                            ? FontWeight.w900
+                                            : FontWeight.w700,
+                                        fontSize: resp.fontMD,
+                                        color: isSelected
+                                            ? primaryColor
+                                            : (isDark
+                                                ? AppColors.textPrimaryDark
+                                                : AppColors.textPrimaryLight),
+                                      ),
+                                    ),
+                                    subtitle: customer.phoneNumber.isNotEmpty
+                                        ? Text(
+                                            customer.phoneNumber,
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: resp.fontSM,
+                                              color: isDark
+                                                  ? AppColors.textSecondaryDark
+                                                  : AppColors.textMutedLight,
+                                            ),
+                                          )
+                                        : null,
+                                    trailing: Row(
+                                      mainAxisSize: MainAxisSize.min,
+                                      children: [
+                                        Container(
+                                          padding: const EdgeInsets.symmetric(
+                                              horizontal: 8, vertical: 3),
+                                          decoration: BoxDecoration(
+                                            color: primaryColor.withValues(
+                                                alpha: isDark ? 0.18 : 0.1),
+                                            borderRadius:
+                                                BorderRadius.circular(6),
+                                          ),
+                                          child: Text(
+                                            '${curr.flag} ${curr.code}',
+                                            style: TextStyle(
+                                              fontFamily: 'Cairo',
+                                              fontSize: resp.fontXS,
+                                              fontWeight: FontWeight.w800,
+                                              color: primaryColor,
+                                            ),
+                                          ),
+                                        ),
+                                        if (isSelected) ...[
+                                          const SizedBox(width: 8),
+                                          Icon(
+                                            Icons.check_circle_rounded,
+                                            color: primaryColor,
+                                            size: 20,
+                                          ),
+                                        ],
+                                      ],
+                                    ),
+                                    onTap: () {
+                                      HapticFeedback.lightImpact();
+                                      Navigator.pop(context, customer);
+                                    },
+                                  );
+                                },
+                              ),
+                      ),
+                    ],
+                  ),
+                ),
+              ),
+            ),
+          );
+          },
+        );
+      },
+    );
+  }
+
+  static bool _matchesSearch(String source, String query) {
+    if (query.isEmpty) return true;
+    final s = _normalizeSearchText(source);
+    final q = _normalizeSearchText(query);
+    return s.contains(q);
+  }
+
+  static String _normalizeSearchText(String text) {
+    var result = text.toLowerCase().trim();
+    // Normalize Arabic letters
+    result = result
+        .replaceAll('أ', 'ا')
+        .replaceAll('إ', 'ا')
+        .replaceAll('آ', 'ا')
+        .replaceAll('ة', 'ه')
+        .replaceAll('ى', 'ي');
+    // Normalize Arabic-Indic numbers to ASCII
+    const arabic = ['٠', '١', '٢', '٣', '٤', '٥', '٦', '٧', '٨', '٩'];
+    const english = ['0', '1', '2', '3', '4', '5', '6', '7', '8', '9'];
+    for (int i = 0; i < 10; i++) {
+      result = result.replaceAll(arabic[i], english[i]);
+    }
+    return result;
   }
 
   Widget _buildLabel(String text, bool isDark, AppResponsive resp) {
