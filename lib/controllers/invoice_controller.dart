@@ -114,7 +114,7 @@ class InvoiceController extends GetxController {
     }
   }
 
-  Future<void> updateInvoice(Invoice invoice) async {
+  Future<void> updateInvoice(Invoice invoice, {bool showSnackbar = true}) async {
     try {
       if (invoice.totalAmount > 0 && invoice.paidAmount > invoice.totalAmount) {
         invoice.paidAmount = invoice.totalAmount;
@@ -127,11 +127,15 @@ class InvoiceController extends GetxController {
       } else if (invoice.customerId != null) {
         await loadInvoicesForCustomer(invoice.customerId!);
       }
-      Get.snackbar('success'.tr, 'invoice_updated_success'.tr,
-          backgroundColor: AppTheme.successColor, colorText: Colors.white);
+      if (showSnackbar && !Get.testMode && Get.context != null) {
+        Get.snackbar('success'.tr, 'invoice_updated_success'.tr,
+            backgroundColor: AppTheme.successColor, colorText: Colors.white);
+      }
     } catch (e) {
-      Get.snackbar('error'.tr, '${'failed_update_invoice'.tr}: $e',
-          backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      if (!Get.testMode && Get.context != null) {
+        Get.snackbar('error'.tr, '${'failed_update_invoice'.tr}: $e',
+            backgroundColor: AppTheme.errorColor, colorText: Colors.white);
+      }
     }
   }
 

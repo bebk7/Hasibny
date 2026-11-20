@@ -878,247 +878,302 @@ class _InvoiceDetailViewState extends State<InvoiceDetailView> {
       return;
     }
 
-    final payCtrl = TextEditingController();
-    final resp = AppResponsive.of(context);
-    final isDark = Theme.of(context).brightness == Brightness.dark;
-    final currCode =
-        invoice.currencyCode.isNotEmpty ? invoice.currencyCode : 'YER';
-    final formKey = GlobalKey<FormState>();
-
-    StateSetter? dialogSetter;
-    void onTextChanged() {
-      dialogSetter?.call(() {});
-    }
-
-    payCtrl.addListener(onTextChanged);
-
     AppDialog.show(
       context: context,
       maxWidth: 420,
-      child: StatefulBuilder(
-        builder: (dialogContext, setDialogState) {
-          dialogSetter = setDialogState;
-          final enteredText = payCtrl.text.trim();
-          final enteredAmount = double.tryParse(enteredText) ?? 0.0;
-          final isExceeding = enteredAmount > remaining + 0.0001;
+      child: _PayInvoiceDialog(
+        invoice: invoice,
+        onPaymentRecorded: () {
+          if (mounted) setState(() {});
+        },
+      ),
+    );
+  }
 
-          return Form(
-            key: formKey,
-            child: SingleChildScrollView(
-              child: Column(
-                mainAxisSize: MainAxisSize.min,
-                crossAxisAlignment: CrossAxisAlignment.start,
-                children: [
-                  Row(
-                    children: [
-                      Container(
-                        padding: EdgeInsets.all(resp.spacingXS),
-                        decoration: BoxDecoration(
-                          color: AppColors.got.withValues(alpha: 0.12),
-                          borderRadius: BorderRadius.circular(resp.radiusSM),
-                        ),
-                        child: Icon(Icons.payments_rounded,
-                            color: AppColors.got, size: resp.iconSM),
-                      ),
-                      SizedBox(width: resp.spacingSM),
-                      Expanded(
-                        child: Text(
-                          'record_give'.tr,
-                          style: TextStyle(
-                            fontFamily: 'Cairo',
-                            fontSize: resp.fontLG,
-                            fontWeight: FontWeight.bold,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
-                        ),
-                      ),
-                    ],
+  void _confirmDelete(BuildContext context) {
+    AppDialog.confirm(
+      context: context,
+      title: 'delete_invoice'.tr,
+      message: 'delete_invoice_confirm'.tr,
+      confirmLabel: 'delete'.tr,
+      isDestructive: true,
+      onConfirm: () {
+        Get.find<InvoiceController>().deleteInvoice(invoice.id);
+        Get.back();
+      },
+    );
+  }
+}
+
+class _PayInvoiceDialog extends StatefulWidget {
+  final Invoice invoice;
+  final VoidCallback onPaymentRecorded;
+
+  const _PayInvoiceDialog({
+    required this.invoice,
+    required this.onPaymentRecorded,
+  });
+
+  @override
+  State<_PayInvoiceDialog> createState() => _PayInvoiceDialogState();
+}
+
+class _PayInvoiceDialogState extends State<_PayInvoiceDialog> {
+  final _formKey = GlobalKey<FormState>();
+  late final TextEditingController _payCtrl;
+  bool _isSubmitting = false;
+
+  @override
+  void initState() {
+    super.initState();
+    _payCtrl = TextEditingController();
+    _payCtrl.addListener(_onTextChanged);
+  }
+
+  void _onTextChanged() {
+    if (mounted) setState(() {});
+  }
+
+  @override
+  void dispose() {
+    _payCtrl.removeListener(_onTextChanged);
+    _payCtrl.dispose();
+    super.dispose();
+  }
+
+  @override
+  Widget build(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+    final remaining = widget.invoice.remainingAmount;
+    final currCode = widget.invoice.currencyCode.isNotEmpty
+        ? widget.invoice.currencyCode
+        : 'YER';
+
+    final enteredText = _payCtrl.text.trim();
+    final enteredAmount = double.tryParse(enteredText) ?? 0.0;
+    final isExceeding = enteredAmount > remaining + 0.0001;
+
+    return Form(
+      key: _formKey,
+      child: SingleChildScrollView(
+        child: Column(
+          mainAxisSize: MainAxisSize.min,
+          crossAxisAlignment: CrossAxisAlignment.start,
+          children: [
+            Row(
+              children: [
+                Container(
+                  padding: EdgeInsets.all(resp.spacingXS),
+                  decoration: BoxDecoration(
+                    color: AppColors.got.withValues(alpha: 0.12),
+                    borderRadius: BorderRadius.circular(resp.radiusSM),
                   ),
-                  SizedBox(height: resp.spacingMD),
+                  child: Icon(Icons.payments_rounded,
+                      color: AppColors.got, size: resp.iconSM),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: Text(
+                    'record_give'.tr,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: resp.fontLG,
+                      fontWeight: FontWeight.bold,
+                    ),
+                    maxLines: 1,
+                    overflow: TextOverflow.ellipsis,
+                  ),
+                ),
+              ],
+            ),
+            SizedBox(height: resp.spacingMD),
 
-                  // Remaining amount display card
-                  Container(
-                    width: double.infinity,
-                    padding: EdgeInsets.all(resp.spacingSM),
-                    decoration: BoxDecoration(
-                      color: AppColors.give.withValues(alpha: 0.08),
-                      borderRadius: BorderRadius.circular(resp.radiusSM),
-                      border: Border.all(
-                        color: AppColors.give.withValues(alpha: 0.2),
+            // Remaining amount display card
+            Container(
+              width: double.infinity,
+              padding: EdgeInsets.all(resp.spacingSM),
+              decoration: BoxDecoration(
+                color: AppColors.give.withValues(alpha: 0.08),
+                borderRadius: BorderRadius.circular(resp.radiusSM),
+                border: Border.all(
+                  color: AppColors.give.withValues(alpha: 0.2),
+                ),
+              ),
+              child: Row(
+                mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                children: [
+                  Expanded(
+                    child: Text(
+                      'remaining_amount'.tr,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontSM,
+                        color: isDark
+                            ? AppColors.textSecondaryDark
+                            : Colors.grey[700],
+                        fontWeight: FontWeight.w600,
+                      ),
+                      maxLines: 1,
+                      overflow: TextOverflow.ellipsis,
+                    ),
+                  ),
+                  SizedBox(width: resp.spacingSM),
+                  Flexible(
+                    child: FittedBox(
+                      fit: BoxFit.scaleDown,
+                      alignment: AlignmentDirectional.centerEnd,
+                      child: Text(
+                        CurrencyFormatter.format(remaining,
+                            currencyCode: currCode),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontMD,
+                          fontWeight: FontWeight.w900,
+                          color: AppColors.give,
+                        ),
                       ),
                     ),
+                  ),
+                ],
+              ),
+            ),
+
+            // Quick fill full remaining chip/button
+            Padding(
+              padding: EdgeInsets.only(top: resp.spacingXS),
+              child: InkWell(
+                borderRadius: BorderRadius.circular(resp.radiusSM),
+                onTap: () {
+                  final formatted = remaining.truncateToDouble() == remaining
+                      ? remaining.toInt().toString()
+                      : remaining.toStringAsFixed(2);
+                  _payCtrl.text = formatted;
+                },
+                child: Padding(
+                  padding: EdgeInsets.symmetric(
+                    vertical: resp.spacingXS,
+                    horizontal: 4,
+                  ),
+                  child: FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerStart,
                     child: Row(
-                      mainAxisAlignment: MainAxisAlignment.spaceBetween,
+                      mainAxisSize: MainAxisSize.min,
                       children: [
-                        Expanded(
-                          child: Text(
-                            'remaining_amount'.tr,
-                            style: TextStyle(
-                              fontFamily: 'Cairo',
-                              fontSize: resp.fontSM,
-                              color: isDark ? AppColors.textSecondaryDark : Colors.grey[700],
-                              fontWeight: FontWeight.w600,
-                            ),
-                            maxLines: 1,
-                            overflow: TextOverflow.ellipsis,
-                          ),
-                        ),
-                        SizedBox(width: resp.spacingSM),
-                        Flexible(
-                          child: FittedBox(
-                            fit: BoxFit.scaleDown,
-                            alignment: AlignmentDirectional.centerEnd,
-                            child: Text(
-                              CurrencyFormatter.format(remaining,
-                                  currencyCode: currCode),
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: resp.fontMD,
-                                fontWeight: FontWeight.w900,
-                                color: AppColors.give,
-                              ),
-                            ),
+                        Icon(Icons.flash_on_rounded,
+                            size: resp.iconXS, color: AppColors.got),
+                        const SizedBox(width: 4),
+                        Text(
+                          '${'pay_full_remaining'.tr} (${CurrencyFormatter.format(remaining, currencyCode: currCode)})',
+                          style: TextStyle(
+                            fontFamily: 'Cairo',
+                            fontSize: resp.fontXS,
+                            fontWeight: FontWeight.w700,
+                            color: AppColors.got,
                           ),
                         ),
                       ],
                     ),
                   ),
+                ),
+              ),
+            ),
 
-                  // Quick fill full remaining chip/button
-                  Padding(
-                    padding: EdgeInsets.only(top: resp.spacingXS),
-                    child: InkWell(
-                      borderRadius: BorderRadius.circular(resp.radiusSM),
-                      onTap: () {
-                        final formatted = remaining.truncateToDouble() == remaining
-                            ? remaining.toInt().toString()
-                            : remaining.toStringAsFixed(2);
-                        payCtrl.text = formatted;
-                        setDialogState(() {});
-                      },
-                      child: Padding(
-                        padding: EdgeInsets.symmetric(
-                          vertical: resp.spacingXS,
-                          horizontal: 4,
-                        ),
-                        child: FittedBox(
-                          fit: BoxFit.scaleDown,
-                          alignment: AlignmentDirectional.centerStart,
-                          child: Row(
-                            mainAxisSize: MainAxisSize.min,
-                            children: [
-                              Icon(Icons.flash_on_rounded,
-                                  size: resp.iconXS, color: AppColors.got),
-                              const SizedBox(width: 4),
-                              Text(
-                                '${'pay_full_remaining'.tr} (${CurrencyFormatter.format(remaining, currencyCode: currCode)})',
-                                style: TextStyle(
-                                  fontFamily: 'Cairo',
-                                  fontSize: resp.fontXS,
-                                  fontWeight: FontWeight.w700,
-                                  color: AppColors.got,
-                                ),
-                              ),
-                            ],
-                          ),
-                        ),
-                      ),
-                    ),
+            SizedBox(height: resp.spacingSM),
+
+            // Amount input field
+            AmountField(
+              controller: _payCtrl,
+              label: 'amount'.tr,
+              hint: '0',
+              currencyCode: currCode,
+              autofocus: true,
+              validator: (val) {
+                if (val == null || val.trim().isEmpty) {
+                  return 'enter_amount'.tr;
+                }
+                final parsed = double.tryParse(val.trim());
+                if (parsed == null || parsed <= 0) {
+                  return 'invalid_amount'.tr;
+                }
+                if (parsed > remaining + 0.0001) {
+                  return 'payment_exceeds_remaining_error'.trParams({
+                    'max': CurrencyFormatter.format(remaining,
+                        currencyCode: currCode),
+                  });
+                }
+                return null;
+              },
+            ),
+
+            // Prominent notice banner if amount exceeds remaining
+            if (isExceeding) ...[
+              Container(
+                margin: EdgeInsets.only(top: resp.spacingSM),
+                padding: EdgeInsets.symmetric(
+                  horizontal: resp.spacingSM,
+                  vertical: resp.spacingXS + 4,
+                ),
+                decoration: BoxDecoration(
+                  color: AppColors.error.withValues(alpha: 0.1),
+                  borderRadius: BorderRadius.circular(resp.radiusSM),
+                  border: Border.all(
+                    color: AppColors.error.withValues(alpha: 0.35),
                   ),
-
-                  SizedBox(height: resp.spacingSM),
-
-                  // Amount input field
-                  AmountField(
-                    controller: payCtrl,
-                    label: 'amount'.tr,
-                    hint: '0',
-                    currencyCode: currCode,
-                    autofocus: true,
-                    validator: (val) {
-                      if (val == null || val.trim().isEmpty) {
-                        return 'enter_amount'.tr;
-                      }
-                      final parsed = double.tryParse(val.trim());
-                      if (parsed == null || parsed <= 0) {
-                        return 'invalid_amount'.tr;
-                      }
-                      if (parsed > remaining + 0.0001) {
-                        return 'payment_exceeds_remaining_error'.trParams({
+                ),
+                child: Row(
+                  crossAxisAlignment: CrossAxisAlignment.start,
+                  children: [
+                    Icon(
+                      Icons.error_outline_rounded,
+                      color: AppColors.error,
+                      size: resp.iconSM,
+                    ),
+                    SizedBox(width: resp.spacingXS),
+                    Expanded(
+                      child: Text(
+                        'payment_exceeds_remaining_notice'.trParams({
                           'max': CurrencyFormatter.format(remaining,
                               currencyCode: currCode),
-                        });
-                      }
-                      return null;
-                    },
-                  ),
-
-                  // Prominent notice banner if amount exceeds remaining
-                  if (isExceeding) ...[
-                    Container(
-                      margin: EdgeInsets.only(top: resp.spacingSM),
-                      padding: EdgeInsets.symmetric(
-                        horizontal: resp.spacingSM,
-                        vertical: resp.spacingXS + 4,
-                      ),
-                      decoration: BoxDecoration(
-                        color: AppColors.error.withValues(alpha: 0.1),
-                        borderRadius: BorderRadius.circular(resp.radiusSM),
-                        border: Border.all(
-                          color: AppColors.error.withValues(alpha: 0.35),
+                        }),
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontSize: resp.fontXS,
+                          fontWeight: FontWeight.w700,
+                          color: isDark
+                              ? const Color(0xFFFF8A80)
+                              : AppColors.error,
                         ),
-                      ),
-                      child: Row(
-                        crossAxisAlignment: CrossAxisAlignment.start,
-                        children: [
-                          Icon(
-                            Icons.error_outline_rounded,
-                            color: AppColors.error,
-                            size: resp.iconSM,
-                          ),
-                          SizedBox(width: resp.spacingXS),
-                          Expanded(
-                            child: Text(
-                              'payment_exceeds_remaining_notice'.trParams({
-                                'max': CurrencyFormatter.format(remaining,
-                                    currencyCode: currCode),
-                              }),
-                              style: TextStyle(
-                                fontFamily: 'Cairo',
-                                fontSize: resp.fontXS,
-                                fontWeight: FontWeight.w700,
-                                color: isDark
-                                    ? const Color(0xFFFF8A80)
-                                    : AppColors.error,
-                              ),
-                            ),
-                          ),
-                        ],
                       ),
                     ),
                   ],
+                ),
+              ),
+            ],
 
-                  SizedBox(height: resp.spacingLG),
+            SizedBox(height: resp.spacingLG),
 
-                  // Action buttons
-                  Row(
-                    children: [
-                      Expanded(
-                        child: AppButton(
-                          text: 'cancel'.tr,
-                          variant: AppButtonVariant.secondary,
-                          onPressed: () => Get.back(),
-                        ),
-                      ),
-                      SizedBox(width: resp.spacingSM),
-                      Expanded(
-                        child: AppButton(
-                          text: 'confirm'.tr,
-                          icon: Icons.check_rounded,
-                          variant: AppButtonVariant.got,
-                          onPressed: () async {
-                            final text = payCtrl.text.trim();
+            // Action buttons
+            Row(
+              children: [
+                Expanded(
+                  child: AppButton(
+                    text: 'cancel'.tr,
+                    variant: AppButtonVariant.secondary,
+                    onPressed: () => Navigator.of(context).pop(),
+                  ),
+                ),
+                SizedBox(width: resp.spacingSM),
+                Expanded(
+                  child: AppButton(
+                    text: 'confirm'.tr,
+                    icon: Icons.check_rounded,
+                    variant: AppButtonVariant.got,
+                    onPressed: _isSubmitting
+                        ? null
+                        : () async {
+                            final text = _payCtrl.text.trim();
                             if (text.isEmpty) {
                               Get.snackbar(
                                 'warning'.tr,
@@ -1150,7 +1205,8 @@ class _InvoiceDetailViewState extends State<InvoiceDetailView> {
                                 }),
                                 backgroundColor: AppColors.error,
                                 colorText: Colors.white,
-                                icon: const Icon(Icons.error_outline_rounded,
+                                icon: const Icon(
+                                    Icons.error_outline_rounded,
                                     color: Colors.white),
                                 snackPosition: SnackPosition.TOP,
                                 duration: const Duration(seconds: 4),
@@ -1158,51 +1214,41 @@ class _InvoiceDetailViewState extends State<InvoiceDetailView> {
                               return;
                             }
 
+                            setState(() => _isSubmitting = true);
                             HapticFeedback.mediumImpact();
-                            invoice.paidAmount = (invoice.paidAmount + amount)
-                                .clamp(0.0, invoice.totalAmount);
+
+                            // Close dialog immediately and return to invoice detail view
+                            Navigator.of(context).pop();
+
+                            widget.invoice.paidAmount =
+                                (widget.invoice.paidAmount + amount)
+                                    .clamp(0.0, widget.invoice.totalAmount);
                             await Get.find<InvoiceController>()
-                                .updateInvoice(invoice);
-                            Get.back(); // close dialog
-                            setState(() {}); // refresh InvoiceDetailView
+                                .updateInvoice(widget.invoice,
+                                    showSnackbar: false);
 
-                            Get.snackbar(
-                              'success'.tr,
-                              'payment_recorded_success'.tr,
-                              backgroundColor: AppColors.success,
-                              colorText: Colors.white,
-                              icon: const Icon(Icons.check_circle_rounded,
-                                  color: Colors.white),
-                              snackPosition: SnackPosition.BOTTOM,
-                            );
+                            widget.onPaymentRecorded();
+
+                            if (!Get.testMode && Get.context != null) {
+                              Get.snackbar(
+                                'success'.tr,
+                                'payment_recorded_success'.tr,
+                                backgroundColor: AppColors.success,
+                                colorText: Colors.white,
+                                icon: const Icon(
+                                    Icons.check_circle_rounded,
+                                    color: Colors.white),
+                                snackPosition: SnackPosition.BOTTOM,
+                              );
+                            }
                           },
-                        ),
-                      ),
-                    ],
                   ),
-                ],
-              ),
+                ),
+              ],
             ),
-          );
-        },
+          ],
+        ),
       ),
-    ).then((_) {
-      payCtrl.removeListener(onTextChanged);
-      payCtrl.dispose();
-    });
-  }
-
-  void _confirmDelete(BuildContext context) {
-    AppDialog.confirm(
-      context: context,
-      title: 'delete_invoice'.tr,
-      message: 'delete_invoice_confirm'.tr,
-      confirmLabel: 'delete'.tr,
-      isDestructive: true,
-      onConfirm: () {
-        Get.find<InvoiceController>().deleteInvoice(invoice.id);
-        Get.back();
-      },
     );
   }
 }

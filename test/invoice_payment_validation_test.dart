@@ -136,6 +136,9 @@ void main() {
       expect(invoice.paidAmount, equals(1000.0));
       expect(invoice.remainingAmount, equals(0.0));
       expect(invoice.isFullyPaid, isTrue);
+
+      // Verify the dialog is dismissed and no longer visible
+      expect(find.byType(AmountField), findsNothing);
     });
 
     testWidgets('AddInvoiceView validator flags paid amount exceeding invoice total', (tester) async {
