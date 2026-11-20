@@ -159,7 +159,10 @@ class TransactionController extends GetxController {
     try {
       await DatabaseService.updateTransaction(transaction);
       SyncService.uploadTransaction(transaction);
-      await loadTransactionsForCustomer(selectedCustomerId.value);
+      final custId = transaction.customerId > 0 ? transaction.customerId : selectedCustomerId.value;
+      if (custId > 0) {
+        await loadTransactionsForCustomer(custId);
+      }
       await loadAllTransactions();
 
       if (Get.isRegistered<CustomerController>()) {

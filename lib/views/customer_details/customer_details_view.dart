@@ -552,6 +552,13 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                 transaction: tx,
                 currencyCode: customer.currencyCode,
                 resp: resp,
+                onEdit: () => _showEditTransactionDialog(
+                  context,
+                  tc,
+                  customer,
+                  tx,
+                  resp,
+                ),
                 onDelete: () => tc.deleteTransaction(tx.id, customer.id),
                 onShare: () => _shareInvoice(tx, customer),
                 onPreview: () => ExportService.previewTransaction(
@@ -573,17 +580,58 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
     Customer customer,
     AppResponsive resp,
   ) {
-    final amountController = TextEditingController();
-    final descriptionController = TextEditingController();
-    var selectedType = TransactionType.give;
-    var selectedDateTime = DateTime.now();
+    _showTransactionFormDialog(
+      context: context,
+      controller: controller,
+      customer: customer,
+      resp: resp,
+    );
+  }
+
+  void _showEditTransactionDialog(
+    BuildContext context,
+    TransactionController controller,
+    Customer customer,
+    TransactionModel transaction,
+    AppResponsive resp,
+  ) {
+    _showTransactionFormDialog(
+      context: context,
+      controller: controller,
+      customer: customer,
+      resp: resp,
+      transactionToEdit: transaction,
+    );
+  }
+
+  void _showTransactionFormDialog({
+    required BuildContext context,
+    required TransactionController controller,
+    required Customer customer,
+    required AppResponsive resp,
+    TransactionModel? transactionToEdit,
+  }) {
+    final isEdit = transactionToEdit != null;
+    final amountController = TextEditingController(
+      text: isEdit
+          ? (transactionToEdit.amount == transactionToEdit.amount.truncateToDouble()
+              ? transactionToEdit.amount.toInt().toString()
+              : transactionToEdit.amount.toString())
+          : '',
+    );
+    final descriptionController = TextEditingController(
+      text: isEdit ? transactionToEdit.description : '',
+    );
+    var selectedType = isEdit ? transactionToEdit.type : TransactionType.give;
+    var selectedDateTime = isEdit ? transactionToEdit.createdAt : DateTime.now();
     final curr = AppCurrency.fromCode(customer.currencyCode);
 
     showModalBottomSheet(
       context: context,
       isScrollControlled: true,
+      useSafeArea: true,
       backgroundColor: Colors.transparent,
-      builder: (context) => StatefulBuilder(
+      builder: (sheetContext) => StatefulBuilder(
         builder: (context, setState) {
           final isDark = AppColors.isDark(context);
           final isAr = Get.locale?.languageCode == 'ar';
@@ -598,220 +646,225 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
 
           final viewInsets = MediaQuery.viewInsetsOf(context);
           final viewPadding = MediaQuery.viewPaddingOf(context);
+          final availableHeight = (resp.screenHeight - viewInsets.bottom - resp.safeTop)
+              .clamp(200.0, resp.screenHeight);
 
-          return AnimatedPadding(
+          return Padding(
             padding: EdgeInsets.only(bottom: viewInsets.bottom),
-            duration: const Duration(milliseconds: 150),
-            curve: Curves.easeOutCubic,
-            child: Align(
-              alignment: Alignment.bottomCenter,
-              child: Container(
-                width: double.infinity,
-                constraints: BoxConstraints(
-                  maxWidth: resp.maxContentWidth,
-                  maxHeight: (resp.screenHeight - viewInsets.bottom).clamp(200.0, resp.screenHeight) * 0.88,
-                ),
-                decoration: BoxDecoration(
-                  color: isDark ? AppColors.darkSurfaceColor : Colors.white,
-                  borderRadius: AppRadius.bottomSheetRadius(context),
-                ),
-                child: SafeArea(
-                  top: false,
-                  child: SingleChildScrollView(
-                    physics: const ClampingScrollPhysics(),
-                    padding: EdgeInsets.only(
-                      left: resp.isExtraCompact ? 14 : 20,
-                      right: resp.isExtraCompact ? 14 : 20,
-                      top: 14,
-                      bottom: viewPadding.bottom + 16,
-                    ),
-                    child: Column(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                  Container(
-                    width: 40,
-                    height: 4,
-                    decoration: BoxDecoration(
-                      color: isDark ? Colors.white24 : Colors.black12,
-                      borderRadius: BorderRadius.circular(2),
-                    ),
+            child: Container(
+              width: double.infinity,
+              constraints: BoxConstraints(
+                maxWidth: resp.maxContentWidth,
+                maxHeight: availableHeight * 0.90,
+              ),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceColor : Colors.white,
+                borderRadius: AppRadius.bottomSheetRadius(context),
+              ),
+              child: SafeArea(
+                top: false,
+                child: SingleChildScrollView(
+                  physics: const ClampingScrollPhysics(),
+                  padding: EdgeInsets.only(
+                    left: resp.isExtraCompact ? 14 : 20,
+                    right: resp.isExtraCompact ? 14 : 20,
+                    top: 14,
+                    bottom: viewPadding.bottom + 16,
                   ),
-                  const SizedBox(height: 16),
-                  Row(
-                    mainAxisAlignment: MainAxisAlignment.center,
+                  child: Column(
+                    mainAxisSize: MainAxisSize.min,
                     children: [
-                      Flexible(
-                        child: Text(
-                          'add_transaction_title'.tr,
-                          style: TextStyle(
-                            fontFamily: AppTypography.fontFamily,
-                            fontSize: resp.fontSize(18),
-                            fontWeight: FontWeight.w800,
-                            color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                          ),
-                          maxLines: 1,
-                          overflow: TextOverflow.ellipsis,
+                      Container(
+                        width: 40,
+                        height: 4,
+                        decoration: BoxDecoration(
+                          color: isDark ? Colors.white24 : Colors.black12,
+                          borderRadius: BorderRadius.circular(2),
                         ),
                       ),
-                      const SizedBox(width: 8),
-                      AppBadge(label: '${curr.flag} ${curr.code}'),
-                    ],
-                  ),
-                  const SizedBox(height: 20),
-                  Row(
-                    children: [
-                      _TypeButton(
-                        label: 'you_got_btn'.tr,
-                        isSelected: selectedType == TransactionType.got,
-                        color: AppColors.gotColor,
-                        icon: Icons.arrow_downward_rounded,
-                        resp: resp,
-                        onTap: () => setState(() => selectedType = TransactionType.got),
-                      ),
-                      SizedBox(width: resp.spacingSM),
-                      _TypeButton(
-                        label: 'you_gave_btn'.tr,
-                        isSelected: selectedType == TransactionType.give,
-                        color: AppColors.giveColor,
-                        icon: Icons.arrow_upward_rounded,
-                        resp: resp,
-                        onTap: () => setState(() => selectedType = TransactionType.give),
-                      ),
-                    ],
-                  ),
-                  const SizedBox(height: 18),
-                  AmountField(
-                    controller: amountController,
-                    label: 'amount'.tr,
-                    hint: '0',
-                    currencyCode: customer.currencyCode,
-                  ),
-                  const SizedBox(height: 14),
-                  TextField(
-                    controller: descriptionController,
-                    decoration: InputDecoration(
-                      labelText: 'description'.tr,
-                      prefixIcon: const Icon(Icons.description_outlined),
-                    ),
-                  ),
-                  const SizedBox(height: 14),
-
-                  // Transaction Date & Time Selector
-                  InkWell(
-                    onTap: () async {
-                      final pickedDate = await showDatePicker(
-                        context: context,
-                        initialDate: selectedDateTime,
-                        firstDate: DateTime(2000),
-                        lastDate: DateTime(2100),
-                      );
-                      if (pickedDate != null && context.mounted) {
-                        final pickedTime = await showTimePicker(
-                          context: context,
-                          initialTime: TimeOfDay.fromDateTime(selectedDateTime),
-                        );
-                        if (pickedTime != null) {
-                          setState(() {
-                            selectedDateTime = DateTime(
-                              pickedDate.year,
-                              pickedDate.month,
-                              pickedDate.day,
-                              pickedTime.hour,
-                              pickedTime.minute,
-                            );
-                          });
-                        }
-                      }
-                    },
-                    borderRadius: BorderRadius.circular(AppRadius.sm),
-                    child: Container(
-                      padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
-                      decoration: BoxDecoration(
-                        color: isDark ? AppColors.darkCardColor : Colors.white,
-                        borderRadius: BorderRadius.circular(AppRadius.sm),
-                        border: Border.all(
-                          color: isDark ? AppColors.borderDark : AppColors.borderLight,
-                        ),
-                      ),
-                      child: Row(
+                      const SizedBox(height: 16),
+                      Row(
+                        mainAxisAlignment: MainAxisAlignment.center,
                         children: [
-                          Icon(
-                            Icons.access_time_filled_rounded,
-                            size: 20,
-                            color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
-                          ),
-                          const SizedBox(width: 10),
-                          Expanded(
-                            child: Column(
-                              crossAxisAlignment: CrossAxisAlignment.start,
-                              children: [
-                                Text(
-                                  'transaction_time'.tr,
-                                  style: TextStyle(
-                                    fontFamily: AppTypography.fontFamily,
-                                    fontSize: resp.fontSize(11),
-                                    color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
-                                    fontWeight: FontWeight.w600,
-                                  ),
-                                ),
-                                const SizedBox(height: 2),
-                                Text(
-                                  '$dateStr  -  $timeStr',
-                                  style: TextStyle(
-                                    fontFamily: AppTypography.fontFamily,
-                                    fontSize: resp.fontSize(13),
-                                    fontWeight: FontWeight.w700,
-                                    color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                                  ),
-                                ),
-                              ],
+                          Flexible(
+                            child: Text(
+                              isEdit ? 'edit_transaction'.tr : 'add_transaction_title'.tr,
+                              style: TextStyle(
+                                fontFamily: AppTypography.fontFamily,
+                                fontSize: resp.fontSize(18),
+                                fontWeight: FontWeight.w800,
+                                color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              ),
+                              maxLines: 1,
+                              overflow: TextOverflow.ellipsis,
                             ),
                           ),
-                          Icon(
-                            Icons.edit_calendar_rounded,
-                            size: 18,
-                            color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                          const SizedBox(width: 8),
+                          AppBadge(label: '${curr.flag} ${curr.code}'),
+                        ],
+                      ),
+                      const SizedBox(height: 20),
+                      Row(
+                        children: [
+                          _TypeButton(
+                            label: 'you_got_btn'.tr,
+                            isSelected: selectedType == TransactionType.got,
+                            color: AppColors.gotColor,
+                            icon: Icons.arrow_downward_rounded,
+                            resp: resp,
+                            onTap: () => setState(() => selectedType = TransactionType.got),
+                          ),
+                          SizedBox(width: resp.spacingSM),
+                          _TypeButton(
+                            label: 'you_gave_btn'.tr,
+                            isSelected: selectedType == TransactionType.give,
+                            color: AppColors.giveColor,
+                            icon: Icons.arrow_upward_rounded,
+                            resp: resp,
+                            onTap: () => setState(() => selectedType = TransactionType.give),
                           ),
                         ],
                       ),
-                    ),
-                  ),
-                  const SizedBox(height: 22),
-                  AppButton(
-                    text: 'confirm'.tr,
-                    onPressed: () async {
-                      final amount = double.tryParse(amountController.text.trim());
-                      if (amount == null || amount <= 0) {
-                        Get.snackbar(
-                          'error'.tr,
-                          'valid_amount'.tr,
-                          snackPosition: SnackPosition.BOTTOM,
-                          backgroundColor: AppColors.errorColor,
-                          colorText: Colors.white,
-                        );
-                        return;
-                      }
-                      Navigator.pop(context);
-                      await controller.addTransaction(
-                        customerId: customer.id,
-                        amount: amount,
-                        type: selectedType,
-                        description: descriptionController.text.trim(),
+                      const SizedBox(height: 18),
+                      AmountField(
+                        controller: amountController,
+                        label: 'amount'.tr,
+                        hint: '0',
                         currencyCode: customer.currencyCode,
-                        createdAt: selectedDateTime,
-                      );
-                    },
+                      ),
+                      const SizedBox(height: 14),
+                      TextField(
+                        controller: descriptionController,
+                        decoration: InputDecoration(
+                          labelText: 'description'.tr,
+                          prefixIcon: const Icon(Icons.description_outlined),
+                        ),
+                      ),
+                      const SizedBox(height: 14),
+
+                      // Transaction Date & Time Selector
+                      InkWell(
+                        onTap: () async {
+                          final pickedDate = await showDatePicker(
+                            context: context,
+                            initialDate: selectedDateTime,
+                            firstDate: DateTime(2000),
+                            lastDate: DateTime(2100),
+                          );
+                          if (pickedDate != null && context.mounted) {
+                            final pickedTime = await showTimePicker(
+                              context: context,
+                              initialTime: TimeOfDay.fromDateTime(selectedDateTime),
+                            );
+                            if (pickedTime != null) {
+                              setState(() {
+                                selectedDateTime = DateTime(
+                                  pickedDate.year,
+                                  pickedDate.month,
+                                  pickedDate.day,
+                                  pickedTime.hour,
+                                  pickedTime.minute,
+                                );
+                              });
+                            }
+                          }
+                        },
+                        borderRadius: BorderRadius.circular(AppRadius.sm),
+                        child: Container(
+                          padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 12),
+                          decoration: BoxDecoration(
+                            color: isDark ? AppColors.darkCardColor : Colors.white,
+                            borderRadius: BorderRadius.circular(AppRadius.sm),
+                            border: Border.all(
+                              color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                            ),
+                          ),
+                          child: Row(
+                            children: [
+                              Icon(
+                                Icons.access_time_filled_rounded,
+                                size: 20,
+                                color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
+                              ),
+                              const SizedBox(width: 10),
+                              Expanded(
+                                child: Column(
+                                  crossAxisAlignment: CrossAxisAlignment.start,
+                                  children: [
+                                    Text(
+                                      'transaction_time'.tr,
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.fontFamily,
+                                        fontSize: resp.fontSize(11),
+                                        color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,
+                                        fontWeight: FontWeight.w600,
+                                      ),
+                                    ),
+                                    const SizedBox(height: 2),
+                                    Text(
+                                      '$dateStr  -  $timeStr',
+                                      style: TextStyle(
+                                        fontFamily: AppTypography.fontFamily,
+                                        fontSize: resp.fontSize(13),
+                                        fontWeight: FontWeight.w700,
+                                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                                      ),
+                                    ),
+                                  ],
+                                ),
+                              ),
+                              Icon(
+                                Icons.edit_calendar_rounded,
+                                size: 18,
+                                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                              ),
+                            ],
+                          ),
+                        ),
+                      ),
+                      const SizedBox(height: 22),
+                      AppButton(
+                        text: isEdit ? 'update'.tr : 'confirm'.tr,
+                        onPressed: () async {
+                          final amount = double.tryParse(amountController.text.trim());
+                          if (amount == null || amount <= 0) {
+                            Get.snackbar(
+                              'error'.tr,
+                              'valid_amount'.tr,
+                              snackPosition: SnackPosition.BOTTOM,
+                              backgroundColor: AppColors.errorColor,
+                              colorText: Colors.white,
+                            );
+                            return;
+                          }
+                          Navigator.pop(context);
+                          if (isEdit) {
+                            transactionToEdit.amount = amount;
+                            transactionToEdit.type = selectedType;
+                            transactionToEdit.description = descriptionController.text.trim();
+                            transactionToEdit.createdAt = selectedDateTime;
+                            await controller.updateTransaction(transactionToEdit);
+                          } else {
+                            await controller.addTransaction(
+                              customerId: customer.id,
+                              amount: amount,
+                              type: selectedType,
+                              description: descriptionController.text.trim(),
+                              currencyCode: customer.currencyCode,
+                              createdAt: selectedDateTime,
+                            );
+                          }
+                        },
+                      ),
+                    ],
                   ),
-                ],
+                ),
               ),
             ),
-          ),
-        ),
+          );
+        },
       ),
     );
-  },
-),
-);
   }
 
   Future<void> _shareInvoice(TransactionModel transaction, Customer customer) async {
@@ -999,6 +1052,7 @@ class _TransactionTile extends StatelessWidget {
   final VoidCallback onDelete;
   final VoidCallback onShare;
   final VoidCallback? onPreview;
+  final VoidCallback? onEdit;
   final AppResponsive resp;
 
   const _TransactionTile({
@@ -1007,6 +1061,7 @@ class _TransactionTile extends StatelessWidget {
     required this.onDelete,
     required this.onShare,
     this.onPreview,
+    this.onEdit,
     required this.resp,
   });
 
@@ -1043,6 +1098,12 @@ class _TransactionTile extends StatelessWidget {
         child: InkWell(
           borderRadius: BorderRadius.circular(resp.cardRadius),
           onTap: onPreview,
+          onLongPress: onEdit != null
+              ? () {
+                  HapticFeedback.mediumImpact();
+                  onEdit!();
+                }
+              : null,
           child: Container(
             margin: EdgeInsets.only(bottom: resp.listSpacing),
             decoration: BoxDecoration(
@@ -1115,7 +1176,7 @@ class _TransactionTile extends StatelessWidget {
                   SizedBox(width: resp.spacingSM),
                   ConstrainedBox(
                     constraints: BoxConstraints(
-                      maxWidth: (resp.availableWidth * 0.40).clamp(90.0, 180.0),
+                      maxWidth: (resp.availableWidth * 0.48).clamp(115.0, 200.0),
                     ),
                     child: Row(
                       mainAxisSize: MainAxisSize.min,
@@ -1137,7 +1198,32 @@ class _TransactionTile extends StatelessWidget {
                             ),
                           ),
                         ),
-                        const SizedBox(width: 6),
+                        if (onEdit != null) ...[
+                          const SizedBox(width: 4),
+                          IconButton(
+                            icon: Container(
+                              padding: const EdgeInsets.all(5),
+                              decoration: BoxDecoration(
+                                color: isDark ? Colors.white10 : Colors.black.withValues(alpha: 0.04),
+                                shape: BoxShape.circle,
+                              ),
+                              child: Icon(
+                                Icons.edit_rounded,
+                                size: 15,
+                                color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
+                              ),
+                            ),
+                            padding: EdgeInsets.zero,
+                            constraints: const BoxConstraints(),
+                            visualDensity: VisualDensity.compact,
+                            tooltip: 'edit'.tr,
+                            onPressed: () {
+                              HapticFeedback.lightImpact();
+                              onEdit!();
+                            },
+                          ),
+                        ],
+                        const SizedBox(width: 4),
                         IconButton(
                           icon: Container(
                             padding: const EdgeInsets.all(5),
@@ -1154,6 +1240,7 @@ class _TransactionTile extends StatelessWidget {
                           padding: EdgeInsets.zero,
                           constraints: const BoxConstraints(),
                           visualDensity: VisualDensity.compact,
+                          tooltip: 'share'.tr,
                           onPressed: () {
                             HapticFeedback.lightImpact();
                             onShare();
