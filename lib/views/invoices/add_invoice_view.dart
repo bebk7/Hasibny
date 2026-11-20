@@ -95,12 +95,14 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                   ),
                 ),
                 SizedBox(width: resp.spacingSM),
-                Text(
-                  'add_item'.tr,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: resp.fontLG,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    'add_item'.tr,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: resp.fontLG,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],
@@ -216,12 +218,14 @@ class _AddInvoiceViewState extends State<AddInvoiceView> {
                   ),
                 ),
                 SizedBox(width: resp.spacingSM),
-                Text(
-                  'edit_item'.tr,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    fontSize: resp.fontLG,
-                    fontWeight: FontWeight.bold,
+                Expanded(
+                  child: Text(
+                    'edit_item'.tr,
+                    style: TextStyle(
+                      fontFamily: 'Cairo',
+                      fontSize: resp.fontLG,
+                      fontWeight: FontWeight.bold,
+                    ),
                   ),
                 ),
               ],

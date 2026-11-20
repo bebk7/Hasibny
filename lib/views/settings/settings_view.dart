@@ -586,12 +586,14 @@ class SettingsView extends StatelessWidget {
                         color: AppColors.primary, size: resp.iconSM),
                   ),
                   SizedBox(width: resp.spacingSM),
-                  Text(
-                    'app_lock_settings'.tr,
-                    style: TextStyle(
-                      fontFamily: 'Cairo',
-                      fontSize: resp.fontLG,
-                      fontWeight: FontWeight.bold,
+                  Expanded(
+                    child: Text(
+                      'app_lock_settings'.tr,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        fontSize: resp.fontLG,
+                        fontWeight: FontWeight.bold,
+                      ),
                     ),
                   ),
                 ],
@@ -1167,12 +1169,14 @@ class SettingsView extends StatelessWidget {
                                       Icon(Icons.check_circle_rounded,
                                           color: AppColors.success, size: resp.iconLG),
                                       SizedBox(width: resp.spacingSM),
-                                      Text(
-                                        'backup_import_success'.tr,
-                                        style: TextStyle(
-                                          fontFamily: 'Cairo',
-                                          fontWeight: FontWeight.bold,
-                                          fontSize: resp.fontLG,
+                                      Expanded(
+                                        child: Text(
+                                          'backup_import_success'.tr,
+                                          style: TextStyle(
+                                            fontFamily: 'Cairo',
+                                            fontWeight: FontWeight.bold,
+                                            fontSize: resp.fontLG,
+                                          ),
                                         ),
                                       ),
                                     ],
@@ -1288,12 +1292,14 @@ class SettingsView extends StatelessWidget {
                     color: AppColors.primary, size: resp.iconSM),
               ),
               SizedBox(width: resp.spacingSM),
-              Text(
-                'help_support'.tr,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: resp.fontLG,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'help_support'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontLG,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],
@@ -1387,12 +1393,14 @@ class SettingsView extends StatelessWidget {
                     color: AppColors.primary, size: resp.iconSM),
               ),
               SizedBox(width: resp.spacingSM),
-              Text(
-                'privacy_policy'.tr,
-                style: TextStyle(
-                  fontFamily: 'Cairo',
-                  fontSize: resp.fontLG,
-                  fontWeight: FontWeight.bold,
+              Expanded(
+                child: Text(
+                  'privacy_policy'.tr,
+                  style: TextStyle(
+                    fontFamily: 'Cairo',
+                    fontSize: resp.fontLG,
+                    fontWeight: FontWeight.bold,
+                  ),
                 ),
               ),
             ],

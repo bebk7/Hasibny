@@ -200,8 +200,11 @@ class AppDialog extends StatelessWidget {
                   ),
                 ),
                 SizedBox(height: resp.spacingLG),
-                Row(
-                  mainAxisAlignment: MainAxisAlignment.end,
+                Wrap(
+                  alignment: WrapAlignment.end,
+                  crossAxisAlignment: WrapCrossAlignment.center,
+                  spacing: resp.spacingSM,
+                  runSpacing: resp.spacingXS,
                   children: [
                     TextButton(
                       onPressed: () => Get.back(result: false),
@@ -214,7 +217,6 @@ class AppDialog extends StatelessWidget {
                         ),
                       ),
                     ),
-                    SizedBox(width: resp.spacingSM),
                     AppButton(
                       text: confirmLabel ?? 'confirm'.tr,
                       isFullWidth: false,
