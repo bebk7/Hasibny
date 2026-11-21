@@ -3,6 +3,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/core.dart';
+import '../home/home_view.dart';
 
 class EmailVerificationView extends StatefulWidget {
   const EmailVerificationView({super.key});
@@ -211,6 +212,13 @@ class _EmailVerificationViewState extends State<EmailVerificationView> {
                           TextButton.icon(
                             onPressed: () async {
                               await ac.continueAsGuest();
+                              if (context.mounted) {
+                                if (Navigator.canPop(context)) {
+                                  Get.back();
+                                } else {
+                                  Get.offAll(() => const HomeView());
+                                }
+                              }
                             },
                             icon: Icon(Icons.skip_next_rounded, size: resp.iconSM),
                             label: Text(

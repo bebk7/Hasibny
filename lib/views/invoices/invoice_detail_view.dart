@@ -1,6 +1,6 @@
 import 'package:flutter/material.dart';
 import 'package:get/get.dart';
-import 'package:intl/intl.dart';
+import 'package:intl/intl.dart' hide TextDirection;
 import 'package:flutter/services.dart';
 import '../../controllers/customer_controller.dart';
 import '../../controllers/invoice_controller.dart';
@@ -511,11 +511,13 @@ class _InvoiceDetailViewState extends State<InvoiceDetailView> {
                       _DetailRow(
                         label: 'phone'.tr,
                         value: customer.phoneNumber,
+                        isPhone: true,
                       ),
                     if (merchant != null && merchant.phone.isNotEmpty)
                       _DetailRow(
                         label: 'phone'.tr,
                         value: merchant.phone,
+                        isPhone: true,
                       ),
                     _DetailRow(
                       label: 'account_currency'.tr,
@@ -1321,7 +1323,8 @@ class _AmountCard extends StatelessWidget {
 class _DetailRow extends StatelessWidget {
   final String label;
   final String value;
-  const _DetailRow({required this.label, required this.value});
+  final bool isPhone;
+  const _DetailRow({required this.label, required this.value, this.isPhone = false});
 
   @override
   Widget build(BuildContext context) {
@@ -1343,8 +1346,9 @@ class _DetailRow extends StatelessWidget {
           SizedBox(width: resp.spacingSM),
           Expanded(
             child: Text(
-              value,
-              textAlign: TextAlign.end,
+              isPhone ? PhoneNumberHelper.bidiSafe(value) : value,
+              textDirection: isPhone ? TextDirection.ltr : null,
+              textAlign: isPhone ? TextAlign.end : TextAlign.end,
               style: TextStyle(
                 fontFamily: 'Cairo',
                 fontWeight: FontWeight.w600,

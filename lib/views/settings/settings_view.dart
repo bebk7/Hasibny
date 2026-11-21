@@ -117,41 +117,41 @@ class _SettingsViewState extends State<SettingsView> {
                     resp: resp,
                   ),
                   _buildDivider(context),
-                  _buildTile(
-                    context: context,
-                    icon: Icons.currency_exchange_rounded,
-                    color: AppColors.warning,
-                    title: 'currency'.tr,
-                    subtitle: settingsController.currencyLabel,
-                    trailing: Row(
-                      mainAxisSize: MainAxisSize.min,
-                      children: [
-                        Container(
-                          padding: EdgeInsets.symmetric(
-                            horizontal: resp.spacingSM,
-                            vertical: 3,
-                          ),
-                          decoration: BoxDecoration(
-                            color: AppColors.warning.withValues(alpha: 0.12),
-                            borderRadius: BorderRadius.circular(resp.radiusSM),
-                          ),
-                          child: Text(
-                            settingsController.currentCurrency.value,
-                            style: TextStyle(
-                              fontSize: resp.fontXS,
-                              fontWeight: FontWeight.bold,
-                              color: AppColors.warning,
+                  Obx(() => _buildTile(
+                        context: context,
+                        icon: Icons.currency_exchange_rounded,
+                        color: AppColors.warning,
+                        title: 'currency'.tr,
+                        subtitle: settingsController.currencyLabel,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: resp.spacingSM,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: AppColors.warning.withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(resp.radiusSM),
+                              ),
+                              child: Text(
+                                settingsController.currentCurrency.value,
+                                style: TextStyle(
+                                  fontSize: resp.fontXS,
+                                  fontWeight: FontWeight.bold,
+                                  color: AppColors.warning,
+                                ),
+                              ),
                             ),
-                          ),
+                            SizedBox(width: resp.spacing2XS),
+                            Icon(resp.forwardIcon,
+                                size: resp.iconSM - 2, color: Colors.grey),
+                          ],
                         ),
-                        SizedBox(width: resp.spacing2XS),
-                        Icon(resp.forwardIcon,
-                            size: resp.iconSM - 2, color: Colors.grey),
-                      ],
-                    ),
-                    onTap: () => _showCurrencyDialog(context),
-                    resp: resp,
-                  ),
+                        onTap: () => _showCurrencyDialog(context),
+                        resp: resp,
+                      )),
                   _buildDivider(context),
                   Obx(() => _buildTile(
                         context: context,

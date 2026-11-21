@@ -352,7 +352,8 @@ class _CustomersViewState extends State<CustomersView> {
                             const SizedBox(width: 4),
                             Flexible(
                               child: Text(
-                                customer.phoneNumber,
+                                PhoneNumberHelper.bidiSafe(customer.phoneNumber),
+                                textDirection: TextDirection.ltr,
                                 style: TextStyle(
                                   fontFamily: AppTypography.fontFamily,
                                   color: isDark ? AppColors.textSecondaryDark : AppColors.textSecondaryLight,

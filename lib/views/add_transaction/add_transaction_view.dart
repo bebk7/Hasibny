@@ -354,7 +354,8 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                                                     .phoneNumber.isNotEmpty) ...[
                                                   const SizedBox(height: 1),
                                                   Text(
-                                                    _selectedCustomer!.phoneNumber,
+                                                    PhoneNumberHelper.bidiSafe(_selectedCustomer!.phoneNumber),
+                                                    textDirection: TextDirection.ltr,
                                                     style: TextStyle(
                                                       fontFamily: 'Cairo',
                                                       fontSize: resp.fontXS,
@@ -903,7 +904,8 @@ class _AddTransactionViewState extends State<AddTransactionView> {
                                     ),
                                     subtitle: customer.phoneNumber.isNotEmpty
                                         ? Text(
-                                            customer.phoneNumber,
+                                            PhoneNumberHelper.bidiSafe(customer.phoneNumber),
+                                            textDirection: TextDirection.ltr,
                                             style: TextStyle(
                                               fontFamily: 'Cairo',
                                               fontSize: resp.fontSM,

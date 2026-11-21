@@ -255,6 +255,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                   padding: const EdgeInsets.symmetric(horizontal: 8, vertical: 3),
                   child: Row(
                     mainAxisSize: MainAxisSize.min,
+                    textDirection: TextDirection.ltr,
                     children: [
                       Icon(
                         Icons.phone_rounded,
@@ -263,7 +264,8 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                       ),
                       const SizedBox(width: 5),
                       Text(
-                        customer.phoneNumber,
+                        PhoneNumberHelper.bidiSafe(customer.phoneNumber),
+                        textDirection: TextDirection.ltr,
                         style: TextStyle(
                           fontFamily: AppTypography.fontFamily,
                           color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
@@ -387,7 +389,7 @@ class _CustomerDetailsViewState extends State<CustomerDetailsView> {
                   Text(
                     customer.autoSendInvoiceWhatsApp
                         ? (hasWa
-                            ? '${'auto_send_enabled'.tr} (${customer.whatsappNumber})'
+                            ? '${'auto_send_enabled'.tr} (${PhoneNumberHelper.bidiSafe(customer.whatsappNumber!)})'
                             : 'auto_send_enabled_primary'.tr)
                         : 'auto_send_disabled'.tr,
                     style: TextStyle(

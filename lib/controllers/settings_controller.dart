@@ -2,6 +2,7 @@ import 'package:flutter/material.dart';
 import 'package:get/get.dart';
 import 'package:shared_preferences/shared_preferences.dart';
 import '../models/app_currency.dart';
+import 'dashboard_controller.dart';
 
 class CurrencyOption {
   final String code;
@@ -70,6 +71,9 @@ class SettingsController extends GetxController {
     currentLanguage.value = lang;
     isDarkMode.value = dark;
     currentCurrency.value = currency;
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().setCurrency(currency);
+    }
 
     storeName.value = prefs.getString(_keyStoreName) ?? '';
     storePhone.value = prefs.getString(_keyStorePhone) ?? '';
@@ -120,6 +124,9 @@ class SettingsController extends GetxController {
     currentCurrency.value = code;
     final prefs = await SharedPreferences.getInstance();
     await prefs.setString(_keyCurrency, code);
+    if (Get.isRegistered<DashboardController>()) {
+      Get.find<DashboardController>().setCurrency(code);
+    }
   }
 
   Future<void> setEnableWhatsAppInvoices(bool value) async {

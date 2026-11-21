@@ -3,6 +3,7 @@ import 'package:get/get.dart';
 import '../models/transaction.dart';
 import '../services/database_service.dart';
 import '../themes/app_theme.dart';
+import 'settings_controller.dart';
 
 class DashboardController extends GetxController {
   var selectedIndex = 0.obs;
@@ -24,6 +25,10 @@ class DashboardController extends GetxController {
   @override
   void onInit() {
     super.onInit();
+    if (Get.isRegistered<SettingsController>()) {
+      selectedCurrency.value =
+          Get.find<SettingsController>().currentCurrency.value;
+    }
     loadDashboardData();
   }
 

@@ -4,6 +4,7 @@ import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import '../../controllers/auth_controller.dart';
 import '../../core/core.dart';
+import '../home/home_view.dart';
 
 class AuthView extends StatefulWidget {
   const AuthView({super.key});
@@ -512,7 +513,15 @@ class _AuthViewState extends State<AuthView> with TickerProviderStateMixin {
                       icon: Icons.person_outline_rounded,
                       variant: AppButtonVariant.outlined,
                       onPressed: () async {
+                        HapticFeedback.lightImpact();
                         await ac.continueAsGuest();
+                        if (context.mounted) {
+                          if (Navigator.canPop(context)) {
+                            Get.back();
+                          } else {
+                            Get.offAll(() => const HomeView());
+                          }
+                        }
                       },
                     ),
                   ],

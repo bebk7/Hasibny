@@ -110,7 +110,7 @@ class AccountBookApp extends StatelessWidget {
 
           // 3. Logged-in User
           if (ac.isLoggedIn) {
-            if (!ac.isEmailVerified.value) {
+            if (!ac.isEmailVerified.value && !ac.isGuestMode.value) {
               return const EmailVerificationView();
             }
             return const HomeView();

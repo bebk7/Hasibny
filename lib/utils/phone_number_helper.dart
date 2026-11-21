@@ -110,4 +110,20 @@ class PhoneNumberHelper {
 
   /// Alias for stripNonDigits / sanitize
   static String sanitize(String input) => stripNonDigits(input);
+
+  /// Wraps a phone number in Unicode Left-to-Right Embedding (U+202A)
+  /// and Pop Directional Formatting (U+202C) characters so that
+  /// it is never reversed or distorted in RTL (Arabic) contexts,
+  /// especially for international numbers with '+' (e.g. +966 for SAR, +1 for USD).
+  static String bidiSafe(String phone) {
+    if (phone.trim().isEmpty) return phone;
+    final clean = phone.replaceAll(RegExp(r'[\u200E\u200F\u202A-\u202E\u2066-\u2069]'), '').trim();
+    if (clean.isEmpty) return '';
+    // If phone contains '+' or spaces/dashes/parentheses, wrap in LTR embedding
+    // to guarantee '+' and segments are never reversed in RTL contexts
+    if (clean.contains(RegExp(r'[\+\(\)\-\s]'))) {
+      return '\u202A$clean\u202C';
+    }
+    return clean;
+  }
 }
