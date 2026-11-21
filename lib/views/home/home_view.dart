@@ -16,21 +16,27 @@ class HomeView extends StatelessWidget {
   Widget build(BuildContext context) {
     final dashboardController = Get.find<DashboardController>();
 
-    return Scaffold(
-      body: Obx(() {
-        return IndexedStack(
-          index: dashboardController.selectedIndex.value,
-          children: const [
-            DashboardView(),
-            CustomersView(),
-            TransactionsView(),
-            SettingsView(),
-          ],
-        );
-      }),
-      bottomNavigationBar: _buildBottomNavigationBar(context, dashboardController),
-      floatingActionButton: const CustomFAB(),
-      floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+    return GuidedTourScope(
+      scope: AppTours.mainScope,
+      child: Scaffold(
+        body: Obx(() {
+          return IndexedStack(
+            index: dashboardController.selectedIndex.value,
+            children: const [
+              DashboardView(),
+              CustomersView(),
+              TransactionsView(),
+              SettingsView(),
+            ],
+          );
+        }),
+        bottomNavigationBar: _buildBottomNavigationBar(context, dashboardController),
+        floatingActionButton: GuidedTourTarget(
+          step: AppTours.buildDashboardTour().steps[4],
+          child: const CustomFAB(),
+        ),
+        floatingActionButtonLocation: FloatingActionButtonLocation.centerDocked,
+      ),
     );
   }
 

@@ -563,6 +563,62 @@ class AppTranslations extends Translations {
     'preview_pdf': 'معاينة تقرير PDF',
     'preview_report_desc': 'عرض التقرير قبل الطباعة أو المشاركة',
     'failed_clear_data': 'فشل مسح البيانات',
+
+    // Elite Guided Tour System
+    'tour_next': 'التالي',
+    'tour_prev': 'السابق',
+    'tour_skip': 'تخطي',
+    'tour_finish': 'إنهاء',
+    'tour_step_counter': 'الخطوة @current من @total',
+    'tour_replay_title': 'الجولات الإرشادية والتعليمية',
+    'tour_replay_subtitle': 'إعادة استعراض أو ضبط الجولات التعليمية لواجهات التطبيق',
+    'tour_reset_all': 'إعادة ضبط كافة الجولات',
+    'tour_reset_all_confirm': 'هل تود إعادة تعيين كافة الجولات الإرشادية لتظهر مرة أخرى عند زيارة الشاشات؟',
+    'tour_reset_success': 'تمت إعادة ضبط جميع الجولات بنجاح',
+    'tour_start_tour': 'بدء الجولة الآن',
+    'tour_steps_count': '@count خطوات',
+
+    // Dashboard Tour
+    'tour_dashboard_title': 'جولة لوحة التحكم',
+    'tour_dashboard_header_title': 'اسم المتجر والتحديث الفوري',
+    'tour_dashboard_header_desc': 'يعرض اسم متجرك وزر التحديث المباشر لمزامنة الأرصدة والديون والبيانات.',
+    'tour_dashboard_actions_title': 'الإجراءات السريعة',
+    'tour_dashboard_actions_desc': 'اختصارات فورية لكشف حساب الموردين، وإدارة العجز والنواقص، وإضافة عميل جديد بنقرة واحدة.',
+    'tour_dashboard_currencies_title': 'العملات المتعددة',
+    'tour_dashboard_currencies_desc': 'التبديل الفوري بين الريال اليمني، الريال السعودي، والدولار لعرض صافي الحسابات لكل عملة بشكل مستقل.',
+    'tour_dashboard_balances_title': 'الملخص المالي وصافي الرصيد',
+    'tour_dashboard_balances_desc': 'بطاقات ذكية توضح إجمالي المبالغ المستحقة لك، والالتزامات عليك، وصافي رصيدك المالي.',
+    'tour_dashboard_fab_title': 'تسجيل معاملة جديدة',
+    'tour_dashboard_fab_desc': 'الزر المركزي لتسجيل عمليات الدفع أو القبض فوراً وتحديد العميل والمبلغ والعملة بسهولة.',
+
+    // Customers Tour
+    'tour_customers_title': 'جولة دليل العملاء',
+    'tour_customers_search_title': 'البحث وتصفية العملاء',
+    'tour_customers_search_desc': 'ابحث بالاسم أو رقم الهاتف، وقم بفرز العملاء بحسب العملة أو حالة المديونية.',
+    'tour_customers_list_title': 'قائمة العملاء وأرصدتهم',
+    'tour_customers_list_desc': 'عرض تفصيلي لأرصدة العملاء مع إمكانية النقر لفتح كشف الحساب وتسجيل الدفعات ومشاركتها عبر واتساب.',
+    'tour_customers_add_title': 'إضافة عميل جديد',
+    'tour_customers_add_desc': 'إضافة عميل جديد مع إمكانية استيراد جهات الاتصال مباشرة من هاتفك.',
+
+    // Transactions Tour
+    'tour_transactions_title': 'جولة سجل المعاملات',
+    'tour_transactions_filter_title': 'تصفية وبحث المعاملات',
+    'tour_transactions_filter_desc': 'تصفية المعاملات حسب النوع (قبض / دفع) والعملة والتاريخ للوصول السريع إلى أي حركة مالية.',
+    'tour_transactions_item_title': 'تفاصيل المعاملة وتعديلها',
+    'tour_transactions_item_desc': 'عرض تفاصيل المبلغ، العملة، التاريخ، مع إمكانية تعديل المعاملة أو مشاركة إيصالها فوراً.',
+    'tour_transactions_export_title': 'تصدير التقارير',
+    'tour_transactions_export_desc': 'تصدير تقارير احترافية بصيغة PDF أو Excel ومشاركتها أو طباعتها مباشرة.',
+
+    // Settings Tour
+    'tour_settings_title': 'جولة الإعدادات',
+    'tour_settings_store_title': 'ملف المتجر والنشاط',
+    'tour_settings_store_desc': 'تخصيص اسم متجرك وشعاره ورقم هاتفه وبياناته التي تظهر في فواتير وكشوفات الحساب.',
+    'tour_settings_backup_title': 'النسخ الاحتياطي المشفر',
+    'tour_settings_backup_desc': 'حفظ واسترجاع بياناتك بنسخة احتياطية مشفرة بكلمة مرور في أي مكان تختاره على جهازك.',
+    'tour_settings_security_title': 'الأمان وقفل التطبيق',
+    'tour_settings_security_desc': 'حماية بياناتك الحساسة برمز PIN أو البصمة الحيوية لتأمين الوصول.',
+    'tour_settings_guided_tours_title': 'الجولات الإرشادية',
+    'tour_settings_guided_tours_desc': 'إعادة استكشاف مميزات التطبيق أو إعادة تعيين جميع الجولات التعليمية في أي وقت.',
   };
 
   static final Map<String, String> _englishTranslations = {
@@ -1034,5 +1090,61 @@ class AppTranslations extends Translations {
     'select_backup_file': 'Please select a backup file (.abbackup)',
     'backup_file_invalid_ext':
         'Unsupported file format. Please select an .abbackup file.',
+
+    // Elite Guided Tour System
+    'tour_next': 'Next',
+    'tour_prev': 'Previous',
+    'tour_skip': 'Skip',
+    'tour_finish': 'Get Started',
+    'tour_step_counter': 'Step @current of @total',
+    'tour_replay_title': 'Guided Tours & Walkthroughs',
+    'tour_replay_subtitle': 'Replay or reset in-app walkthrough tours',
+    'tour_reset_all': 'Reset All Tours',
+    'tour_reset_all_confirm': 'Do you want to reset all guided tours to show again on screen visits?',
+    'tour_reset_success': 'All guided tours have been reset successfully',
+    'tour_start_tour': 'Start Tour Now',
+    'tour_steps_count': '@count Steps',
+
+    // Dashboard Tour
+    'tour_dashboard_title': 'Dashboard Tour',
+    'tour_dashboard_header_title': 'Store Name & Instant Refresh',
+    'tour_dashboard_header_desc': 'Displays your store name and a quick refresh button to instantly sync balances and transactions.',
+    'tour_dashboard_actions_title': 'Quick Actions',
+    'tour_dashboard_actions_desc': 'Direct shortcuts to merchants ledger, inventory deficits, and one-tap new customer addition.',
+    'tour_dashboard_currencies_title': 'Multi-Currency Selector',
+    'tour_dashboard_currencies_desc': 'Instantly switch between YER, SAR, and USD to view independent net balances for each currency.',
+    'tour_dashboard_balances_title': 'Financial Overview & Net Balance',
+    'tour_dashboard_balances_desc': 'Smart cards summarizing total debts owed to you, debts you owe, and your net financial standing.',
+    'tour_dashboard_fab_title': 'Quick Transaction Action',
+    'tour_dashboard_fab_desc': 'The central action button to immediately record payments, receipts, select customers, and set currencies.',
+
+    // Customers Tour
+    'tour_customers_title': 'Customers Tour',
+    'tour_customers_search_title': 'Search & Filter Customers',
+    'tour_customers_search_desc': 'Search by name or phone number, and filter customers by currency or debt status.',
+    'tour_customers_list_title': 'Customer List & Balances',
+    'tour_customers_list_desc': 'Detailed view of customer balances with one-tap access to statements, payments, and WhatsApp sharing.',
+    'tour_customers_add_title': 'Add New Customer',
+    'tour_customers_add_desc': 'Add a new customer with one-tap contact import directly from your phone.',
+
+    // Transactions Tour
+    'tour_transactions_title': 'Transactions Tour',
+    'tour_transactions_filter_title': 'Filter & Search Transactions',
+    'tour_transactions_filter_desc': 'Filter transactions by type (receipt/payment), currency, and date range for rapid auditing.',
+    'tour_transactions_item_title': 'Transaction Details & Edit',
+    'tour_transactions_item_desc': 'View transaction amount, date, notes, and easily edit or share the transaction receipt.',
+    'tour_transactions_export_title': 'Export Reports',
+    'tour_transactions_export_desc': 'Export professional PDF and Excel reports to share or print instantly.',
+
+    // Settings Tour
+    'tour_settings_title': 'Settings Tour',
+    'tour_settings_store_title': 'Store Profile',
+    'tour_settings_store_desc': 'Customize your store name, logo, phone, and details printed on receipts and statements.',
+    'tour_settings_backup_title': 'Encrypted Backup & Restore',
+    'tour_settings_backup_desc': 'Safely backup and restore your data using password-encrypted files saved anywhere on your device.',
+    'tour_settings_security_title': 'App Security & Lock',
+    'tour_settings_security_desc': 'Secure your sensitive financial records with PIN code or biometric fingerprint authentication.',
+    'tour_settings_guided_tours_title': 'Guided Tours',
+    'tour_settings_guided_tours_desc': 'Re-explore app features or reset all interactive guided tours anytime.',
   };
 }

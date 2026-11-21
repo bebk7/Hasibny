@@ -14,8 +14,29 @@ import '../merchants/merchants_view.dart';
 import '../merchants/add_merchant_view.dart';
 import '../merchants/merchant_shortages_view.dart';
 
-class DashboardView extends StatelessWidget {
+class DashboardView extends StatefulWidget {
   const DashboardView({super.key});
+
+  @override
+  State<DashboardView> createState() => _DashboardViewState();
+}
+
+class _DashboardViewState extends State<DashboardView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildDashboardTour());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    GuidedTourManager.instance.cancelPendingTour(AppTours.dashboardTourId);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -27,11 +48,14 @@ class DashboardView extends StatelessWidget {
 
     return Scaffold(
       appBar: AppBar(
-        title: Obx(() {
-          final storeName = (sc?.storeName.value ?? '').trim();
-          final titleText = storeName.isNotEmpty ? storeName : 'app_title'.tr;
-          return AppAppBarTitle(titleText);
-        }),
+        title: GuidedTourTarget(
+          step: AppTours.buildDashboardTour().steps[0],
+          child: Obx(() {
+            final storeName = (sc?.storeName.value ?? '').trim();
+            final titleText = storeName.isNotEmpty ? storeName : 'app_title'.tr;
+            return AppAppBarTitle(titleText);
+          }),
+        ),
         actions: [
           IconButton(
             tooltip: 'refresh'.tr,
@@ -86,7 +110,10 @@ class DashboardView extends StatelessWidget {
                       icon: Icons.bolt_rounded,
                     ),
                     SizedBox(height: resp.spacingSM),
-                    _buildQuickActions(context, dc, resp),
+                    GuidedTourTarget(
+                      step: AppTours.buildDashboardTour().steps[1],
+                      child: _buildQuickActions(context, dc, resp),
+                    ),
                     SizedBox(height: resp.sectionSpacing),
 
                     // Multi-Currency Financial Overview Header
@@ -106,60 +133,25 @@ class DashboardView extends StatelessWidget {
                     SizedBox(height: resp.spacingSM),
 
                     // Currency Selector Tabs
-                    _buildCurrencyTabs(context, dc, resp),
+                    GuidedTourTarget(
+                      step: AppTours.buildDashboardTour().steps[2],
+                      child: _buildCurrencyTabs(context, dc, resp),
+                    ),
                     SizedBox(height: resp.spacingSM + 4),
 
                     // Active Currency Balance Cards
-                    Obx(() {
-                      final curr = dc.selectedCurrency.value;
-                      final toGive = dc.currentToGive;
-                      final toGet = dc.currentToGet;
-                      final net = dc.currentNetBalance;
-                      final isLarge = resp.isLarge;
-                      final spacing = resp.cardSpacing;
+                    GuidedTourTarget(
+                      step: AppTours.buildDashboardTour().steps[3],
+                      child: Obx(() {
+                        final curr = dc.selectedCurrency.value;
+                        final toGive = dc.currentToGive;
+                        final toGet = dc.currentToGet;
+                        final net = dc.currentNetBalance;
+                        final isLarge = resp.isLarge;
+                        final spacing = resp.cardSpacing;
 
-                      if (isLarge) {
-                        return Row(
-                          children: [
-                            Expanded(
-                              child: BalanceCard(
-                                title: 'total_to_give'.tr,
-                                amount: toGive,
-                                currencyCode: curr,
-                                color: AppColors.giveColor,
-                                icon: Icons.arrow_upward_rounded,
-                              ),
-                            ),
-                            SizedBox(width: spacing),
-                            Expanded(
-                              child: BalanceCard(
-                                title: 'total_to_get'.tr,
-                                amount: toGet,
-                                currencyCode: curr,
-                                color: AppColors.gotColor,
-                                icon: Icons.arrow_downward_rounded,
-                              ),
-                            ),
-                            SizedBox(width: spacing),
-                            Expanded(
-                              child: BalanceCard(
-                                title: 'net_balance'.tr,
-                                amount: net,
-                                currencyCode: curr,
-                                color: net >= 0 ? AppColors.gotColor : AppColors.giveColor,
-                                icon: net >= 0
-                                    ? Icons.account_balance_wallet_rounded
-                                    : Icons.account_balance_wallet_outlined,
-                                isNetBalance: true,
-                              ),
-                            ),
-                          ],
-                        );
-                      }
-
-                      return Column(
-                        children: [
-                          Row(
+                        if (isLarge) {
+                          return Row(
                             children: [
                               Expanded(
                                 child: BalanceCard(
@@ -180,22 +172,63 @@ class DashboardView extends StatelessWidget {
                                   icon: Icons.arrow_downward_rounded,
                                 ),
                               ),
+                              SizedBox(width: spacing),
+                              Expanded(
+                                child: BalanceCard(
+                                  title: 'net_balance'.tr,
+                                  amount: net,
+                                  currencyCode: curr,
+                                  color: net >= 0 ? AppColors.gotColor : AppColors.giveColor,
+                                  icon: net >= 0
+                                      ? Icons.account_balance_wallet_rounded
+                                      : Icons.account_balance_wallet_outlined,
+                                  isNetBalance: true,
+                                ),
+                              ),
                             ],
-                          ),
-                          SizedBox(height: spacing),
-                          BalanceCard(
-                            title: 'net_balance'.tr,
-                            amount: net,
-                            currencyCode: curr,
-                            color: net >= 0 ? AppColors.gotColor : AppColors.giveColor,
-                            icon: net >= 0
-                                ? Icons.account_balance_wallet_rounded
-                                : Icons.account_balance_wallet_outlined,
-                            isNetBalance: true,
-                          ),
-                        ],
-                      );
-                    }),
+                          );
+                        }
+
+                        return Column(
+                          children: [
+                            Row(
+                              children: [
+                                Expanded(
+                                  child: BalanceCard(
+                                    title: 'total_to_give'.tr,
+                                    amount: toGive,
+                                    currencyCode: curr,
+                                    color: AppColors.giveColor,
+                                    icon: Icons.arrow_upward_rounded,
+                                  ),
+                                ),
+                                SizedBox(width: spacing),
+                                Expanded(
+                                  child: BalanceCard(
+                                    title: 'total_to_get'.tr,
+                                    amount: toGet,
+                                    currencyCode: curr,
+                                    color: AppColors.gotColor,
+                                    icon: Icons.arrow_downward_rounded,
+                                  ),
+                                ),
+                              ],
+                            ),
+                            SizedBox(height: spacing),
+                            BalanceCard(
+                              title: 'net_balance'.tr,
+                              amount: net,
+                              currencyCode: curr,
+                              color: net >= 0 ? AppColors.gotColor : AppColors.giveColor,
+                              icon: net >= 0
+                                  ? Icons.account_balance_wallet_rounded
+                                  : Icons.account_balance_wallet_outlined,
+                              isNetBalance: true,
+                            ),
+                          ],
+                        );
+                      }),
+                    ),
 
                     SizedBox(height: resp.sectionSpacing),
 

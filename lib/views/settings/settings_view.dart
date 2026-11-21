@@ -1,7 +1,7 @@
 import 'dart:io';
-import 'dart:typed_data';
 import 'package:file_picker/file_picker.dart';
 import 'package:flutter/material.dart';
+import 'package:flutter/services.dart';
 import 'package:get/get.dart';
 import 'package:url_launcher/url_launcher.dart';
 import '../../controllers/auth_controller.dart';
@@ -17,8 +17,29 @@ import '../auth/auth_view.dart';
 import '../lock/set_pin_view.dart';
 import 'store_profile_view.dart';
 
-class SettingsView extends StatelessWidget {
+class SettingsView extends StatefulWidget {
   const SettingsView({super.key});
+
+  @override
+  State<SettingsView> createState() => _SettingsViewState();
+}
+
+class _SettingsViewState extends State<SettingsView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildSettingsTour());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    GuidedTourManager.instance.cancelPendingTour(AppTours.settingsTourId);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -47,25 +68,28 @@ class SettingsView extends StatelessWidget {
               icon: Icons.storefront_rounded,
               resp: resp,
             ),
-            AppCard(
-              padding: EdgeInsets.zero,
-              child: Obx(() => _buildTile(
-                    context: context,
-                    icon: Icons.store_rounded,
-                    color: AppColors.primary,
-                    title: settingsController.storeName.value.isEmpty
-                        ? 'store_profile'.tr
-                        : settingsController.storeName.value,
-                    subtitle: settingsController.storeName.value.isEmpty
-                        ? 'store_profile_sub'.tr
-                        : settingsController.storePhone.value.isEmpty
-                            ? 'store_profile_sub'.tr
-                            : '\u200E${settingsController.storePhone.value}',
-                    trailing: Icon(resp.forwardIcon,
-                        size: resp.iconSM, color: Colors.grey),
-                    onTap: () => Get.to(() => const StoreProfileView()),
-                    resp: resp,
-                  )),
+            GuidedTourTarget(
+              step: AppTours.buildSettingsTour().steps[0],
+              child: AppCard(
+                padding: EdgeInsets.zero,
+                child: Obx(() => _buildTile(
+                      context: context,
+                      icon: Icons.store_rounded,
+                      color: AppColors.primary,
+                      title: settingsController.storeName.value.isEmpty
+                          ? 'store_profile'.tr
+                          : settingsController.storeName.value,
+                      subtitle: settingsController.storeName.value.isEmpty
+                          ? 'store_profile_sub'.tr
+                          : settingsController.storePhone.value.isEmpty
+                              ? 'store_profile_sub'.tr
+                              : '\u200E${settingsController.storePhone.value}',
+                      trailing: Icon(resp.forwardIcon,
+                          size: resp.iconSM, color: Colors.grey),
+                      onTap: () => Get.to(() => const StoreProfileView()),
+                      resp: resp,
+                    )),
+              ),
             ),
             SizedBox(height: resp.spacingMD),
 
@@ -158,16 +182,34 @@ class SettingsView extends StatelessWidget {
                         resp: resp,
                       )),
                   _buildDivider(context),
-                  _buildTile(
-                    context: context,
-                    icon: Icons.lock_person_rounded,
-                    color: AppColors.success,
-                    title: 'app_lock'.tr,
-                    subtitle: 'app_lock_sub'.tr,
-                    trailing: Icon(resp.forwardIcon,
-                        size: resp.iconSM, color: Colors.grey),
-                    onTap: () => _showAppLockDialog(context),
-                    resp: resp,
+                  GuidedTourTarget(
+                    step: AppTours.buildSettingsTour().steps[2],
+                    child: _buildTile(
+                      context: context,
+                      icon: Icons.lock_person_rounded,
+                      color: AppColors.success,
+                      title: 'app_lock'.tr,
+                      subtitle: 'app_lock_sub'.tr,
+                      trailing: Icon(resp.forwardIcon,
+                          size: resp.iconSM, color: Colors.grey),
+                      onTap: () => _showAppLockDialog(context),
+                      resp: resp,
+                    ),
+                  ),
+                  _buildDivider(context),
+                  GuidedTourTarget(
+                    step: AppTours.buildSettingsTour().steps[3],
+                    child: _buildTile(
+                      context: context,
+                      icon: Icons.help_outline_rounded,
+                      color: const Color(0xFF8B5CF6),
+                      title: 'tour_replay_title'.tr,
+                      subtitle: 'tour_replay_subtitle'.tr,
+                      trailing: Icon(resp.forwardIcon,
+                          size: resp.iconSM, color: Colors.grey),
+                      onTap: () => _showGuidedToursSheet(context),
+                      resp: resp,
+                    ),
                   ),
                 ],
               ),
@@ -184,16 +226,19 @@ class SettingsView extends StatelessWidget {
               padding: EdgeInsets.zero,
               child: Column(
                 children: [
-                  _buildTile(
-                    context: context,
-                    icon: Icons.security_rounded,
-                    color: const Color(0xFF6366F1),
-                    title: 'backup_restore_title'.tr,
-                    subtitle: 'export_backup'.tr,
-                    trailing: Icon(resp.forwardIcon,
-                        size: resp.iconSM, color: Colors.grey),
-                    onTap: () => _showBackupDialog(context),
-                    resp: resp,
+                  GuidedTourTarget(
+                    step: AppTours.buildSettingsTour().steps[1],
+                    child: _buildTile(
+                      context: context,
+                      icon: Icons.security_rounded,
+                      color: const Color(0xFF6366F1),
+                      title: 'backup_restore_title'.tr,
+                      subtitle: 'export_backup'.tr,
+                      trailing: Icon(resp.forwardIcon,
+                          size: resp.iconSM, color: Colors.grey),
+                      onTap: () => _showBackupDialog(context),
+                      resp: resp,
+                    ),
                   ),
                   _buildDivider(context),
                   _buildTile(
@@ -1476,6 +1521,245 @@ class SettingsView extends StatelessWidget {
           );
         }
       },
+    );
+  }
+
+  void _showGuidedToursSheet(BuildContext context) {
+    final resp = AppResponsive.of(context);
+    final isDark = AppColors.isDark(context);
+    final manager = GuidedTourManager.instance;
+    final dc = Get.find<DashboardController>();
+
+    AppBottomSheet.show(
+      context: context,
+      title: 'tour_replay_title'.tr,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Padding(
+            padding: EdgeInsets.symmetric(horizontal: resp.spacingSM),
+            child: Text(
+              'tour_replay_subtitle'.tr,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: resp.fontSM,
+                color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+              ),
+            ),
+          ),
+          SizedBox(height: resp.spacingMD),
+
+          // Tour 1: Dashboard
+          _buildTourReplayTile(
+            context: context,
+            resp: resp,
+            isDark: isDark,
+            title: 'tour_dashboard_title'.tr,
+            stepCount: 5,
+            icon: Icons.dashboard_rounded,
+            color: AppColors.primary,
+            onStart: () async {
+              Navigator.pop(context);
+              dc.selectedIndex.value = 0;
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                manager.replayTour(context, AppTours.buildDashboardTour());
+              }
+            },
+          ),
+          SizedBox(height: resp.spacingSM),
+
+          // Tour 2: Customers
+          _buildTourReplayTile(
+            context: context,
+            resp: resp,
+            isDark: isDark,
+            title: 'tour_customers_title'.tr,
+            stepCount: 3,
+            icon: Icons.people_rounded,
+            color: const Color(0xFF10B981),
+            onStart: () async {
+              Navigator.pop(context);
+              dc.selectedIndex.value = 1;
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                manager.replayTour(context, AppTours.buildCustomersTour());
+              }
+            },
+          ),
+          SizedBox(height: resp.spacingSM),
+
+          // Tour 3: Transactions
+          _buildTourReplayTile(
+            context: context,
+            resp: resp,
+            isDark: isDark,
+            title: 'tour_transactions_title'.tr,
+            stepCount: 3,
+            icon: Icons.receipt_long_rounded,
+            color: const Color(0xFF3B82F6),
+            onStart: () async {
+              Navigator.pop(context);
+              dc.selectedIndex.value = 2;
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                manager.replayTour(context, AppTours.buildTransactionsTour());
+              }
+            },
+          ),
+          SizedBox(height: resp.spacingSM),
+
+          // Tour 4: Settings
+          _buildTourReplayTile(
+            context: context,
+            resp: resp,
+            isDark: isDark,
+            title: 'tour_settings_title'.tr,
+            stepCount: 4,
+            icon: Icons.settings_rounded,
+            color: const Color(0xFF8B5CF6),
+            onStart: () async {
+              Navigator.pop(context);
+              await Future.delayed(const Duration(milliseconds: 300));
+              if (mounted) {
+                manager.replayTour(context, AppTours.buildSettingsTour());
+              }
+            },
+          ),
+          SizedBox(height: resp.spacingLG),
+
+          // Reset All Tours Button
+          OutlinedButton.icon(
+            onPressed: () {
+              AppDialog.confirm(
+                context: context,
+                title: 'tour_reset_all'.tr,
+                message: 'tour_reset_all_confirm'.tr,
+                confirmLabel: 'confirm'.tr,
+                cancelLabel: 'cancel'.tr,
+                isDestructive: true,
+                onConfirm: () async {
+                  await manager.resetAllTours();
+                  if (context.mounted) {
+                    Navigator.pop(context);
+                    Get.snackbar(
+                      'success'.tr,
+                      'tour_reset_success'.tr,
+                      backgroundColor: AppColors.success,
+                      colorText: Colors.white,
+                      snackPosition: SnackPosition.BOTTOM,
+                    );
+                  }
+                },
+              );
+            },
+            icon: const Icon(Icons.restart_alt_rounded, size: 20),
+            label: Text(
+              'tour_reset_all'.tr,
+              style: TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontWeight: FontWeight.w700,
+                fontSize: resp.fontSM,
+              ),
+            ),
+            style: OutlinedButton.styleFrom(
+              foregroundColor: AppColors.error,
+              side: BorderSide(color: AppColors.error.withValues(alpha: 0.4)),
+              padding: const EdgeInsets.symmetric(vertical: 12),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.md),
+              ),
+            ),
+          ),
+          SizedBox(height: resp.spacingMD),
+        ],
+      ),
+    );
+  }
+
+  Widget _buildTourReplayTile({
+    required BuildContext context,
+    required AppResponsive resp,
+    required bool isDark,
+    required String title,
+    required int stepCount,
+    required IconData icon,
+    required Color color,
+    required VoidCallback onStart,
+  }) {
+    return Container(
+      decoration: BoxDecoration(
+        color: isDark ? Colors.white.withValues(alpha: 0.05) : Colors.black.withValues(alpha: 0.03),
+        borderRadius: BorderRadius.circular(AppRadius.md),
+        border: Border.all(
+          color: isDark ? AppColors.borderDark : AppColors.borderLight,
+        ),
+      ),
+      padding: EdgeInsets.symmetric(
+        horizontal: resp.spacingMD,
+        vertical: resp.spacingSM,
+      ),
+      child: Row(
+        children: [
+          Container(
+            padding: const EdgeInsets.all(8),
+            decoration: BoxDecoration(
+              color: color.withValues(alpha: 0.15),
+              borderRadius: BorderRadius.circular(AppRadius.sm),
+            ),
+            child: Icon(icon, color: color, size: 22),
+          ),
+          SizedBox(width: resp.spacingSM),
+          Expanded(
+            child: Column(
+              crossAxisAlignment: CrossAxisAlignment.start,
+              mainAxisSize: MainAxisSize.min,
+              children: [
+                Text(
+                  title,
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: resp.fontSM,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                Text(
+                  'tour_steps_count'.trParams({'count': stepCount.toString()}),
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: resp.fontXS,
+                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                  ),
+                ),
+              ],
+            ),
+          ),
+          ElevatedButton(
+            onPressed: () {
+              HapticFeedback.lightImpact();
+              onStart();
+            },
+            style: ElevatedButton.styleFrom(
+              backgroundColor: color,
+              foregroundColor: Colors.white,
+              padding: const EdgeInsets.symmetric(horizontal: 14, vertical: 8),
+              minimumSize: const Size(60, 34),
+              shape: RoundedRectangleBorder(
+                borderRadius: BorderRadius.circular(AppRadius.sm),
+              ),
+            ),
+            child: Text(
+              'tour_start_tour'.tr,
+              style: const TextStyle(
+                fontFamily: AppTypography.fontFamily,
+                fontSize: 12,
+                fontWeight: FontWeight.w700,
+              ),
+            ),
+          ),
+        ],
+      ),
     );
   }
 }

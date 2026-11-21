@@ -45,3 +45,7 @@ export 'utils/app_validators.dart';
 export 'utils/app_formatters.dart';
 export '../utils/responsive.dart' show Responsive;
 
+// Guided Tour System
+export 'guided_tour/guided_tour.dart';
+
+

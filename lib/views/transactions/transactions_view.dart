@@ -9,8 +9,29 @@ import '../../models/customer.dart';
 import '../../models/transaction.dart';
 import '../../services/export_service.dart';
 
-class TransactionsView extends StatelessWidget {
+class TransactionsView extends StatefulWidget {
   const TransactionsView({super.key});
+
+  @override
+  State<TransactionsView> createState() => _TransactionsViewState();
+}
+
+class _TransactionsViewState extends State<TransactionsView> {
+  @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildTransactionsTour());
+      }
+    });
+  }
+
+  @override
+  void dispose() {
+    GuidedTourManager.instance.cancelPendingTour(AppTours.transactionsTourId);
+    super.dispose();
+  }
 
   @override
   Widget build(BuildContext context) {
@@ -23,28 +44,31 @@ class TransactionsView extends StatelessWidget {
       appBar: AppBar(
         title: AppAppBarTitle('all_transactions'.tr),
         actions: [
-          IconButton(
-            tooltip: 'preview_report'.tr,
-            icon: Container(
-              padding: EdgeInsets.all(resp.spacingXS),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white10 : AppColors.primary.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
+          GuidedTourTarget(
+            step: AppTours.buildTransactionsTour().steps[2],
+            child: IconButton(
+              tooltip: 'preview_report'.tr,
+              icon: Container(
+                padding: EdgeInsets.all(resp.spacingXS),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : AppColors.primary.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.visibility_rounded,
+                  size: resp.iconSM,
+                  color: isDark ? AppColors.darkPrimary : AppColors.primary,
+                ),
               ),
-              child: Icon(
-                Icons.visibility_rounded,
-                size: resp.iconSM,
-                color: isDark ? AppColors.darkPrimary : AppColors.primary,
-              ),
+              onPressed: () {
+                HapticFeedback.lightImpact();
+                ExportService.previewAllReportPDF(
+                  customers: cc.customers.toList(),
+                  balances: Map<int, double>.from(cc.customerBalances),
+                  transactions: tc.allTransactions.toList(),
+                );
+              },
             ),
-            onPressed: () {
-              HapticFeedback.lightImpact();
-              ExportService.previewAllReportPDF(
-                customers: cc.customers.toList(),
-                balances: Map<int, double>.from(cc.customerBalances),
-                transactions: tc.allTransactions.toList(),
-              );
-            },
           ),
           IconButton(
             tooltip: 'refresh'.tr,
@@ -77,31 +101,64 @@ class TransactionsView extends StatelessWidget {
           padding: EdgeInsets.zero,
           child: Column(
             children: [
-              _buildCurrencyFilterBar(context, tc, resp),
-              _buildTypeFilterBar(context, tc, resp),
-              _buildSummaryHeader(context, tc, resp),
+              GuidedTourTarget(
+                step: AppTours.buildTransactionsTour().steps[0],
+                child: Column(
+                  mainAxisSize: MainAxisSize.min,
+                  children: [
+                    _buildCurrencyFilterBar(context, tc, resp),
+                    _buildTypeFilterBar(context, tc, resp),
+                    _buildSummaryHeader(context, tc, resp),
+                  ],
+                ),
+              ),
               Expanded(
-                child: Obx(() {
-                  final list = tc.filteredAllTransactions;
-                  if (list.isEmpty) return _buildEmptyState(context);
+                child: GuidedTourTarget(
+                  step: AppTours.buildTransactionsTour().steps[1],
+                  child: Obx(() {
+                    final list = tc.filteredAllTransactions;
+                    if (list.isEmpty) return _buildEmptyState(context);
 
-                  final isTablet = resp.isTablet;
+                    final isTablet = resp.isTablet;
 
-                  if (isTablet) {
-                    final cardExtent = resp.textScaleFactor > 1.2 ? 104.0 : 92.0;
-                    return GridView.builder(
+                    if (isTablet) {
+                      final cardExtent = resp.textScaleFactor > 1.2 ? 104.0 : 92.0;
+                      return GridView.builder(
+                        padding: EdgeInsets.fromLTRB(
+                          resp.pagePadding,
+                          resp.spacingSM,
+                          resp.pagePadding,
+                          resp.pagePadding + resp.bottomInset,
+                        ),
+                        physics: const BouncingScrollPhysics(),
+                        gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
+                          maxCrossAxisExtent: 480,
+                          mainAxisExtent: cardExtent,
+                          crossAxisSpacing: resp.spacingMD,
+                          mainAxisSpacing: resp.spacingSM,
+                        ),
+                        itemCount: list.length,
+                        itemBuilder: (context, index) {
+                          final transaction = list[index];
+                          final customer = cc.getCustomerById(transaction.customerId);
+                          return _TransactionCard(
+                            transaction: transaction,
+                            customer: customer,
+                            onShare: () => _shareInvoice(transaction, customer),
+                          );
+                        },
+                      );
+                    }
+
+                    return ListView.builder(
                       padding: EdgeInsets.fromLTRB(
                         resp.pagePadding,
                         resp.spacingSM,
                         resp.pagePadding,
                         resp.pagePadding + resp.bottomInset,
                       ),
-                      physics: const BouncingScrollPhysics(),
-                      gridDelegate: SliverGridDelegateWithMaxCrossAxisExtent(
-                        maxCrossAxisExtent: 480,
-                        mainAxisExtent: cardExtent,
-                        crossAxisSpacing: resp.spacingMD,
-                        mainAxisSpacing: resp.spacingSM,
+                      physics: const AlwaysScrollableScrollPhysics(
+                        parent: BouncingScrollPhysics(),
                       ),
                       itemCount: list.length,
                       itemBuilder: (context, index) {
@@ -114,30 +171,8 @@ class TransactionsView extends StatelessWidget {
                         );
                       },
                     );
-                  }
-
-                  return ListView.builder(
-                    padding: EdgeInsets.fromLTRB(
-                      resp.pagePadding,
-                      resp.spacingSM,
-                      resp.pagePadding,
-                      resp.pagePadding + resp.bottomInset,
-                    ),
-                    physics: const AlwaysScrollableScrollPhysics(
-                      parent: BouncingScrollPhysics(),
-                    ),
-                    itemCount: list.length,
-                    itemBuilder: (context, index) {
-                      final transaction = list[index];
-                      final customer = cc.getCustomerById(transaction.customerId);
-                      return _TransactionCard(
-                        transaction: transaction,
-                        customer: customer,
-                        onShare: () => _shareInvoice(transaction, customer),
-                      );
-                    },
-                  );
-                }),
+                  }),
+                ),
               ),
             ],
           ),

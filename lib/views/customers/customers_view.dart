@@ -19,7 +19,18 @@ class _CustomersViewState extends State<CustomersView> {
   final TextEditingController _searchCtrl = TextEditingController();
 
   @override
+  void initState() {
+    super.initState();
+    WidgetsBinding.instance.addPostFrameCallback((_) {
+      if (mounted) {
+        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildCustomersTour());
+      }
+    });
+  }
+
+  @override
   void dispose() {
+    GuidedTourManager.instance.cancelPendingTour(AppTours.customersTourId);
     _searchCtrl.dispose();
     super.dispose();
   }
@@ -35,25 +46,28 @@ class _CustomersViewState extends State<CustomersView> {
       appBar: AppBar(
         title: AppAppBarTitle('nav_customers'.tr),
         actions: [
-          IconButton(
-            tooltip: 'add_customer'.tr,
-            icon: Container(
-              padding: const EdgeInsets.all(6),
-              decoration: BoxDecoration(
-                color: isDark ? Colors.white10 : AppColors.primaryColor.withValues(alpha: 0.08),
-                shape: BoxShape.circle,
+          GuidedTourTarget(
+            step: AppTours.buildCustomersTour().steps[2],
+            child: IconButton(
+              tooltip: 'add_customer'.tr,
+              icon: Container(
+                padding: const EdgeInsets.all(6),
+                decoration: BoxDecoration(
+                  color: isDark ? Colors.white10 : AppColors.primaryColor.withValues(alpha: 0.08),
+                  shape: BoxShape.circle,
+                ),
+                child: Icon(
+                  Icons.person_add_alt_1_rounded,
+                  size: 20,
+                  color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
+                ),
               ),
-              child: Icon(
-                Icons.person_add_alt_1_rounded,
-                size: 20,
-                color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
-              ),
+              onPressed: () async {
+                HapticFeedback.lightImpact();
+                await Get.to(() => const AddCustomerView());
+                customerController.loadCustomers();
+              },
             ),
-            onPressed: () async {
-              HapticFeedback.lightImpact();
-              await Get.to(() => const AddCustomerView());
-              customerController.loadCustomers();
-            },
           ),
           SizedBox(width: resp.spacingSM),
         ],
@@ -70,64 +84,75 @@ class _CustomersViewState extends State<CustomersView> {
               constraints: BoxConstraints(maxWidth: resp.maxContentWidth),
               child: Column(
                 children: [
-                  // Search input
-                  Padding(
-                    padding: EdgeInsets.fromLTRB(
-                      resp.isSmall ? 12 : 16,
-                      8,
-                      resp.isSmall ? 12 : 16,
-                      6,
-                    ),
-                    child: TextField(
-                      controller: _searchCtrl,
-                      onChanged: (value) =>
-                          customerController.searchQuery.value = value,
-                      style: TextStyle(
-                        fontFamily: AppTypography.fontFamily,
-                        color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
-                        fontSize: resp.fontSize(14),
-                      ),
-                      decoration: InputDecoration(
-                        hintText: 'search_customers'.tr,
-                        prefixIcon: Icon(
-                          Icons.search_rounded,
-                          color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
+                  // Search & Currency Filter Target
+                  GuidedTourTarget(
+                    step: AppTours.buildCustomersTour().steps[0],
+                    child: Column(
+                      mainAxisSize: MainAxisSize.min,
+                      children: [
+                        // Search input
+                        Padding(
+                          padding: EdgeInsets.fromLTRB(
+                            resp.isSmall ? 12 : 16,
+                            8,
+                            resp.isSmall ? 12 : 16,
+                            6,
+                          ),
+                          child: TextField(
+                            controller: _searchCtrl,
+                            onChanged: (value) =>
+                                customerController.searchQuery.value = value,
+                            style: TextStyle(
+                              fontFamily: AppTypography.fontFamily,
+                              color: isDark ? AppColors.textPrimaryDark : AppColors.textPrimaryLight,
+                              fontSize: resp.fontSize(14),
+                            ),
+                            decoration: InputDecoration(
+                              hintText: 'search_customers'.tr,
+                              prefixIcon: Icon(
+                                Icons.search_rounded,
+                                color: isDark ? AppColors.darkPrimaryColor : AppColors.primaryColor,
+                              ),
+                              suffixIcon: ValueListenableBuilder<TextEditingValue>(
+                                valueListenable: _searchCtrl,
+                                builder: (context, value, _) {
+                                  if (value.text.isEmpty) return const SizedBox.shrink();
+                                  return IconButton(
+                                    icon: const Icon(Icons.clear_rounded, size: 18),
+                                    onPressed: () {
+                                      _searchCtrl.clear();
+                                      customerController.searchQuery.value = '';
+                                    },
+                                  );
+                                },
+                              ),
+                              filled: true,
+                              contentPadding: EdgeInsets.symmetric(
+                                horizontal: 16,
+                                vertical: resp.isSmall ? 10 : 12,
+                              ),
+                            ),
+                          ),
                         ),
-                        suffixIcon: ValueListenableBuilder<TextEditingValue>(
-                          valueListenable: _searchCtrl,
-                          builder: (context, value, _) {
-                            if (value.text.isEmpty) return const SizedBox.shrink();
-                            return IconButton(
-                              icon: const Icon(Icons.clear_rounded, size: 18),
-                              onPressed: () {
-                                _searchCtrl.clear();
-                                customerController.searchQuery.value = '';
-                              },
-                            );
-                          },
-                        ),
-                        filled: true,
-                        contentPadding: EdgeInsets.symmetric(
-                          horizontal: 16,
-                          vertical: resp.isSmall ? 10 : 12,
-                        ),
-                      ),
+
+                        // Currency filter bar
+                        _buildCurrencyFilterBar(context, customerController, resp),
+                      ],
                     ),
                   ),
 
-                  // Currency filter bar
-                  _buildCurrencyFilterBar(context, customerController, resp),
-
-                  // Customers List
+                  // Customers List Target
                   Expanded(
-                    child: Obx(() {
-                      // Explicitly track customerBalances so list updates reactively
-                      final _ = customerController.customerBalances.values;
-                      final customers = customerController.filteredCustomers;
+                    child: GuidedTourTarget(
+                      step: AppTours.buildCustomersTour().steps[1],
+                      child: Obx(() {
+                        // Explicitly track customerBalances so list updates reactively
+                        final _ = customerController.customerBalances.values;
+                        final customers = customerController.filteredCustomers;
 
-                      if (customers.isEmpty) {
-                        return _buildEmptyState(context, customerController);
-                      }
+                        if (customers.isEmpty) {
+                          return _buildEmptyState(context, customerController);
+                        }
 
                       return RefreshIndicator(
                         onRefresh: () async {
@@ -169,7 +194,8 @@ class _CustomersViewState extends State<CustomersView> {
                       );
                     }),
                   ),
-                ],
+                ),
+              ],
               ),
             ),
           );
