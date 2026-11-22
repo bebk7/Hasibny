@@ -1207,8 +1207,7 @@ class _PayInvoiceDialogState extends State<_PayInvoiceDialog> {
                                 }),
                                 backgroundColor: AppColors.error,
                                 colorText: Colors.white,
-                                icon: const Icon(
-                                    Icons.error_outline_rounded,
+                                icon: const Icon(Icons.error_outline_rounded,
                                     color: Colors.white),
                                 snackPosition: SnackPosition.TOP,
                                 duration: const Duration(seconds: 4),
@@ -1225,9 +1224,9 @@ class _PayInvoiceDialogState extends State<_PayInvoiceDialog> {
                             widget.invoice.paidAmount =
                                 (widget.invoice.paidAmount + amount)
                                     .clamp(0.0, widget.invoice.totalAmount);
-                            await Get.find<InvoiceController>()
-                                .updateInvoice(widget.invoice,
-                                    showSnackbar: false);
+                            await Get.find<InvoiceController>().updateInvoice(
+                                widget.invoice,
+                                showSnackbar: false);
 
                             widget.onPaymentRecorded();
 
@@ -1237,8 +1236,7 @@ class _PayInvoiceDialogState extends State<_PayInvoiceDialog> {
                                 'payment_recorded_success'.tr,
                                 backgroundColor: AppColors.success,
                                 colorText: Colors.white,
-                                icon: const Icon(
-                                    Icons.check_circle_rounded,
+                                icon: const Icon(Icons.check_circle_rounded,
                                     color: Colors.white),
                                 snackPosition: SnackPosition.BOTTOM,
                               );

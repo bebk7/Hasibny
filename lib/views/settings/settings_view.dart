@@ -28,11 +28,6 @@ class _SettingsViewState extends State<SettingsView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildSettingsTour());
-      }
-    });
   }
 
   @override
@@ -1202,6 +1197,9 @@ class _SettingsViewState extends State<SettingsView> {
                               backupBytes: nonNullBytes,
                               password: pass,
                             );
+                            if (Get.isRegistered<DashboardController>()) {
+                              await Get.find<DashboardController>().loadDashboardData();
+                            }
                             Get.back();
                             AppDialog.show(
                               context: context,
@@ -1548,7 +1546,46 @@ class _SettingsViewState extends State<SettingsView> {
               ),
             ),
           ),
-          SizedBox(height: resp.spacingMD),
+          SizedBox(height: resp.spacingSM),
+
+          // Master Auto-Tours Toggle
+          Obx(() {
+            final isEnabled = manager.storage.isAutoToursEnabled.value;
+            return Container(
+              margin: EdgeInsets.symmetric(horizontal: resp.spacingSM, vertical: resp.spacing2XS),
+              padding: EdgeInsets.symmetric(horizontal: resp.spacingSM, vertical: resp.spacing2XS),
+              decoration: BoxDecoration(
+                color: isDark ? AppColors.darkSurfaceColor : AppColors.surfaceColor,
+                borderRadius: BorderRadius.circular(resp.radiusMD),
+                border: Border.all(
+                  color: isDark ? AppColors.borderDark : AppColors.borderLight,
+                ),
+              ),
+              child: SwitchListTile.adaptive(
+                contentPadding: EdgeInsets.zero,
+                value: isEnabled,
+                activeTrackColor: AppColors.primary,
+                title: Text(
+                  'tour_auto_enabled_title'.tr,
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: resp.fontSM,
+                    fontWeight: FontWeight.w700,
+                  ),
+                ),
+                subtitle: Text(
+                  'tour_auto_enabled_desc'.tr,
+                  style: TextStyle(
+                    fontFamily: AppTypography.fontFamily,
+                    fontSize: resp.fontXS,
+                    color: isDark ? AppColors.textMutedDark : AppColors.textMutedLight,
+                  ),
+                ),
+                onChanged: (val) => manager.storage.setAutoToursEnabled(val),
+              ),
+            );
+          }),
+          SizedBox(height: resp.spacingSM),
 
           // Tour 1: Dashboard
           _buildTourReplayTile(

@@ -41,6 +41,7 @@ class GuidedTourManager extends GetxController {
     Duration delay = const Duration(milliseconds: 650),
   }) async {
     if (!config.autoStartOnFirstVisit) return;
+    if (!storage.isAutoToursEnabled.value) return;
 
     // Check persistence: if already seen (completed or skipped), do nothing
     final alreadySeen = await storage.hasTourBeenSeen(config.tourId);
@@ -55,6 +56,10 @@ class GuidedTourManager extends GetxController {
       if (seen || !context.mounted) return;
 
       cancelPendingTour(config.tourId);
+
+      // Immediately mark as seen so that if the app is closed or navigated, it won't re-trigger!
+      await storage.markTourSeen(config.tourId);
+      await storage.markGlobalTourSeen();
 
       if (delay == Duration.zero) {
         await startTour(context, config);
@@ -150,6 +155,7 @@ class GuidedTourManager extends GetxController {
       await storage.markTourSkipped(config.tourId);
       config.onDismiss?.call();
     }
+    await storage.markGlobalTourSeen();
     activeShowcaseView?.dismiss();
     _cleanup();
   }
@@ -161,6 +167,7 @@ class GuidedTourManager extends GetxController {
       await storage.markTourCompleted(config.tourId);
       config.onFinish?.call();
     }
+    await storage.markGlobalTourSeen();
     activeShowcaseView?.dismiss();
     _cleanup();
   }
@@ -200,6 +207,7 @@ class GuidedTourManager extends GetxController {
       storage.markTourCompleted(config.tourId);
       config.onFinish?.call();
     }
+    storage.markGlobalTourSeen();
     _cleanup();
   }
 
@@ -210,6 +218,7 @@ class GuidedTourManager extends GetxController {
       storage.markTourSkipped(config.tourId);
       config.onDismiss?.call();
     }
+    storage.markGlobalTourSeen();
     _cleanup();
   }
 

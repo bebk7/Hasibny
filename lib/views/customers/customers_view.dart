@@ -21,11 +21,6 @@ class _CustomersViewState extends State<CustomersView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildCustomersTour());
-      }
-    });
   }
 
   @override

@@ -442,6 +442,13 @@ class DatabaseService {
     required List<Invoice> invoices,
     required List<MerchantShortage> shortages,
   }) async {
+    if (!isInitialized) {
+      try {
+        await initialize();
+      } catch (_) {
+        return;
+      }
+    }
     await _isar.writeTxn(() async {
       await _isar.transactionModels.clear();
       await _isar.customers.clear();

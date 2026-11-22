@@ -49,6 +49,9 @@ void main() async {
 
     // 4. Check onboarding status (handles existing installations seamlessly)
     await onboardingController.checkOnboardingStatus();
+
+    // 5. Initialize Guided Tour Storage
+    await GuidedTourStorage.instance.init();
   } catch (e, stack) {
     debugPrint('App initialization error: $e\n$stack');
   } finally {

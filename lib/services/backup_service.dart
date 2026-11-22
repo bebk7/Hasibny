@@ -13,6 +13,8 @@ import '../controllers/customer_controller.dart';
 import '../controllers/transaction_controller.dart';
 import '../controllers/merchant_controller.dart';
 import '../controllers/merchant_shortage_controller.dart';
+import '../controllers/dashboard_controller.dart';
+import '../controllers/invoice_controller.dart';
 import '../models/customer.dart';
 import '../models/transaction.dart';
 import '../models/merchant.dart';
@@ -494,8 +496,8 @@ class BackupService {
       shortages: shortages,
     );
 
-    // Refresh state in active GetX controllers
-    _refreshControllers();
+    // Refresh state in active GetX controllers and wait for completion
+    await _refreshControllers();
 
     return BackupRestoreSummary(
       customersCount: customers.length,
@@ -507,20 +509,33 @@ class BackupService {
     );
   }
 
-  static void _refreshControllers() {
+  static Future<void> _refreshControllers() async {
     try {
+      final futures = <Future>[];
       if (Get.isRegistered<CustomerController>()) {
-        Get.find<CustomerController>().loadCustomers();
+        futures.add(Get.find<CustomerController>().loadCustomers());
       }
       if (Get.isRegistered<TransactionController>()) {
-        Get.find<TransactionController>().loadAllTransactions();
+        futures.add(Get.find<TransactionController>().loadAllTransactions());
+      }
+      if (Get.isRegistered<DashboardController>()) {
+        futures.add(Get.find<DashboardController>().loadDashboardData());
+      }
+      if (Get.isRegistered<InvoiceController>()) {
+        final ic = Get.find<InvoiceController>();
+        if (ic.selectedMerchantId.value > 0) {
+          futures.add(ic.loadInvoicesForMerchant(ic.selectedMerchantId.value));
+        } else if (ic.selectedCustomerId.value > 0) {
+          futures.add(ic.loadInvoicesForCustomer(ic.selectedCustomerId.value));
+        }
       }
       if (Get.isRegistered<MerchantController>()) {
-        Get.find<MerchantController>().loadMerchants();
+        futures.add(Get.find<MerchantController>().loadMerchants());
       }
       if (Get.isRegistered<MerchantShortageController>()) {
-        Get.find<MerchantShortageController>().loadAll();
+        futures.add(Get.find<MerchantShortageController>().loadAll());
       }
+      await Future.wait(futures);
     } catch (_) {}
   }
 }

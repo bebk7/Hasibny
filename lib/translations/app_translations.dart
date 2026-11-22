@@ -619,6 +619,8 @@ class AppTranslations extends Translations {
     'tour_settings_security_desc': 'حماية بياناتك الحساسة برمز PIN أو البصمة الحيوية لتأمين الوصول.',
     'tour_settings_guided_tours_title': 'الجولات الإرشادية',
     'tour_settings_guided_tours_desc': 'إعادة استكشاف مميزات التطبيق أو إعادة تعيين جميع الجولات التعليمية في أي وقت.',
+    'tour_auto_enabled_title': 'الجولات الإرشادية التلقائية',
+    'tour_auto_enabled_desc': 'تشغيل الجولة التوضيحية للمميزات تلقائياً عند أول تشغيل',
   };
 
   static final Map<String, String> _englishTranslations = {
@@ -1146,5 +1148,7 @@ class AppTranslations extends Translations {
     'tour_settings_security_desc': 'Secure your sensitive financial records with PIN code or biometric fingerprint authentication.',
     'tour_settings_guided_tours_title': 'Guided Tours',
     'tour_settings_guided_tours_desc': 'Re-explore app features or reset all interactive guided tours anytime.',
+    'tour_auto_enabled_title': 'Automatic Guided Tours',
+    'tour_auto_enabled_desc': 'Automatically showcase app features on first launch',
   };
 }

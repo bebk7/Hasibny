@@ -20,11 +20,6 @@ class _TransactionsViewState extends State<TransactionsView> {
   @override
   void initState() {
     super.initState();
-    WidgetsBinding.instance.addPostFrameCallback((_) {
-      if (mounted) {
-        GuidedTourManager.instance.showIfFirstVisit(context, AppTours.buildTransactionsTour());
-      }
-    });
   }
 
   @override

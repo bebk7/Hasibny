@@ -101,6 +101,7 @@ class AppTours {
       tourId: customersTourId,
       title: 'tour_customers_title'.tr,
       scope: mainScope,
+      autoStartOnFirstVisit: false,
       steps: [
         GuidedTourStep(
           id: 'cust_search',
@@ -139,6 +140,7 @@ class AppTours {
       tourId: transactionsTourId,
       title: 'tour_transactions_title'.tr,
       scope: mainScope,
+      autoStartOnFirstVisit: false,
       steps: [
         GuidedTourStep(
           id: 'tx_filter',
@@ -177,6 +179,7 @@ class AppTours {
       tourId: settingsTourId,
       title: 'tour_settings_title'.tr,
       scope: mainScope,
+      autoStartOnFirstVisit: false,
       steps: [
         GuidedTourStep(
           id: 'set_store',
