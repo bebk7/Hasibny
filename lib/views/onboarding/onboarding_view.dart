@@ -296,7 +296,7 @@ class _OnboardingViewState extends State<OnboardingView> {
                         ],
                       ),
                       child: Image.asset(
-                        'assets/HasibnyLogo.png',
+                        'assets/images/hasibnyLogo.png',
                         fit: BoxFit.contain,
                         errorBuilder: (_, __, ___) => Icon(
                           Icons.account_balance_wallet_rounded,

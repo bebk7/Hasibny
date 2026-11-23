@@ -44,7 +44,9 @@ dev_dependencies:
 flutter_launcher_icons:
   android: true
   ios: false
-  image_path: assets/images/hasibnyLogo.png
+  image_path: assets/images/app_icon.png
+  adaptive_icon_background: "#004D66"
+  adaptive_icon_foreground: assets/images/adaptive_foreground.png
 
 flutter_native_splash:
   color: "#0F1315"
