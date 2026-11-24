@@ -32,19 +32,19 @@ class AppBottomSheet extends StatelessWidget {
     final availableHeight = (resp.screenHeight - viewInsets.bottom - resp.safeTop)
         .clamp(200.0, resp.screenHeight);
 
-    return Container(
-      width: double.infinity,
-      constraints: BoxConstraints(
-        maxWidth: resp.maxContentWidth,
-        maxHeight: maxHeight ?? (availableHeight * 0.90),
-      ),
-      decoration: BoxDecoration(
-        color: isDark ? AppColors.darkSurfaceColor : Colors.white,
-        borderRadius: AppRadius.bottomSheetRadius(context),
-      ),
-      child: SafeArea(
-        top: false,
-        child: SingleChildScrollView(
+    return Material(
+      color: isDark ? AppColors.darkSurfaceColor : Colors.white,
+      borderRadius: AppRadius.bottomSheetRadius(context),
+      clipBehavior: Clip.antiAlias,
+      child: Container(
+        width: double.infinity,
+        constraints: BoxConstraints(
+          maxWidth: resp.maxContentWidth,
+          maxHeight: maxHeight ?? (availableHeight * 0.90),
+        ),
+        child: SafeArea(
+          top: false,
+          child: SingleChildScrollView(
           physics: const ClampingScrollPhysics(),
           padding: padding ??
               EdgeInsets.only(
@@ -98,8 +98,9 @@ class AppBottomSheet extends StatelessWidget {
           ),
         ),
       ),
-    );
-  }
+    ),
+  );
+}
 
   /// Show responsive bottom sheet via standard Flutter modal bottom sheet
   static Future<T?> show<T>({

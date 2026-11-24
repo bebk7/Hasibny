@@ -130,12 +130,15 @@ class _SettingsViewState extends State<SettingsView> {
                                 color: AppColors.warning.withValues(alpha: 0.12),
                                 borderRadius: BorderRadius.circular(resp.radiusSM),
                               ),
-                              child: Text(
-                                settingsController.currentCurrency.value,
-                                style: TextStyle(
-                                  fontSize: resp.fontXS,
-                                  fontWeight: FontWeight.bold,
-                                  color: AppColors.warning,
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  settingsController.currentCurrency.value,
+                                  style: TextStyle(
+                                    fontSize: resp.fontXS,
+                                    fontWeight: FontWeight.bold,
+                                    color: AppColors.warning,
+                                  ),
                                 ),
                               ),
                             ),
@@ -145,6 +148,48 @@ class _SettingsViewState extends State<SettingsView> {
                           ],
                         ),
                         onTap: () => _showCurrencyDialog(context),
+                        resp: resp,
+                      )),
+                  _buildDivider(context),
+                  Obx(() => _buildTile(
+                        context: context,
+                        icon: Icons.pin_outlined,
+                        color: const Color(0xFF10B981),
+                        title: 'number_format'.tr,
+                        subtitle: settingsController.numberFormatLabel,
+                        trailing: Row(
+                          mainAxisSize: MainAxisSize.min,
+                          children: [
+                            Container(
+                              padding: EdgeInsets.symmetric(
+                                horizontal: resp.spacingSM,
+                                vertical: 3,
+                              ),
+                              decoration: BoxDecoration(
+                                color: const Color(0xFF10B981).withValues(alpha: 0.12),
+                                borderRadius: BorderRadius.circular(resp.radiusSM),
+                              ),
+                              child: FittedBox(
+                                fit: BoxFit.scaleDown,
+                                child: Text(
+                                  SettingsController.numberFormats.firstWhere(
+                                    (opt) => opt.code == settingsController.currentNumberFormat.value,
+                                    orElse: () => SettingsController.numberFormats.first,
+                                  ).preview,
+                                  style: TextStyle(
+                                    fontSize: resp.fontXS,
+                                    fontWeight: FontWeight.bold,
+                                    color: const Color(0xFF10B981),
+                                  ),
+                                ),
+                              ),
+                            ),
+                            SizedBox(width: resp.spacing2XS),
+                            Icon(resp.forwardIcon,
+                                size: resp.iconSM - 2, color: Colors.grey),
+                          ],
+                        ),
+                        onTap: () => _showNumberFormatSheet(context),
                         resp: resp,
                       )),
                   _buildDivider(context),
@@ -426,14 +471,18 @@ class _SettingsViewState extends State<SettingsView> {
           Icon(icon,
               size: resp.iconXS, color: AppColors.primary.withValues(alpha: 0.8)),
           SizedBox(width: resp.spacingSM),
-          Text(
-            title,
-            style: TextStyle(
-              fontFamily: 'Cairo',
-              fontSize: resp.fontSM,
-              fontWeight: FontWeight.bold,
-              color: AppColors.primary.withValues(alpha: 0.9),
-              letterSpacing: 0.5,
+          Expanded(
+            child: Text(
+              title,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontSM,
+                fontWeight: FontWeight.bold,
+                color: AppColors.primary.withValues(alpha: 0.9),
+                letterSpacing: 0.5,
+              ),
+              maxLines: 1,
+              overflow: TextOverflow.ellipsis,
             ),
           ),
         ],
@@ -560,41 +609,148 @@ class _SettingsViewState extends State<SettingsView> {
           ...SettingsController.currencies.map((currency) => Obx(() {
                 final isSelected =
                     settingsController.currentCurrency.value == currency.code;
-                return Container(
-                  margin: EdgeInsets.only(bottom: resp.spacing2XS),
-                  decoration: BoxDecoration(
+                return Padding(
+                  padding: EdgeInsets.only(bottom: resp.spacing2XS),
+                  child: Material(
                     color: isSelected
                         ? AppColors.primary.withValues(alpha: 0.08)
                         : Colors.transparent,
                     borderRadius: BorderRadius.circular(resp.cardRadius * 0.75),
+                    child: ListTile(
+                      title: Text(
+                        currency.label,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.normal,
+                          color: isSelected ? AppColors.primary : null,
+                          fontSize: resp.fontMD,
+                        ),
+                      ),
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color: isSelected ? AppColors.primary : Colors.grey,
+                        size: resp.iconSM,
+                      ),
+                      trailing: isSelected
+                          ? Icon(Icons.check_rounded,
+                              color: AppColors.primary, size: resp.iconSM)
+                          : null,
+                      onTap: () {
+                        settingsController.setCurrency(currency.code);
+                        Get.back();
+                      },
+                    ),
                   ),
-                  child: ListTile(
-                    title: Text(
-                      currency.label,
-                      style: TextStyle(
-                        fontFamily: 'Cairo',
-                        fontWeight: isSelected
-                            ? FontWeight.bold
-                            : FontWeight.normal,
-                        color: isSelected ? AppColors.primary : null,
-                        fontSize: resp.fontMD,
+                );
+              })),
+        ],
+      ),
+    );
+  }
+
+  void _showNumberFormatSheet(BuildContext context) {
+    final settingsController = Get.find<SettingsController>();
+    final resp = AppResponsive.of(context);
+    final isDark = Theme.of(context).brightness == Brightness.dark;
+
+    AppBottomSheet.show(
+      context: context,
+      child: Column(
+        mainAxisSize: MainAxisSize.min,
+        crossAxisAlignment: CrossAxisAlignment.stretch,
+        children: [
+          Center(
+            child: Text(
+              'select_number_format'.tr,
+              style: TextStyle(
+                fontFamily: 'Cairo',
+                fontSize: resp.fontLG,
+                fontWeight: FontWeight.bold,
+              ),
+            ),
+          ),
+          SizedBox(height: resp.spacingMD),
+          ...SettingsController.numberFormats.map((format) => Obx(() {
+                final isSelected =
+                    settingsController.currentNumberFormat.value == format.code;
+                return Padding(
+                  padding: EdgeInsets.only(bottom: resp.spacingXS),
+                  child: Material(
+                    color: isSelected
+                        ? const Color(0xFF10B981).withValues(alpha: 0.08)
+                        : Colors.transparent,
+                    shape: RoundedRectangleBorder(
+                      borderRadius:
+                          BorderRadius.circular(resp.cardRadius * 0.75),
+                      side: BorderSide(
+                        color: isSelected
+                            ? const Color(0xFF10B981).withValues(alpha: 0.3)
+                            : Colors.transparent,
                       ),
                     ),
-                    leading: Icon(
-                      isSelected
-                          ? Icons.radio_button_checked_rounded
-                          : Icons.radio_button_off_rounded,
-                      color: isSelected ? AppColors.primary : Colors.grey,
-                      size: resp.iconSM,
+                    child: ListTile(
+                      contentPadding: EdgeInsets.symmetric(
+                        horizontal: resp.spacingMD,
+                        vertical: 2,
+                      ),
+                      leading: Icon(
+                        isSelected
+                            ? Icons.radio_button_checked_rounded
+                            : Icons.radio_button_off_rounded,
+                        color:
+                            isSelected ? const Color(0xFF10B981) : Colors.grey,
+                        size: resp.iconSM,
+                      ),
+                      title: Text(
+                        format.titleKey.tr,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          fontWeight: isSelected
+                              ? FontWeight.bold
+                              : FontWeight.w600,
+                          color: isSelected ? const Color(0xFF10B981) : null,
+                          fontSize: resp.fontMD,
+                        ),
+                      ),
+                      subtitle: Text(
+                        format.descKey.tr,
+                        style: TextStyle(
+                          fontFamily: 'Cairo',
+                          color: isDark ? Colors.grey[400] : Colors.grey[600],
+                          fontSize: resp.fontXS,
+                        ),
+                      ),
+                      trailing: Container(
+                        padding: const EdgeInsets.symmetric(
+                            horizontal: 8, vertical: 3),
+                        decoration: BoxDecoration(
+                          color: isDark
+                              ? Colors.white10
+                              : Colors.black.withValues(alpha: 0.05),
+                          borderRadius: BorderRadius.circular(6),
+                        ),
+                        child: Text(
+                          format.preview,
+                          style: TextStyle(
+                            fontSize: resp.fontXS,
+                            fontWeight: FontWeight.bold,
+                            color: isSelected
+                                ? const Color(0xFF10B981)
+                                : (isDark
+                                    ? Colors.grey[300]
+                                    : Colors.grey[700]),
+                          ),
+                        ),
+                      ),
+                      onTap: () {
+                        settingsController.setNumberFormat(format.code);
+                        Get.back();
+                      },
                     ),
-                    trailing: isSelected
-                        ? Icon(Icons.check_rounded,
-                            color: AppColors.primary, size: resp.iconSM)
-                        : null,
-                    onTap: () {
-                      settingsController.setCurrency(currency.code);
-                      Get.back();
-                    },
                   ),
                 );
               })),

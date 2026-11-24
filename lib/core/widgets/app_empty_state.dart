@@ -33,14 +33,19 @@ class AppEmptyState extends StatelessWidget {
     final isDark = AppColors.isDark(context);
     final color = iconColor ?? AppColors.primaryOf(context);
 
-    final avatarSize = isCompact ? 56.0 : (resp.isSmall ? 68.0 : 80.0);
-    final iconSz = isCompact ? 26.0 : (resp.isSmall ? 32.0 : 38.0);
+    final avatarSize = resp.isShort
+        ? 44.0
+        : (isCompact ? 56.0 : (resp.isSmall ? 68.0 : 80.0));
+    final iconSz = resp.isShort
+        ? 22.0
+        : (isCompact ? 26.0 : (resp.isSmall ? 32.0 : 38.0));
 
     return Center(
-      child: Padding(
+      child: SingleChildScrollView(
+        physics: const ClampingScrollPhysics(),
         padding: EdgeInsets.symmetric(
           horizontal: resp.isSmall ? 20.0 : 32.0,
-          vertical: isCompact ? 20.0 : 40.0,
+          vertical: resp.isShort ? 8.0 : (isCompact ? 20.0 : 32.0),
         ),
         child: Column(
           mainAxisSize: MainAxisSize.min,

@@ -53,36 +53,23 @@ class CurrencyFormatter {
     );
   }
 
-  static String _formatNumber(double amount) {
-    String value;
+  static String _formatNumber(double amount, [String? formatCode]) {
+    String intPart;
+    String? decPart;
     if (amount == amount.truncateToDouble()) {
-      value = amount.toInt().toString();
+      intPart = amount.toInt().toString();
     } else {
       final s = amount.toStringAsFixed(2);
-      if (s.endsWith('00')) {
-        value = amount.toInt().toString();
-      } else if (s.endsWith('0')) {
-        value = s.substring(0, s.length - 1);
-      } else {
-        value = s;
+      final parts = s.split('.');
+      intPart = parts[0];
+      decPart = parts[1];
+      if (decPart.endsWith('00')) {
+        decPart = null;
+      } else if (decPart.endsWith('0')) {
+        decPart = decPart.substring(0, 1);
       }
     }
-    return _addThousandSeparators(value);
-  }
-
-  static String _addThousandSeparators(String value) {
-    final parts = value.split('.');
-    final intPart = parts[0];
-    final isNeg = intPart.startsWith('-');
-    final digits = isNeg ? intPart.substring(1) : intPart;
-
-    final buf = StringBuffer();
-    for (int i = 0; i < digits.length; i++) {
-      if (i > 0 && (digits.length - i) % 3 == 0) buf.write(',');
-      buf.write(digits[i]);
-    }
-    final formatted = (isNeg ? '-' : '') + buf.toString();
-    return parts.length > 1 ? '$formatted.${parts[1]}' : formatted;
+    return AppCurrency.applyNumberFormat(intPart, decPart, formatCode);
   }
 
   // ─── Amount to words with currency support ───────────────────────────

@@ -519,23 +519,31 @@ class _TransactionCard extends StatelessWidget {
               ),
             ),
             SizedBox(width: resp.spacingSM),
-            Column(
-              crossAxisAlignment: CrossAxisAlignment.end,
-              mainAxisSize: MainAxisSize.min,
-              children: [
-                Text(
-                  '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode)}',
-                  textAlign: TextAlign.end,
-                  style: TextStyle(
-                    fontFamily: 'Cairo',
-                    color: color,
-                    fontWeight: FontWeight.w900,
-                    fontSize: resp.fontMD,
-                    letterSpacing: -0.3,
+            ConstrainedBox(
+              constraints: BoxConstraints(
+                maxWidth: (resp.availableWidth * 0.45).clamp(110.0, 200.0),
+              ),
+              child: Column(
+                crossAxisAlignment: CrossAxisAlignment.end,
+                mainAxisSize: MainAxisSize.min,
+                children: [
+                  FittedBox(
+                    fit: BoxFit.scaleDown,
+                    alignment: AlignmentDirectional.centerEnd,
+                    child: Text(
+                      '${isGive ? '-' : '+'}${CurrencyFormatter.format(transaction.amount, currencyCode: transaction.currencyCode)}',
+                      textAlign: TextAlign.end,
+                      style: TextStyle(
+                        fontFamily: 'Cairo',
+                        color: color,
+                        fontWeight: FontWeight.w900,
+                        fontSize: resp.fontMD,
+                        letterSpacing: -0.3,
+                      ),
+                    ),
                   ),
-                ),
-                const SizedBox(height: 3),
-                InkWell(
+                  const SizedBox(height: 3),
+                  InkWell(
                   onTap: () {
                     HapticFeedback.lightImpact();
                     onShare();
@@ -552,8 +560,9 @@ class _TransactionCard extends StatelessWidget {
                 ),
               ],
             ),
-          ],
-        ),
+          ),
+        ],
+      ),
       ),
     );
   }

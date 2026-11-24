@@ -12,10 +12,25 @@ class CurrencyOption {
       {required this.code, required this.symbol, required this.label});
 }
 
+class NumberFormatOption {
+  final String code;
+  final String titleKey;
+  final String descKey;
+  final String preview;
+
+  const NumberFormatOption({
+    required this.code,
+    required this.titleKey,
+    required this.descKey,
+    required this.preview,
+  });
+}
+
 class SettingsController extends GetxController {
   static const _keyLanguage = 'language';
   static const _keyDarkMode = 'dark_mode';
   static const _keyCurrency = 'currency';
+  static const _keyNumberFormat = 'number_format';
   static const _keyStoreName = 'store_name';
   static const _keyStorePhone = 'store_phone';
   static const _keyStoreAddress = 'store_address';
@@ -27,6 +42,7 @@ class SettingsController extends GetxController {
   final RxString currentLanguage = 'ar'.obs;
   final RxBool isDarkMode = false.obs;
   final RxString currentCurrency = 'YER'.obs;
+  final RxString currentNumberFormat = 'standard'.obs;
 
   final RxString storeName = ''.obs;
   final RxString storePhone = ''.obs;
@@ -37,6 +53,33 @@ class SettingsController extends GetxController {
 
   /// Global Master Switch: Enable/Disable WhatsApp automated invoice delivery
   final RxBool enableWhatsAppInvoices = true.obs;
+
+  static const List<NumberFormatOption> numberFormats = [
+    NumberFormatOption(
+      code: 'standard',
+      titleKey: 'format_standard',
+      descKey: 'format_standard_desc',
+      preview: '1,234.50',
+    ),
+    NumberFormatOption(
+      code: 'european',
+      titleKey: 'format_european',
+      descKey: 'format_european_desc',
+      preview: '1.234,50',
+    ),
+    NumberFormatOption(
+      code: 'spaces',
+      titleKey: 'format_spaces',
+      descKey: 'format_spaces_desc',
+      preview: '1 234.50',
+    ),
+    NumberFormatOption(
+      code: 'arabicIndic',
+      titleKey: 'format_arabic_indic',
+      descKey: 'format_arabic_indic_desc',
+      preview: '١٬٢٣٤٫٥٠',
+    ),
+  ];
 
   static const List<CurrencyOption> currencies = [
     CurrencyOption(code: 'YER', symbol: 'ر.ي', label: '🇾🇪 الريال اليمني (YER)'),
@@ -56,6 +99,14 @@ class SettingsController extends GetxController {
     return '${curr.flag} ${curr.getName(isArabic: isArabic)} (${curr.code})';
   }
 
+  String get numberFormatLabel {
+    final option = numberFormats.firstWhere(
+      (opt) => opt.code == currentNumberFormat.value,
+      orElse: () => numberFormats.first,
+    );
+    return option.titleKey.tr;
+  }
+
   @override
   void onInit() {
     super.onInit();
@@ -67,10 +118,12 @@ class SettingsController extends GetxController {
     final lang = prefs.getString(_keyLanguage) ?? 'ar';
     final dark = prefs.getBool(_keyDarkMode) ?? false;
     final currency = prefs.getString(_keyCurrency) ?? 'YER';
+    final numFormat = prefs.getString(_keyNumberFormat) ?? 'standard';
 
     currentLanguage.value = lang;
     isDarkMode.value = dark;
     currentCurrency.value = currency;
+    currentNumberFormat.value = numFormat;
     if (Get.isRegistered<DashboardController>()) {
       Get.find<DashboardController>().setCurrency(currency);
     }
@@ -127,6 +180,12 @@ class SettingsController extends GetxController {
     if (Get.isRegistered<DashboardController>()) {
       Get.find<DashboardController>().setCurrency(code);
     }
+  }
+
+  void setNumberFormat(String code) async {
+    currentNumberFormat.value = code;
+    final prefs = await SharedPreferences.getInstance();
+    await prefs.setString(_keyNumberFormat, code);
   }
 
   Future<void> setEnableWhatsAppInvoices(bool value) async {
